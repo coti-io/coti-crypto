@@ -4,10 +4,6 @@ export function getUtcInstant() {
   return moment.utc().valueOf() / 1000;
 }
 
-export function getBytesFromString(str: string) {
-  return str.split('').map(e => e.charCodeAt(0));
-}
-
 export function hexToBytes(hex: string) {
   let bytes = [];
   for (let c = 0; c < hex.length; c += 2) {
@@ -28,4 +24,14 @@ export function byteArrayToHexString(uint8arr: Uint8Array) {
     hexStr += hex;
   }
   return hexStr;
+}
+
+export function removeZeroBytesFromByteArray(bytes: Uint8Array) {
+  for (let i = 0; i < bytes.byteLength; i++) {
+    if (bytes[i] !== 0) {
+      bytes = bytes.subarray(i, bytes.byteLength);
+      break;
+    }
+  }
+  return bytes;
 }
