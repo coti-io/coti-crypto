@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import * as BN from 'bn.js';
+import BN from 'bn.js';
 import * as CRC32 from 'crc-32';
 import * as elliptic from 'elliptic';
 import * as stringUtils from './stringUtils';
@@ -111,6 +111,10 @@ export function verifyOrderOfPrivateKey(privateKeyHex: string) {
   return orderG.cmp(new BN(privateKeyHex, 16)) >= 0;
 }
 
+export function paddingPublicKeyByCoordinates(publicKeyX: string, publicKeyY: string) {
+  return paddingPublicKey({ x: publicKeyX, y: publicKeyY });
+}
+
 export function paddingPublicKey(publicKey: PublicKey) {
   const paddingLetter = '0';
   let publicX = publicKey.x;
@@ -137,10 +141,14 @@ export function signByteArrayMessage(byteArray: Uint8Array, keyPair: KeyPair) {
 export function verifyAddressStructure(addressHex: string) {
   if (addressHex.length !== 136) return false;
   let addressHexWithoutCheckSum = addressHex.substring(0, 128);
-  let addressBytesWithoutCheckSum = stringUtils.hexToBytes(addressHexWithoutCheckSum);
-  addressBytesWithoutCheckSum = removeLeadingZeroBytesFromAddress(addressBytesWithoutCheckSum);
-  let checkSumHex = getCrc32(addressBytesWithoutCheckSum);
+  let checkSumHex = getCheckSumFromHexString(addressHexWithoutCheckSum);
   return checkSumHex === addressHex.substring(128, 136);
+}
+
+export function getCheckSumFromHexString(hexString: string) {
+  let bytes = stringUtils.hexToBytes(hexString);
+  bytes = removeLeadingZeroBytesFromAddress(bytes);
+  return getCrc32(bytes);
 }
 
 function removeLeadingZeroBytesFromAddress(addressBytes: Uint8Array) {
