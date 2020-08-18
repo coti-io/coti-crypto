@@ -1,9 +1,8 @@
-import { BaseAddress } from './baseAddress';
-import { KeyPair, getCheckSumFromHexString, paddingPublicKeyByCoordinates } from './utils/cryptoUtils';
+import { KeyPair, getCheckSumFromAddressHex, paddingPublicKeyByCoordinates } from './utils/cryptoUtils';
+import { IndexedAddress } from './indexedAddress';
 
-export class Address extends BaseAddress {
+export class Address extends IndexedAddress {
   private keyPair: KeyPair;
-  private index: number;
 
   constructor(keyPair: KeyPair, index: number) {
     let publicXKeyHex = keyPair
@@ -16,20 +15,15 @@ export class Address extends BaseAddress {
       .toString(16, 2);
 
     let paddedAddress = paddingPublicKeyByCoordinates(publicXKeyHex, publicYKeyHex);
-    let checkSumHex = getCheckSumFromHexString(paddedAddress);
+    let checkSumHex = getCheckSumFromAddressHex(paddedAddress);
 
     let addressWithCheckSum = paddedAddress + checkSumHex;
-    super(addressWithCheckSum);
+    super(addressWithCheckSum, index);
 
     this.keyPair = keyPair;
-    this.index = index;
   }
 
   public getAddressKeyPair() {
     return this.keyPair;
-  }
-
-  public getIndex() {
-    return this.index;
   }
 }

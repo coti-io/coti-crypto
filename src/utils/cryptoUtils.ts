@@ -2,7 +2,7 @@ import * as crypto from 'crypto';
 import BN from 'bn.js';
 import * as CRC32 from 'crc-32';
 import * as elliptic from 'elliptic';
-import * as stringUtils from './stringUtils';
+import * as utils from './utils';
 
 const ec = new elliptic.ec('secp256k1');
 const regexp = /^[0-9a-fA-F]+$/;
@@ -59,7 +59,7 @@ export function decryptCTR(text: string, password: string) {
 export function getCrc32(arr: Uint8Array) {
   let checkSum = CRC32.buf(arr);
   let checkSumInBytes = new Uint8Array(toBytesInt32(checkSum));
-  let checkSumHex = stringUtils.byteArrayToHexString(checkSumInBytes);
+  let checkSumHex = utils.byteArrayToHexString(checkSumInBytes);
   return checkSumHex;
 }
 
@@ -141,12 +141,12 @@ export function signByteArrayMessage(byteArray: Uint8Array, keyPair: KeyPair) {
 export function verifyAddressStructure(addressHex: string) {
   if (addressHex.length !== 136) return false;
   let addressHexWithoutCheckSum = addressHex.substring(0, 128);
-  let checkSumHex = getCheckSumFromHexString(addressHexWithoutCheckSum);
+  let checkSumHex = getCheckSumFromAddressHex(addressHexWithoutCheckSum);
   return checkSumHex === addressHex.substring(128, 136);
 }
 
-export function getCheckSumFromHexString(hexString: string) {
-  let bytes = stringUtils.hexToBytes(hexString);
+export function getCheckSumFromAddressHex(hexString: string) {
+  let bytes = utils.hexToBytes(hexString);
   bytes = removeLeadingZeroBytesFromAddress(bytes);
   return getCrc32(bytes);
 }
@@ -155,8 +155,8 @@ function removeLeadingZeroBytesFromAddress(addressBytes: Uint8Array) {
   let xPart = addressBytes.subarray(0, addressBytes.byteLength / 2);
   let yPart = addressBytes.subarray(addressBytes.byteLength / 2, addressBytes.byteLength);
 
-  xPart = stringUtils.removeZeroBytesFromByteArray(xPart);
-  yPart = stringUtils.removeZeroBytesFromByteArray(yPart);
+  xPart = utils.removeZeroBytesFromByteArray(xPart);
+  yPart = utils.removeZeroBytesFromByteArray(yPart);
 
   let addressWithoutLeadingZeroBytes = new Uint8Array(xPart.byteLength + xPart.byteLength);
   addressWithoutLeadingZeroBytes.set(new Uint8Array(xPart), 0);
