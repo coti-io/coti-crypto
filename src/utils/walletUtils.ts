@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Signature } from '../signature';
 import { BaseAddress } from '../baseAddress';
+import { BaseTransaction } from '../baseTransaction';
 
 const FULL_NODE_URL = process.env.FULL_NODE_URL;
 const TRUSTSCORE_URL = process.env.TRUSTSCORE_URL;
@@ -67,10 +68,10 @@ export async function checkBalances(addresses: string[]) {
   }
 }
 
-export async function getFullNodeFees(Wallet, amountToTransfer: number) {
+export async function getFullNodeFees(wallet, amountToTransfer: number) {
   try {
-    const userHash = Wallet.generateUserPublicHash();
-    const userSignature = new Signature.FullnodeFeeSignatue(amountToTransfer).sign(Wallet);
+    const userHash = wallet.generateUserPublicHash();
+    const userSignature = new Signature.FullnodeFeeSignatue(amountToTransfer).sign(wallet);
     const res = await axios.put(`${FULL_NODE_URL}/fee`, { originalAmount: amountToTransfer, userHash, userSignature });
     return res.data.fullNodeFee;
   } catch (error) {
@@ -89,12 +90,12 @@ export async function getNetworkFees(fullNodeFeeData, userHash: string) {
   }
 }
 
-export async function getTrustScoreFromTsNode(Wallet, userHash: string, transaction) {
+export async function getTrustScoreFromTsNode(wallet, userHash: string, transaction) {
   const transactionHash = transaction.createTransactionHash();
   const createTrustScoreMessage = {
     userHash,
     transactionHash,
-    userSignature: Wallet.signMessage(transaction.createTransactionHash())
+    userSignature: wallet.signMessage(transaction.createTransactionHash())
   };
 
   try {
@@ -104,4 +105,26 @@ export async function getTrustScoreFromTsNode(Wallet, userHash: string, transact
     const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
     throw new Error(`Error getting trust score from trust score node: ${errorMessage}`);
   }
+}
+
+export async function createMiniConsensus(userHash, fullNodeFee: BaseTransaction, networkFee: BaseTransaction) {
+  const iteration = 3;
+
+  let validationNetworkFeeMessage = {
+    fullNodeFeeData: fullNodeFee,
+    networkFeeData: networkFee,
+    userHash
+  };
+  let res;
+  try {
+    for (let i = 1; i < iteration; i++) {
+      res = await axios.post(`${TRUSTSCORE_URL}/networkFee`, validationNetworkFeeMessage);
+      validationNetworkFeeMessage.networkFeeData = res.data.networkFeeData;
+    }
+  } catch (error) {
+    const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
+    throw new Error(`Error in createMiniConsensus: ${errorMessage}`);
+  }
+
+  return { fullNodeFee, networkFee: res.data.networkFeeData };
 }

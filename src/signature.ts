@@ -26,3 +26,19 @@ export abstract class Signature {
 
   abstract getBytes(): Uint8Array;
 }
+
+export class FullNodeFeeSignatue extends Signature {
+  private amount: number;
+
+  constructor(amount: number) {
+    super();
+    this.amount = amount;
+  }
+
+  getBytes() {
+    let arr: number[] = [];
+    const amountInBytes = utils.getNumberArrayFromString(utils.removeZerosFromEndOfNumber(this.amount));
+    arr = arr.concat(amountInBytes);
+    return new Uint8Array(arr);
+  }
+}

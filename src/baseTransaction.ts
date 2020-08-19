@@ -11,16 +11,26 @@ export interface Item {
   itemQuantity: number;
 }
 
+export interface TrustScoreNodeResult {
+  trustScoreNodeHash: string;
+  trustScoreNodeSignature: SignatureData;
+  valid: true;
+}
+
 export class BaseTransaction {
-  private hash: string;
+  private hash?: string;
   private addressHash: string;
   private amount: number;
   private createTime: number;
   private name: string;
-  private items: Item[];
-  private encryptedMerchantName: string;
-  private originalAmount: number;
-  private signatureData: SignatureData;
+  private items?: Item[];
+  private encryptedMerchantName?: string;
+  private originalAmount?: number;
+  private networkFeeTrustScoreNodeResult?: TrustScoreNodeResult[];
+  private rollingReserveTrustScoreNodeResult? : TrustScoreNodeResult[];
+  private receiverDescription?: string;
+  private reducedAmount?: number;
+  private signatureData?: SignatureData;
 
   constructor(
     address: BaseAddress,
@@ -30,8 +40,6 @@ export class BaseTransaction {
     encryptedMerchantName: string,
     originalAmount: number
   ) {
-    if (!address) return;
-
     this.addressHash = address.getAddressHex();
     this.amount = amount;
     this.createTime = utils.getUtcInstant();
@@ -62,32 +70,35 @@ export class BaseTransaction {
     let bytes = utils.hexToBytes(this.addressHash);
     bytes = utils.concatByteArrays(bytes, amountInBytes);
     bytes = utils.concatByteArrays(bytes, utcTimeInByteArray);
-    if (this.name === 'RBT') {
+    if (this.name === 'RBT' && this.originalAmount !== undefined) {
       let originalAmountInBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.originalAmount));
       bytes = utils.concatByteArrays(bytes, originalAmountInBytes);
     }
     if (this.name === 'PIBT') {
-      let itemsByteArray: number[] = [];
-      this.items.forEach(item => {
-        let id = Array.from(utils.numberToByteArray(item.itemId, 8));
-        let price = utils.getNumberArrayFromString(utils.removeZerosFromEndOfNumber(item.itemPrice));
-        let name = utils.getNumberArrayFromString(item.itemName);
-        let quantity = Array.from(utils.numberToByteArray(item.itemQuantity, 4));
-        itemsByteArray = itemsByteArray
-          .concat(id)
-          .concat(price)
-          .concat(name)
-          .concat(quantity);
-      });
-      bytes = utils.concatByteArrays(bytes, new Uint8Array(itemsByteArray));
-      bytes = utils.concatByteArrays(bytes, utils.getBytesFromString(this.encryptedMerchantName));
+      if (this.items !== undefined) {
+        let itemsByteArray: number[] = [];
+        this.items.forEach(item => {
+          let id = Array.from(utils.numberToByteArray(item.itemId, 8));
+          let price = utils.getNumberArrayFromString(utils.removeZerosFromEndOfNumber(item.itemPrice));
+          let name = utils.getNumberArrayFromString(item.itemName);
+          let quantity = Array.from(utils.numberToByteArray(item.itemQuantity, 4));
+          itemsByteArray = itemsByteArray
+            .concat(id)
+            .concat(price)
+            .concat(name)
+            .concat(quantity);
+        });
+        bytes = utils.concatByteArrays(bytes, new Uint8Array(itemsByteArray));
+      }
+      if (this.encryptedMerchantName !== undefined)
+        bytes = utils.concatByteArrays(bytes, utils.getBytesFromString(this.encryptedMerchantName));
     }
 
     return bytes;
   }
 
   public getHashBytes() {
-    return utils.hexToBytes(this.hash);
+    return this.hash !== undefined ? utils.hexToBytes(this.hash) : null;
   }
 
   public sign(transactionHash: string, wallet) {
@@ -110,26 +121,26 @@ export class BaseTransaction {
     jsonToReturn.hash = this.hash;
     jsonToReturn.createTime = this.createTime; //it gets the utc time
 
-    if (this.signatureData !== null && this.signatureData !== undefined) {
+    if (this.signatureData) {
       jsonToReturn.signatureData = { r: this.signatureData.r, s: this.signatureData.s };
     }
 
-    if (this.originalAmount !== null && this.originalAmount !== undefined) {
+    if (this.originalAmount) {
       jsonToReturn.originalAmount = utils.removeZerosFromEndOfNumber(this.originalAmount);
     }
 
-    if (this.networkFeeTrustScoreNodeResult !== null && this.networkFeeTrustScoreNodeResult !== undefined)
-      jsonToReturn['networkFeeTrustScoreNodeResult'] = this.networkFeeTrustScoreNodeResult;
-    if (this.encryptedMerchantName) jsonToReturn['encryptedMerchantName'] = this.encryptedMerchantName;
+    if (this.networkFeeTrustScoreNodeResult)
+      jsonToReturn.networkFeeTrustScoreNodeResult = this.networkFeeTrustScoreNodeResult;
+    if (this.encryptedMerchantName) jsonToReturn.encryptedMerchantName = this.encryptedMerchantName;
     if (this.items) jsonToReturn['items'] = this.items;
     if (this.rollingReserveTrustScoreNodeResult)
-      jsonToReturn['rollingReserveTrustScoreNodeResult'] = this.rollingReserveTrustScoreNodeResult;
+      jsonToReturn.rollingReserveTrustScoreNodeResult = this.rollingReserveTrustScoreNodeResult;
     if (this.receiverDescription) jsonToReturn['receiverDescription'] = this.receiverDescription;
 
-    if (this.reducedAmount !== null && this.reducedAmount !== undefined)
-      jsonToReturn['reducedAmount'] = this.removeZerosFromEndOfNumber(this.reducedAmount.toString());
+    if (this.reducedAmount)
+      jsonToReturn.reducedAmount = utils.removeZerosFromEndOfNumber(this.reducedAmount);
 
-    jsonToReturn['name'] = this.name;
+    jsonToReturn.name = this.name;
 
     return jsonToReturn;
   }

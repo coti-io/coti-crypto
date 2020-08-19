@@ -12,7 +12,8 @@
     "outDir":"./dist",
     "esModuleInterop": true,
     "experimentalDecorators": true,
-    "watch":true
+    "watch":true,
+    "typeRoots": ["node_modules/@types"]
   },
   "include":[
     "./src/**/*"
