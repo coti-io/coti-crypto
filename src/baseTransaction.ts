@@ -1,5 +1,4 @@
 import * as utils from './utils/utils';
-import * as cryptoUtils from './utils/cryptoUtils';
 import { keccak256 } from 'js-sha3';
 import { BaseAddress } from './baseAddress';
 import { SignatureData } from './signature';

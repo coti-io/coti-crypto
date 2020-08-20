@@ -1,5 +1,4 @@
 import * as utils from './utils/utils';
-import * as cryptoUtils from './utils/cryptoUtils';
 import { keccak256 } from 'js-sha3';
 
 export interface SignatureData {
@@ -8,11 +7,11 @@ export interface SignatureData {
 }
 
 export abstract class Signature {
-  protected signatureData: SignatureData;
+  protected signatureData!: SignatureData;
 
   constructor() {}
 
-  public sign(Wallet, isHash: boolean) {
+  public sign(wallet, isHash = false) {
     const messageInBytes = isHash ? this.getBytes() : this.createBasicSignatureHash();
     this.signatureData = Wallet.signMessage(messageInBytes);
     return this.signatureData;
@@ -27,7 +26,7 @@ export abstract class Signature {
   abstract getBytes(): Uint8Array;
 }
 
-export class FullNodeFeeSignatue extends Signature {
+export class FullNodeFeeSignature extends Signature {
   private amount: number;
 
   constructor(amount: number) {
@@ -36,9 +35,6 @@ export class FullNodeFeeSignatue extends Signature {
   }
 
   getBytes() {
-    let arr: number[] = [];
-    const amountInBytes = utils.getNumberArrayFromString(utils.removeZerosFromEndOfNumber(this.amount));
-    arr = arr.concat(amountInBytes);
-    return new Uint8Array(arr);
+    return utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.amount));
   }
 }

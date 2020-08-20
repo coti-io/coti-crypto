@@ -12,10 +12,29 @@ export enum TransactionType {
   CHARGEBACK = 'Chargeback'
 }
 
+// export interface ReducedTransaction {
+//   hash: string;
+//   createTime: number;
+//   transactionConsensusUpdateTime?: number;
+// }
+
+export class ReducedTransaction {
+    hash: string;
+    createTime: number;
+    transactionConsensusUpdateTime?: number;
+
+  constructor(transaction: Transaction) {
+    this.hash = transaction.getTransactionHash();
+    this.createTime = transaction.getCreateTime();
+    this.transactionConsensusUpdateTime = transaction.getTransactionConsensusUpdateTime();
+  }
+}
+
 export class Transaction {
   private hash!: string;
   private baseTransactions: BaseTransaction[];
   private createTime: number;
+  private transactionConsensusUpdateTime?: number;
   private transactionDescription: string;
   private trustScoreResults: string[];
   private senderHash: string;
@@ -81,6 +100,14 @@ export class Transaction {
 
   getTransactionHash() {
     return this.hash;
+  }
+
+  getCreateTime() {
+    return this.createTime;
+  }
+
+  getTransactionConsensusUpdateTime() {
+      return this.transactionConsensusUpdateTime;
   }
 
   signTransaction(wallet) {
