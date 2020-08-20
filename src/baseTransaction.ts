@@ -18,7 +18,7 @@ export interface TrustScoreNodeResult {
 }
 
 export class BaseTransaction {
-  private hash?: string;
+  private hash!: string;
   private addressHash: string;
   private amount: number;
   private createTime: number;
@@ -27,7 +27,7 @@ export class BaseTransaction {
   private encryptedMerchantName?: string;
   private originalAmount?: number;
   private networkFeeTrustScoreNodeResult?: TrustScoreNodeResult[];
-  private rollingReserveTrustScoreNodeResult? : TrustScoreNodeResult[];
+  private rollingReserveTrustScoreNodeResult?: TrustScoreNodeResult[];
   private receiverDescription?: string;
   private reducedAmount?: number;
   private signatureData?: SignatureData;
@@ -36,9 +36,9 @@ export class BaseTransaction {
     address: BaseAddress,
     amount: number,
     name: string,
-    items: Item[],
-    encryptedMerchantName: string,
-    originalAmount: number
+    items?: Item[],
+    encryptedMerchantName?: string,
+    originalAmount?: number
   ) {
     this.addressHash = address.getAddressHex();
     this.amount = amount;
@@ -68,19 +68,18 @@ export class BaseTransaction {
     let utcTimeInByteArray = utils.numberToByteArray(utcTime, 8);
 
     let bytes = utils.hexToBytes(this.addressHash);
-    bytes = utils.concatByteArrays(bytes, amountInBytes);
-    bytes = utils.concatByteArrays(bytes, utcTimeInByteArray);
+    bytes = utils.concatByteArrays([bytes, amountInBytes, utcTimeInByteArray]);
     if (this.name === 'RBT' && this.originalAmount !== undefined) {
       let originalAmountInBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.originalAmount));
-      bytes = utils.concatByteArrays(bytes, originalAmountInBytes);
+      bytes = utils.concatByteArrays([bytes, originalAmountInBytes]);
     }
     if (this.name === 'PIBT') {
       if (this.items !== undefined) {
         let itemsByteArray: number[] = [];
         this.items.forEach(item => {
           let id = Array.from(utils.numberToByteArray(item.itemId, 8));
-          let price = utils.getNumberArrayFromString(utils.removeZerosFromEndOfNumber(item.itemPrice));
-          let name = utils.getNumberArrayFromString(item.itemName);
+          let price = utils.getArrayFromString(utils.removeZerosFromEndOfNumber(item.itemPrice));
+          let name = utils.getArrayFromString(item.itemName);
           let quantity = Array.from(utils.numberToByteArray(item.itemQuantity, 4));
           itemsByteArray = itemsByteArray
             .concat(id)
@@ -88,17 +87,17 @@ export class BaseTransaction {
             .concat(name)
             .concat(quantity);
         });
-        bytes = utils.concatByteArrays(bytes, new Uint8Array(itemsByteArray));
+        bytes = utils.concatByteArrays([bytes, new Uint8Array(itemsByteArray)]);
       }
-      if (this.encryptedMerchantName !== undefined)
-        bytes = utils.concatByteArrays(bytes, utils.getBytesFromString(this.encryptedMerchantName));
+      if (this.encryptedMerchantName)
+        bytes = utils.concatByteArrays([bytes, utils.getBytesFromString(this.encryptedMerchantName)]);
     }
 
     return bytes;
   }
 
-  public getHashBytes() {
-    return this.hash !== undefined ? utils.hexToBytes(this.hash) : null;
+  public getHashArray() {
+    return utils.hexToArray(this.hash);
   }
 
   public sign(transactionHash: string, wallet) {
@@ -132,13 +131,12 @@ export class BaseTransaction {
     if (this.networkFeeTrustScoreNodeResult)
       jsonToReturn.networkFeeTrustScoreNodeResult = this.networkFeeTrustScoreNodeResult;
     if (this.encryptedMerchantName) jsonToReturn.encryptedMerchantName = this.encryptedMerchantName;
-    if (this.items) jsonToReturn['items'] = this.items;
+    if (this.items) jsonToReturn.items = this.items;
     if (this.rollingReserveTrustScoreNodeResult)
       jsonToReturn.rollingReserveTrustScoreNodeResult = this.rollingReserveTrustScoreNodeResult;
-    if (this.receiverDescription) jsonToReturn['receiverDescription'] = this.receiverDescription;
+    if (this.receiverDescription) jsonToReturn.receiverDescription = this.receiverDescription;
 
-    if (this.reducedAmount)
-      jsonToReturn.reducedAmount = utils.removeZerosFromEndOfNumber(this.reducedAmount);
+    if (this.reducedAmount) jsonToReturn.reducedAmount = utils.removeZerosFromEndOfNumber(this.reducedAmount);
 
     jsonToReturn.name = this.name;
 

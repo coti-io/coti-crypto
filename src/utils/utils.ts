@@ -5,19 +5,23 @@ export function getUtcInstant() {
 }
 
 export function getBytesFromString(str: string) {
-  return new Uint8Array(getNumberArrayFromString(str));
+  return new Uint8Array(getArrayFromString(str));
 }
 
-export function getNumberArrayFromString(str: string) {
+export function getArrayFromString(str: string) {
   return str.split('').map(e => e.charCodeAt(0));
 }
 
 export function hexToBytes(hex: string) {
-  let bytes = [];
+  return new Uint8Array(hexToArray(hex));
+}
+
+export function hexToArray(hex: string) {
+  let array: number[] = [];
   for (let c = 0; c < hex.length; c += 2) {
-    bytes.push(parseInt(hex.substr(c, 2), 16));
+    array.push(parseInt(hex.substr(c, 2), 16));
   }
-  return new Uint8Array(bytes);
+  return array;
 }
 
 export function byteArrayToHexString(uint8arr: Uint8Array) {
@@ -44,20 +48,18 @@ export function numberToByteArray(num: number, byteLength: number) {
 }
 
 export function removeZerosFromEndOfNumber(num: number) {
-    return removeZerosFromEndOfStringOfNumber(num.toString());
+  return removeZerosFromEndOfStringOfNumber(num.toString());
 }
 
 function removeZerosFromEndOfStringOfNumber(str: string) {
-    if(str.includes('.')){
-        while (str.charAt(str.length -1) === '0')
-        {
-            str = str.substring(0,str.length -1);
-        }
-
-        if (str.charAt(str.length -1) === '.')
-        str = str.substring(0,str.length -1);
+  if (str.includes('.')) {
+    while (str.charAt(str.length - 1) === '0') {
+      str = str.substring(0, str.length - 1);
     }
-    return str;
+
+    if (str.charAt(str.length - 1) === '.') str = str.substring(0, str.length - 1);
+  }
+  return str;
 }
 
 export function removeZeroBytesFromByteArray(bytes: Uint8Array) {
@@ -70,9 +72,12 @@ export function removeZeroBytesFromByteArray(bytes: Uint8Array) {
   return bytes;
 }
 
-export function concatByteArrays(bytes1: Uint8Array, bytes2: Uint8Array) {
-  let result = new Uint8Array(bytes1.byteLength + bytes2.byteLength);
-  result.set(bytes1, 0);
-  result.set(bytes2, bytes1.byteLength);
+export function concatByteArrays(byteArrays: Uint8Array[]) {
+  const result = new Uint8Array(byteArrays.reduce((totalLength, byteArray) => totalLength + byteArray.byteLength, 0));
+  let off = 0;
+  byteArrays.forEach(byteArray => {
+    result.set(byteArray, off);
+    off += byteArray.byteLength;
+  });
   return result;
 }
