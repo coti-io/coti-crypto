@@ -1,7 +1,8 @@
 import * as utils from './utils/utils';
 import { keccak256 } from 'js-sha3';
-import { BaseAddress } from './baseAddress';
+import { BaseAddress } from './address';
 import { SignatureData } from './signature';
+import { BaseWallet } from './wallet';
 
 export interface Item {
   itemId: number;
@@ -99,11 +100,10 @@ export class BaseTransaction {
     return utils.hexToArray(this.hash);
   }
 
-  public sign(transactionHash: string, wallet) {
+  public async sign(transactionHash: string, wallet: BaseWallet) {
     if (this.shouldSignTransaction()) {
       const messageInBytes = utils.hexToBytes(transactionHash);
-      this.signatureData = wallet.signMessage(messageInBytes, this.addressHash);
-      return this.signatureData;
+      this.signatureData = await wallet.signMessage(messageInBytes, this.addressHash);
     }
   }
 
@@ -117,7 +117,7 @@ export class BaseTransaction {
     jsonToReturn.addressHash = this.addressHash;
     jsonToReturn.amount = utils.removeZerosFromEndOfNumber(this.amount);
     jsonToReturn.hash = this.hash;
-    jsonToReturn.createTime = this.createTime; //it gets the utc time
+    jsonToReturn.createTime = this.createTime;
 
     if (this.signatureData) {
       jsonToReturn.signatureData = { r: this.signatureData.r, s: this.signatureData.s };

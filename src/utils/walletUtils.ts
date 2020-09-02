@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { FullNodeFeeSignature } from '../signature';
-import { BaseAddress } from '../baseAddress';
+import { BaseAddress, IndexedAddress } from '../address';
 import { BaseTransaction } from '../baseTransaction';
 import { Transaction } from '../transaction';
+import { BaseWallet, IndexedWallet } from '../wallet';
+import { hexToBytes } from './utils';
 
 const FULL_NODE_URL = process.env.FULL_NODE_URL;
 const TRUSTSCORE_URL = process.env.TRUSTSCORE_URL;
@@ -18,20 +20,27 @@ export async function getUserTrustScore(userHash: string) {
   }
 }
 
-export async function getAddressesOfWallet(wallet) {
+export async function getAddressesOfWallet(wallet: IndexedWallet) {
   let addressesToCheck: string[] = [];
-  let addressesThatExists: string[] = [];
+  let addressesThatExists: IndexedAddress[] = [];
   let nextChunk = 0;
   let notExistsAddressFound = false;
+  const generatedAddressMap = new Map<string, IndexedAddress>();
 
   while (!notExistsAddressFound) {
     for (let i = nextChunk; i < nextChunk + 20; i++) {
-      addressesToCheck.push(wallet.generateAddressByIndex(i).getAddressHex());
+      const address = await wallet.generateAddressByIndex(i);
+      generatedAddressMap.set(address.getAddressHex(), address);
+      addressesToCheck.push(address.getAddressHex());
     }
-    let addressesResult = await checkAddressExists(addressesToCheck);
-    addressesThatExists = addressesThatExists.concat(
-      Object.keys(addressesResult).filter(x => addressesResult[x] === true)
-    );
+    let addressesResult = await checkAddressesExist(addressesToCheck);
+
+    Object.keys(addressesResult)
+      .filter(addressHex => addressesResult.get(addressHex) === true)
+      .forEach(addressHex => {
+        const generatedAddress = generatedAddressMap.get(addressHex);
+        if (generatedAddress) addressesThatExists.push(generatedAddress);
+      });
     notExistsAddressFound = Object.values(addressesResult).filter(val => val === false).length ? true : false;
     addressesToCheck = [];
     nextChunk = nextChunk + 20;
@@ -39,10 +48,10 @@ export async function getAddressesOfWallet(wallet) {
   return addressesThatExists;
 }
 
-async function checkAddressExists(addressesToCheck: string[]) {
+async function checkAddressesExist(addressesToCheck: string[]) {
   try {
     const { data } = await axios.post(`${FULL_NODE_URL}/address`, { addresses: addressesToCheck });
-    return data.addresses;
+    return <Map<string, boolean>>data.addresses;
   } catch (error) {
     const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
     throw new Error(`Error checking existing addresses from fullnode: ${errorMessage}`);
@@ -69,11 +78,38 @@ export async function checkBalances(addresses: string[]) {
   }
 }
 
-export async function getFullNodeFees(wallet, amountToTransfer: number) {
+export async function getTransactionsHistory(addresses: string[]) {
+  const transactionMap = new Map<string, Transaction>();
+  let response = await axios.post(`${FULL_NODE_URL}/transaction/addressTransactions/batch`, { addresses });
+
+  let parsedData = response.data;
+  if (typeof parsedData !== 'object') {
+    parsedData = JSON.parse(parsedData.substring(0, parsedData.length - 2).concat(']'));
+  }
+  const transactionsData: Transaction[] = parsedData;
+  transactionsData.forEach(transaction => {
+    if (transactionMap.get(transaction.getHash())) return;
+
+    transaction.setCreateTime(transaction.getCreateTime() * 1000);
+    const transactionConsensusUpdateTime = transaction.getTransactionConsensusUpdateTime();
+    if (transactionConsensusUpdateTime) {
+      transaction.setTransactionConsensusUpdateTime(transactionConsensusUpdateTime * 1000);
+    }
+    transactionMap.set(transaction.getHash(), transaction);
+  });
+
+  return transactionMap;
+}
+
+export async function getFullNodeFees(wallet: IndexedWallet, amountToTransfer: number) {
   try {
-    const userHash = wallet.generateUserPublicHash();
+    const userHash = wallet.getPublicHash();
     const userSignature = new FullNodeFeeSignature(amountToTransfer).sign(wallet);
-    const response = await axios.put(`${FULL_NODE_URL}/fee`, { originalAmount: amountToTransfer, userHash, userSignature });
+    const response = await axios.put(`${FULL_NODE_URL}/fee`, {
+      originalAmount: amountToTransfer,
+      userHash,
+      userSignature
+    });
     return response.data.fullNodeFee;
   } catch (error) {
     const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
@@ -81,7 +117,7 @@ export async function getFullNodeFees(wallet, amountToTransfer: number) {
   }
 }
 
-export async function getNetworkFees(fullNodeFeeData, userHash: string) {
+export async function getNetworkFees(fullNodeFeeData: BaseTransaction, userHash: string) {
   try {
     const response = await axios.put(`${TRUSTSCORE_URL}/networkFee`, { fullNodeFeeData, userHash });
     return response.data.networkFeeData;
@@ -91,12 +127,12 @@ export async function getNetworkFees(fullNodeFeeData, userHash: string) {
   }
 }
 
-export async function getTrustScoreFromTsNode(wallet, userHash: string, transaction: Transaction) {
+export async function getTrustScoreFromTsNode(wallet: BaseWallet, userHash: string, transaction: Transaction) {
   const transactionHash = transaction.createTransactionHash();
   const createTrustScoreMessage = {
     userHash,
     transactionHash,
-    userSignature: wallet.signMessage(transaction.createTransactionHash())
+    userSignature: wallet.signMessage(hexToBytes(transactionHash))
   };
 
   try {

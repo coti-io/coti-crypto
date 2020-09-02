@@ -1,12 +1,9 @@
-import bigdecimal from 'bigdecimal';
+import bigDecimal from 'js-big-decimal';
 import * as stomp from 'webstomp-client';
 import SockJS from 'sockjs-client';
 import { checkBalances } from './utils/walletUtils';
-import { Address } from './address';
-import { WalletEvent } from './walletEvent';
-import { Wallet } from './wallet';
-import { BaseAddress } from './baseAddress';
-import { IndexedAddress } from './indexedAddress';
+import { BaseWallet } from './wallet';
+import { BaseAddress, IndexedAddress, Address } from './address';
 
 const FULL_NODE_WEBSOCKET_ACTION = '/websocket';
 const FULL_NODE_URL = process.env.FULL_NODE_URL;
@@ -15,30 +12,30 @@ const socketUrl = FULL_NODE_URL + FULL_NODE_WEBSOCKET_ACTION;
 export type StompClient = stomp.Client;
 
 export class WebSocket {
-  private readonly wallet: Wallet;
+  private readonly wallet: BaseWallet;
   private client!: StompClient;
   private reconnectCounter = 0;
   private readonly propagationSubscriptions = new Map();
   private readonly balanceSubscriptions = new Map();
   private readonly transactionsSubscriptions = new Map();
 
-  constructor(wallet: Wallet, successCallback: () => void, reconnectFailedCallback: () => void) {
+  constructor(wallet: BaseWallet, successCallback: () => void, reconnectFailedCallback: () => void) {
     this.wallet = wallet;
     this.openWebSocketConnection(wallet, successCallback, reconnectFailedCallback);
   }
 
-  public openWebSocketConnection(wallet: Wallet, successCallback: () => void, reconnectFailedCallback: () => void) {
-    const addresses = wallet.getWalletAddressHexes();
+  public openWebSocketConnection(wallet: BaseWallet, successCallback: () => void, reconnectFailedCallback: () => void) {
+    const addresses = wallet.getAddressHexes();
     this.setClient();
     this.client.connect(
       {},
       () => {
         console.info('Web socket client connected:');
-        onConnected(addresses, successCallback);
+        this.onConnected(addresses, successCallback);
       },
       error => {
         console.error(error);
-        addressesUnsubscribe();
+        this.addressesUnsubscribe();
         this.reconnect(socketUrl, successCallback, reconnectFailedCallback, addresses);
       }
     );
@@ -50,7 +47,7 @@ export class WebSocket {
   }
 
   private closeSocketConnection() {
-    addressesUnsubscribe();
+    this.addressesUnsubscribe();
     this.client.disconnect();
   }
 
@@ -73,10 +70,10 @@ export class WebSocket {
     this.setClient();
     this.client.connect(
       {},
-      () => {
+      async () => {
         console.info('Web socket client reconnected:');
         connected = true;
-        this.onConnected(addresses, successCallback);
+        await this.onConnected(addresses, successCallback);
       },
       () => {
         if (!connected && this.reconnectCounter <= 6) {
@@ -91,7 +88,7 @@ export class WebSocket {
     );
   }
 
-  private onConnected(addresses: string[], callback: () => void) {
+  private async onConnected(addresses: string[], callback: () => void) {
     this.reconnectCounter = 0;
     console.log('Connected and monitoring addresses: ', addresses);
     if (!addresses) addresses = [];
@@ -101,8 +98,7 @@ export class WebSocket {
     });
 
     for (let i = addresses.length; i < addresses.length + 10; i++) {
-      const keyPair = this.wallet.getKeyPairFromAddressIndex(i);
-      const address = new Address(keyPair, i);
+      const address = await this.wallet.generateAddressByIndex(i);
       this.addressPropagationSubscriber(address);
     }
     console.log(
@@ -121,7 +117,7 @@ export class WebSocket {
         try {
           const data = JSON.parse(body);
           if (data.message === 'Balance Updated!') {
-            const address = this.wallet.getWalletAddresses().get(data.addressHash);
+            const address = this.wallet.getAddressMap().get(data.addressHash);
             if (address === undefined) {
               const errorMsg = `Error - Address not found for addressHex: ${data.addressHash}`;
               console.log(errorMsg);
@@ -162,12 +158,12 @@ export class WebSocket {
     }
   }
 
-  addressPropagationSubscriber(address: IndexedAddress) {
+  private addressPropagationSubscriber(address: IndexedAddress) {
     console.log('Subscribing for address:', address.getAddressHex());
     const alreadySubscribed = this.propagationSubscriptions.get(address);
     const addressHex = address.getAddressHex();
     if (alreadySubscribed) {
-      console.log('Attempting to resubscribe in address propagation, skip resubscription of:', address.getAddressHex());
+      console.log('Attempting to resubscribe in address propagation, skip resubscription of:', addressHex);
     }
 
     let addressPropagationSubscription = this.client.subscribe(`/topic/address/${addressHex}`, ({ body }) => {
@@ -185,8 +181,8 @@ export class WebSocket {
         if (subscription) {
           subscription.unsubscribe();
           this.propagationSubscriptions.delete(address);
-          this.checkBalanceAndSubscribeNewAddress(address);
           this.wallet.onGenerateAddress(addressHex);
+          this.checkBalanceAndSubscribeNewAddress(address);
         }
       } catch (err) {
         if (err) {
@@ -197,10 +193,13 @@ export class WebSocket {
     this.propagationSubscriptions.set(address, addressPropagationSubscription);
   }
 
-  async checkBalanceAndSubscribeNewAddress(address: IndexedAddress) {
-    const nextPropagationAddressIndex = Array.from(this.propagationSubscriptions.keys()).pop().index + 1;
-    const keyPair = this.wallet.getKeyPairFromAddressIndex(nextPropagationAddressIndex);
-    const nextAddress = new Address(keyPair, nextPropagationAddressIndex);
+  private async checkBalanceAndSubscribeNewAddress(address: IndexedAddress) {
+    const nextPropagationAddressIndex =
+      Array.from(this.propagationSubscriptions.keys())
+        .pop()
+        .getIndex() + 1;
+    const nextAddressHex = this.wallet.getAddressHexFromAddressIndex(nextPropagationAddressIndex);
+    const nextAddress = new IndexedAddress(nextAddressHex, nextPropagationAddressIndex);
 
     this.addressPropagationSubscriber(nextAddress);
 
@@ -208,17 +207,14 @@ export class WebSocket {
 
     const balances = await checkBalances([addressHex]);
     const { addressBalance, addressPreBalance } = balances[addressHex];
-    this.setAddressWithBalance(addressBalance, addressPreBalance, address);
+    this.setAddressWithBalance(new bigDecimal(addressBalance), new bigDecimal(addressPreBalance), address);
 
     const addressIndex = address.getIndex();
     console.log(`Subscribing the balance and transactions for address: ${addressHex} and index: ${addressIndex}`);
     this.connectToAddress(addressHex);
   }
 
-  setAddressWithBalance(addressBalance: number, addressPreBalance: number, address: BaseAddress) {
-    addressBalance = new bigdecimal.BigDecimal(`${addressBalance}`);
-    addressPreBalance = new bigdecimal.BigDecimal(`${addressPreBalance}`);
-
+  private setAddressWithBalance(addressBalance: bigDecimal, addressPreBalance: bigDecimal, address: BaseAddress) {
     this.wallet.setAddressWithBalance(address, addressBalance, addressPreBalance);
   }
 }

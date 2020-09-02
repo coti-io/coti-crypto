@@ -1,8 +1,9 @@
 import { keccak256 } from 'js-sha3';
 import { BaseTransaction } from './baseTransaction';
 import * as utils from './utils/utils';
-import { BaseAddress } from './baseAddress';
+import { BaseAddress } from './address';
 import { SignatureData } from './signature';
+import { BaseWallet } from './wallet';
 
 export enum TransactionType {
   INITIAL = 'Initial',
@@ -12,16 +13,10 @@ export enum TransactionType {
   CHARGEBACK = 'Chargeback'
 }
 
-// export interface ReducedTransaction {
-//   hash: string;
-//   createTime: number;
-//   transactionConsensusUpdateTime?: number;
-// }
-
 export class ReducedTransaction {
-    hash: string;
-    createTime: number;
-    transactionConsensusUpdateTime?: number;
+  hash: string;
+  createTime: number;
+  transactionConsensusUpdateTime?: number;
 
   constructor(transaction: Transaction) {
     this.hash = transaction.getTransactionHash();
@@ -45,7 +40,7 @@ export class Transaction {
     listOfBaseTransaction: BaseTransaction[],
     transactionDescription: string,
     userHash: string,
-    type: TransactionType
+    type?: TransactionType
   ) {
     if (!transactionDescription) throw new Error('Transaction must have a description');
 
@@ -62,12 +57,12 @@ export class Transaction {
     this.type = type || TransactionType.TRANSFER;
   }
 
-  addBaseTransaction(address: BaseAddress, valueToSend: number, name: string) {
+  public addBaseTransaction(address: BaseAddress, valueToSend: number, name: string) {
     let baseTransaction = new BaseTransaction(address, valueToSend, name);
     this.baseTransactions.push(baseTransaction);
   }
 
-  createTransactionHash() {
+  public createTransactionHash() {
     let bytesOfAllBaseTransactions: number[] = [];
     this.baseTransactions.forEach(baseTransaction => {
       bytesOfAllBaseTransactions = bytesOfAllBaseTransactions.concat(baseTransaction.getHashArray());
@@ -78,15 +73,15 @@ export class Transaction {
     return this.hash;
   }
 
-  addTrustScoreMessageToTransaction(trustScoreMessage: string) {
+  public addTrustScoreMessageToTransaction(trustScoreMessage: string) {
     this.trustScoreResults.push(trustScoreMessage);
   }
 
-  setTrustScoreMessageSignatureData(signatureTrustScoreRequest: SignatureData) {
+  public setTrustScoreMessageSignatureData(signatureTrustScoreRequest: SignatureData) {
     this.signatureData = signatureTrustScoreRequest;
   }
 
-  createTrustScoreMessage() {
+  public createTrustScoreMessage() {
     return {
       userHash: this.senderHash,
       transactionHash: this.hash,
@@ -94,23 +89,31 @@ export class Transaction {
     };
   }
 
-  getSenderHash() {
+  public getSenderHash() {
     return this.senderHash;
   }
 
-  getTransactionHash() {
+  public getHash() {
     return this.hash;
   }
 
-  getCreateTime() {
+  public getCreateTime() {
     return this.createTime;
   }
 
-  getTransactionConsensusUpdateTime() {
-      return this.transactionConsensusUpdateTime;
+  public setCreateTime(createTime: number) {
+    this.createTime = createTime;
   }
 
-  signTransaction(wallet) {
+  public getTransactionConsensusUpdateTime() {
+    return this.transactionConsensusUpdateTime;
+  }
+
+  public setTransactionConsensusUpdateTime(transactionConsensusUpdateTime: number) {
+    this.transactionConsensusUpdateTime = transactionConsensusUpdateTime;
+  }
+
+  public async signTransaction(wallet: BaseWallet) {
     const transactionHashInBytes = utils.hexToBytes(this.hash);
     const transactionTypeInBytes = utils.getBytesFromString(this.type);
     const utcTime = this.createTime * 1000;
@@ -125,10 +128,10 @@ export class Transaction {
 
     messageInBytes = new Uint8Array(keccak256.update(messageInBytes).arrayBuffer());
 
-    this.signatureData = wallet.signMessage(messageInBytes);
+    this.signatureData = await wallet.signMessage(messageInBytes);
 
     for (var i = 0; i < this.baseTransactions.length; i++) {
-      this.baseTransactions[i].sign(this.hash, wallet);
+      await this.baseTransactions[i].sign(this.hash, wallet);
     }
   }
 }

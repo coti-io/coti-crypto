@@ -13,7 +13,7 @@ export abstract class Signature {
 
   public sign(wallet, isHash = false) {
     const messageInBytes = isHash ? this.getBytes() : this.createBasicSignatureHash();
-    this.signatureData = Wallet.signMessage(messageInBytes);
+    this.signatureData = wallet.signMessage(messageInBytes);
     return this.signatureData;
   }
 
