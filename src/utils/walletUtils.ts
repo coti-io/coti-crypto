@@ -3,7 +3,7 @@ import { FullNodeFeeSignature } from '../signature';
 import { BaseAddress, IndexedAddress } from '../address';
 import { BaseTransaction } from '../baseTransaction';
 import { Transaction } from '../transaction';
-import { BaseWallet, IndexedWallet } from '../wallet';
+import { IndexedWallet } from '../wallet';
 import { hexToBytes } from './utils';
 
 const FULL_NODE_URL = process.env.FULL_NODE_URL;
@@ -20,12 +20,12 @@ export async function getUserTrustScore(userHash: string) {
   }
 }
 
-export async function getAddressesOfWallet(wallet: IndexedWallet) {
+export async function getAddressesOfWallet<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
   let addressesToCheck: string[] = [];
-  let addressesThatExists: IndexedAddress[] = [];
+  let addressesThatExists: T[] = [];
   let nextChunk = 0;
   let notExistsAddressFound = false;
-  const generatedAddressMap = new Map<string, IndexedAddress>();
+  const generatedAddressMap = new Map<string, T>();
 
   while (!notExistsAddressFound) {
     for (let i = nextChunk; i < nextChunk + 20; i++) {
@@ -101,7 +101,7 @@ export async function getTransactionsHistory(addresses: string[]) {
   return transactionMap;
 }
 
-export async function getFullNodeFees(wallet: IndexedWallet, amountToTransfer: number) {
+export async function getFullNodeFees<T extends IndexedAddress>(wallet: IndexedWallet<T>, amountToTransfer: number) {
   try {
     const userHash = wallet.getPublicHash();
     const userSignature = new FullNodeFeeSignature(amountToTransfer).sign(wallet);
@@ -127,7 +127,11 @@ export async function getNetworkFees(fullNodeFeeData: BaseTransaction, userHash:
   }
 }
 
-export async function getTrustScoreFromTsNode(wallet: BaseWallet, userHash: string, transaction: Transaction) {
+export async function getTrustScoreFromTsNode<T extends IndexedAddress>(
+  wallet: IndexedWallet<T>,
+  userHash: string,
+  transaction: Transaction
+) {
   const transactionHash = transaction.createTransactionHash();
   const createTrustScoreMessage = {
     userHash,

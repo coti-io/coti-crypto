@@ -3,6 +3,10 @@ import BN from 'bn.js';
 import * as CRC32 from 'crc-32';
 import * as elliptic from 'elliptic';
 import * as utils from './utils';
+import { sha256 } from 'js-sha256';
+import { sha3_256 as sha3Bit256, keccak256 } from 'js-sha3';
+import { blake } from 'blakejs';
+import { SignatureData } from '../signature';
 
 const ec = new elliptic.ec('secp256k1');
 const regexp = /^[0-9a-fA-F]+$/;
@@ -74,6 +78,23 @@ export function generateKeyPair() {
   return ec.genKeyPair();
 }
 
+export function generateKeyPairFromSeed(seed: string, index?: number) {
+  let privateKeyInBytes = utils.hexToBytes(seed);
+  if (index) {
+    const indexInBytes = new Uint8Array(toBytesInt32(index));
+    privateKeyInBytes = utils.concatByteArrays([privateKeyInBytes, indexInBytes]);
+    privateKeyInBytes = new Uint8Array(keccak256.update(privateKeyInBytes).array());
+  }
+  let privateKeyInHex = utils.byteArrayToHexString(privateKeyInBytes);
+
+  while (!verifyOrderOfPrivateKey(privateKeyInHex)) {
+    privateKeyInBytes = new Uint8Array(keccak256.update(privateKeyInBytes).array());
+    privateKeyInHex = utils.byteArrayToHexString(privateKeyInBytes);
+  }
+
+  return getKeyPairFromPrivate(privateKeyInHex);
+}
+
 export function generatePrivateKey() {
   const keyPair = generateKeyPair();
   return keyPair.getPrivate('hex');
@@ -90,6 +111,11 @@ export function getKeyPairFromPublic(publicKeyHex: string) {
 export function verifySignature(messageInBytes: Uint8Array, signature: Signature, publicKeyHex: string) {
   let keyPair = getKeyPairFromPublic(publicKeyHex);
   return keyPair.verify(messageInBytes, signature);
+}
+
+export async function signByteArrayMessage(byteArray: Uint8Array, keyPair: KeyPair): Promise<SignatureData> {
+  const ecSignature = keyPair.sign(byteArray);
+  return { r: ecSignature.r.toString(16), s: ecSignature.s.toString(16) };
 }
 
 export function getPublicKeyFromHexString(publicKeyHex: string): PublicKey {
@@ -134,10 +160,6 @@ export function paddingPublicKey(publicKey: PublicKey) {
   return publicX + publicY;
 }
 
-export function signByteArrayMessage(byteArray: Uint8Array, keyPair: KeyPair) {
-  return keyPair.sign(byteArray);
-}
-
 export function verifyAddressStructure(addressHex: string) {
   if (addressHex.length !== 136) return false;
   let addressHexWithoutCheckSum = addressHex.substring(0, 128);
@@ -162,4 +184,11 @@ function removeLeadingZeroBytesFromAddress(addressBytes: Uint8Array) {
   addressWithoutLeadingZeroBytes.set(new Uint8Array(xPart), 0);
   addressWithoutLeadingZeroBytes.set(new Uint8Array(yPart), xPart.byteLength);
   return addressWithoutLeadingZeroBytes;
+}
+
+export function generateSeed(key: string) {
+  let sha2Array = sha256.array(key);
+  let sha3Array = sha3Bit256.update(key).array();
+  let combinedArray = sha2Array.concat(sha3Array);
+  return blake.blake2bHex(Buffer.from(combinedArray), null, 32);
 }

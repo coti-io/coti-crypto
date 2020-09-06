@@ -2,7 +2,7 @@ import bigDecimal from 'js-big-decimal';
 import * as stomp from 'webstomp-client';
 import SockJS from 'sockjs-client';
 import { checkBalances } from './utils/walletUtils';
-import { BaseWallet } from './wallet';
+import { BaseWallet, IndexedWallet } from './wallet';
 import { BaseAddress, IndexedAddress, Address } from './address';
 
 const FULL_NODE_WEBSOCKET_ACTION = '/websocket';
@@ -96,15 +96,16 @@ export class WebSocket {
     addresses.forEach(address => {
       this.connectToAddress(address);
     });
-
-    for (let i = addresses.length; i < addresses.length + 10; i++) {
-      const address = await this.wallet.generateAddressByIndex(i);
-      this.addressPropagationSubscriber(address);
+    if (this.wallet instanceof IndexedWallet) {
+      for (let i = addresses.length; i < addresses.length + 10; i++) {
+        const address = await this.wallet.generateAddressByIndex(i);
+        this.addressPropagationSubscriber(address);
+      }
+      console.log(
+        'PropagationSubscriptions: ',
+        [...this.propagationSubscriptions.keys()].map(a => a.getAddressHex())
+      );
     }
-    console.log(
-      'PropagationSubscriptions: ',
-      [...this.propagationSubscriptions.keys()].map(a => a.getAddressHex())
-    );
     console.log('BalanceSubscriptions: ', [...this.balanceSubscriptions.keys()]);
     console.log('TransactionsSubscriptions: ', [...this.transactionsSubscriptions.keys()]);
 
@@ -181,7 +182,7 @@ export class WebSocket {
         if (subscription) {
           subscription.unsubscribe();
           this.propagationSubscriptions.delete(address);
-          this.wallet.onGenerateAddress(addressHex);
+          this.wallet.emit('generateAddress', addressHex);
           this.checkBalanceAndSubscribeNewAddress(address);
         }
       } catch (err) {
@@ -193,25 +194,26 @@ export class WebSocket {
     this.propagationSubscriptions.set(address, addressPropagationSubscription);
   }
 
-  private async checkBalanceAndSubscribeNewAddress(address: IndexedAddress) {
-    const nextPropagationAddressIndex =
-      Array.from(this.propagationSubscriptions.keys())
-        .pop()
-        .getIndex() + 1;
-    const nextAddressHex = this.wallet.getAddressHexFromAddressIndex(nextPropagationAddressIndex);
-    const nextAddress = new IndexedAddress(nextAddressHex, nextPropagationAddressIndex);
+  private async checkBalanceAndSubscribeNewAddress<T extends IndexedAddress>(address: IndexedAddress) {
+    if (this.wallet instanceof IndexedWallet) {
+      const nextPropagationAddressIndex =
+        Array.from(this.propagationSubscriptions.keys())
+          .pop()
+          .getIndex() + 1;
+      const nextAddress = <T>await this.wallet.generateAddressByIndex(nextPropagationAddressIndex);
 
-    this.addressPropagationSubscriber(nextAddress);
+      this.addressPropagationSubscriber(nextAddress);
 
-    const addressHex = address.getAddressHex();
+      const addressHex = address.getAddressHex();
 
-    const balances = await checkBalances([addressHex]);
-    const { addressBalance, addressPreBalance } = balances[addressHex];
-    this.setAddressWithBalance(new bigDecimal(addressBalance), new bigDecimal(addressPreBalance), address);
+      const balances = await checkBalances([addressHex]);
+      const { addressBalance, addressPreBalance } = balances[addressHex];
+      this.setAddressWithBalance(new bigDecimal(addressBalance), new bigDecimal(addressPreBalance), address);
 
-    const addressIndex = address.getIndex();
-    console.log(`Subscribing the balance and transactions for address: ${addressHex} and index: ${addressIndex}`);
-    this.connectToAddress(addressHex);
+      const addressIndex = address.getIndex();
+      console.log(`Subscribing the balance and transactions for address: ${addressHex} and index: ${addressIndex}`);
+      this.connectToAddress(addressHex);
+    }
   }
 
   private setAddressWithBalance(addressBalance: bigDecimal, addressPreBalance: bigDecimal, address: BaseAddress) {

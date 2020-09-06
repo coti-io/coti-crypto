@@ -1,5 +1,7 @@
 import * as utils from './utils/utils';
 import { keccak256 } from 'js-sha3';
+import { IndexedAddress } from './address';
+import { IndexedWallet } from './wallet';
 
 export interface SignatureData {
   r: string;
@@ -11,9 +13,9 @@ export abstract class Signature {
 
   constructor() {}
 
-  public sign(wallet, isHash = false) {
+  public async sign<T extends IndexedAddress>(wallet: IndexedWallet<T>, isHash = false) {
     const messageInBytes = isHash ? this.getBytes() : this.createBasicSignatureHash();
-    this.signatureData = wallet.signMessage(messageInBytes);
+    this.signatureData = await wallet.signMessage(messageInBytes);
     return this.signatureData;
   }
 

@@ -4,6 +4,10 @@ import { Transaction, ReducedTransaction } from './transaction';
 import * as walletUtils from './utils/walletUtils';
 import bigDecimal from 'js-big-decimal';
 import { SignatureData } from './signature';
+import * as cryptoUtils from './utils/cryptoUtils';
+import BN from 'bn.js';
+
+type KeyPair = cryptoUtils.KeyPair;
 
 export interface WalletEvent {
   on(event: 'balanceChange', listener: (address: BaseAddress) => void): this;
@@ -11,7 +15,7 @@ export interface WalletEvent {
   on(event: 'receivedTransaction', listener: (transaction: Transaction) => void): this;
 
   emit(event: 'balanceChange', address: BaseAddress): boolean;
-  emit(event: 'generateAddress', address: BaseAddress): boolean;
+  emit(event: 'generateAddress', addressHex: string): boolean;
   emit(event: 'receivedTransaction', transaction: Transaction): boolean;
 }
 
@@ -42,7 +46,7 @@ export class BaseWallet extends WalletEvent {
   public async loadAddresses(addresses: BaseAddress[]) {
     if (!addresses || !addresses.length) return;
     addresses.forEach(address => {
-      this.setAddressToMap(address);
+      this.setInitialAddressToMap(address);
     });
   }
 
@@ -56,6 +60,10 @@ export class BaseWallet extends WalletEvent {
 
   public getAddressHexes() {
     return [...this.addressMap.keys()];
+  }
+
+  protected setInitialAddressToMap(address: BaseAddress) {
+    this.setAddressToMap(address);
   }
 
   protected setAddressToMap(address: BaseAddress) {
@@ -154,24 +162,48 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     this.indexToAddressHexMap = new Map();
   }
 
-  private checkAddressType(address: BaseAddress) {
-    throw new Error(`Address should be indexed`);
+  private checkAddressIndexed(address: BaseAddress) {
+    if (!(address instanceof IndexedAddress)) throw new Error('Address should be indexed');
   }
 
-  public setAddressToMap(address: BaseAddress) {
+  protected addressTypeGuard(address: BaseAddress, Class: Constructor<T>) {
+    if (!(address instanceof Class)) throw new Error('Wrong address type');
+  }
+
+  public abstract checkAddressType(address: BaseAddress): void;
+
+  protected setAddressToMap(address: BaseAddress) {
     this.checkAddressType(address);
     super.setAddressToMap(address);
     const index = (<T>address).getIndex();
     this.indexToAddressHexMap.set(index, address.getAddressHex());
   }
 
+  protected setInitialAddressToMap(address: BaseAddress) {
+    this.checkAddressIndexed(address);
+    const typedAddress = this.getAddressFromIndexedAddress(<IndexedAddress>address);
+    super.setInitialAddressToMap(typedAddress);
+    this.indexToAddressHexMap.set(typedAddress.getIndex(), typedAddress.getAddressHex());
+  }
+
+  public abstract getAddressFromIndexedAddress(indexedAddress: IndexedAddress): T;
+
   public getIndexByAddress(addressHex: string) {
     const address = this.addressMap.get(addressHex);
     return address ? (<T>address).getIndex() : null;
   }
 
-  public getAddressByIndex(index: number) {
-    const address = this.indexToAddressHexMap.get(index);
+  public async getAddressByIndex(index: number) {
+    const addressHex = this.indexToAddressHexMap.get(index);
+    if (!addressHex) return await this.generateAndSetAddressByIndex(index);
+    const address = this.addressMap.get(addressHex);
+    return address ? <T>address : await this.generateAndSetAddressByIndex(index);
+  }
+
+  public async generateAndSetAddressByIndex(index: number) {
+    const address = await this.generateAddressByIndex(index);
+    this.setAddressToMap(address);
+    return address;
   }
 
   public getPublicHash() {
@@ -189,4 +221,64 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
   public abstract async generateAddressByIndex(index: number): Promise<T>;
 }
 
-export class Wallet extends IndexedWallet<Address> {}
+export class Wallet extends IndexedWallet<Address> {
+  private seed!: string;
+  private keyPair!: KeyPair;
+
+  constructor(seed?: string, userSecret?: string, serverKey?: BN) {
+    super();
+    if (seed) {
+      if (!this.checkSeedFormat(seed)) throw new Error('Seed is not in correct format');
+      this.seed = seed;
+    } else if (userSecret && serverKey) this.generateSeed(userSecret, serverKey);
+    // should call to server before to get a serverkey ...
+    else throw new Error('Invalid parameters for Wallet');
+
+    this.generateAndSetKeyPair();
+  }
+
+  private checkSeedFormat(seed: string) {
+    return seed.length === 64;
+  }
+
+  private generateSeed(userSecret: string, serverKey: BN) {
+    let hexServerKey = serverKey.toString(16, 2);
+    let combinedString = `${userSecret}${hexServerKey}`;
+    this.seed = cryptoUtils.generateSeed(combinedString);
+  }
+
+  private generateAndSetKeyPair() {
+    this.keyPair = cryptoUtils.generateKeyPairFromSeed(this.seed);
+  }
+  private generateKeyPairByIndex(index: number) {
+    return cryptoUtils.generateKeyPairFromSeed(this.seed, index);
+  }
+
+  private getKeyPair() {
+    return this.keyPair;
+  }
+
+  public async generateAddressByIndex(index: number) {
+    const keyPair = this.generateKeyPairByIndex(index);
+    return new Address(keyPair, index);
+  }
+
+  public getAddressFromIndexedAddress(indexedAddress: IndexedAddress) {
+    const keyPair = this.generateKeyPairByIndex(indexedAddress.getIndex());
+    return new Address(keyPair, indexedAddress.getIndex());
+  }
+
+  public checkAddressType(address: BaseAddress) {
+    this.addressTypeGuard(address, Address);
+  }
+
+  public async signMessage(messageInBytes: Uint8Array, addressHex?: string) {
+    let keyPair;
+    if (addressHex) {
+      const address = this.getAddressByAddressHex(addressHex);
+      if (!address) throw new Error(`Wallet doesn't contain the address`);
+      keyPair = (<Address>address).getAddressKeyPair();
+    } else keyPair = this.getKeyPair();
+    return cryptoUtils.signByteArrayMessage(messageInBytes, keyPair);
+  }
+}

@@ -1,13 +1,10 @@
-import {
-  KeyPair,
-  getCheckSumFromAddressHex,
-  paddingPublicKeyByCoordinates,
-  verifyAddressStructure
-} from './utils/cryptoUtils';
+import * as cryptoUtils from './utils/cryptoUtils';
 import bigDecimal from 'js-big-decimal';
 
+type KeyPair = cryptoUtils.KeyPair;
+
 export class BaseAddress {
-  protected addressHex!: string;
+  protected addressHex: string;
   protected preBalance!: bigDecimal;
   protected balance!: bigDecimal;
 
@@ -17,7 +14,7 @@ export class BaseAddress {
   }
 
   public checkAddress(addressHex: string) {
-    verifyAddressStructure(addressHex);
+    cryptoUtils.verifyAddressStructure(addressHex);
   }
 
   public getAddressHex() {
@@ -44,7 +41,7 @@ export class BaseAddress {
 export class IndexedAddress extends BaseAddress {
   protected index: number;
 
-  constructor(addressHex: string, index: number) {
+  constructor(index: number, addressHex: string) {
     super(addressHex);
     this.index = index;
   }
@@ -57,22 +54,23 @@ export class IndexedAddress extends BaseAddress {
 export class Address extends IndexedAddress {
   private keyPair: KeyPair;
 
-  constructor(keyPair: KeyPair, index: number) {
-    let publicXKeyHex = keyPair
-      .getPublic()
-      .getX()
-      .toString(16, 2);
-    let publicYKeyHex = keyPair
-      .getPublic()
-      .getY()
-      .toString(16, 2);
+  constructor(keyPair: KeyPair, index: number, addressHex?: string) {
+    if (!addressHex) {
+      let publicXKeyHex = keyPair
+        .getPublic()
+        .getX()
+        .toString(16, 2);
+      let publicYKeyHex = keyPair
+        .getPublic()
+        .getY()
+        .toString(16, 2);
 
-    let paddedAddress = paddingPublicKeyByCoordinates(publicXKeyHex, publicYKeyHex);
-    let checkSumHex = getCheckSumFromAddressHex(paddedAddress);
+      let paddedAddress = cryptoUtils.paddingPublicKeyByCoordinates(publicXKeyHex, publicYKeyHex);
+      let checkSumHex = cryptoUtils.getCheckSumFromAddressHex(paddedAddress);
 
-    let addressWithCheckSum = paddedAddress + checkSumHex;
-    super(addressWithCheckSum, index);
-
+      addressHex = paddedAddress + checkSumHex;
+    }
+    super(index, addressHex);
     this.keyPair = keyPair;
   }
 

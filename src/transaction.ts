@@ -1,9 +1,9 @@
 import { keccak256 } from 'js-sha3';
 import { BaseTransaction } from './baseTransaction';
 import * as utils from './utils/utils';
-import { BaseAddress } from './address';
+import { BaseAddress, IndexedAddress } from './address';
 import { SignatureData } from './signature';
-import { BaseWallet } from './wallet';
+import { IndexedWallet } from './wallet';
 
 export enum TransactionType {
   INITIAL = 'Initial',
@@ -19,7 +19,7 @@ export class ReducedTransaction {
   transactionConsensusUpdateTime?: number;
 
   constructor(transaction: Transaction) {
-    this.hash = transaction.getTransactionHash();
+    this.hash = transaction.getHash();
     this.createTime = transaction.getCreateTime();
     this.transactionConsensusUpdateTime = transaction.getTransactionConsensusUpdateTime();
   }
@@ -113,7 +113,7 @@ export class Transaction {
     this.transactionConsensusUpdateTime = transactionConsensusUpdateTime;
   }
 
-  public async signTransaction(wallet: BaseWallet) {
+  public async signTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
     const transactionHashInBytes = utils.hexToBytes(this.hash);
     const transactionTypeInBytes = utils.getBytesFromString(this.type);
     const utcTime = this.createTime * 1000;

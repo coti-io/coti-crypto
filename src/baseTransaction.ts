@@ -1,8 +1,8 @@
 import * as utils from './utils/utils';
 import { keccak256 } from 'js-sha3';
-import { BaseAddress } from './address';
+import { BaseAddress, IndexedAddress } from './address';
 import { SignatureData } from './signature';
-import { BaseWallet } from './wallet';
+import { IndexedWallet } from './wallet';
 
 export interface Item {
   itemId: number;
@@ -100,7 +100,7 @@ export class BaseTransaction {
     return utils.hexToArray(this.hash);
   }
 
-  public async sign(transactionHash: string, wallet: BaseWallet) {
+  public async sign<T extends IndexedAddress>(transactionHash: string, wallet: IndexedWallet<T>) {
     if (this.shouldSignTransaction()) {
       const messageInBytes = utils.hexToBytes(transactionHash);
       this.signatureData = await wallet.signMessage(messageInBytes, this.addressHash);
