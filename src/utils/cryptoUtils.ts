@@ -24,7 +24,7 @@ export interface PublicKey {
   y: string;
 }
 
-export type Signature = elliptic.ec.Signature;
+export type EcSignature = elliptic.ec.Signature;
 export type KeyPair = elliptic.ec.KeyPair;
 
 export function encryptGCM(data: string, password: string, iv: string): Encryption {
@@ -80,18 +80,15 @@ export function generateKeyPair() {
 
 export function generateKeyPairFromSeed(seed: string, index?: number) {
   let privateKeyInBytes = utils.hexToBytes(seed);
-  if (index) {
+  if (index != undefined) {
     const indexInBytes = new Uint8Array(toBytesInt32(index));
     privateKeyInBytes = utils.concatByteArrays([privateKeyInBytes, indexInBytes]);
-    privateKeyInBytes = new Uint8Array(keccak256.update(privateKeyInBytes).array());
   }
-  let privateKeyInHex = utils.byteArrayToHexString(privateKeyInBytes);
-
-  while (!verifyOrderOfPrivateKey(privateKeyInHex)) {
+  let privateKeyInHex;
+  do {
     privateKeyInBytes = new Uint8Array(keccak256.update(privateKeyInBytes).array());
     privateKeyInHex = utils.byteArrayToHexString(privateKeyInBytes);
-  }
-
+  } while (!verifyOrderOfPrivateKey(privateKeyInHex));
   return getKeyPairFromPrivate(privateKeyInHex);
 }
 
@@ -108,7 +105,7 @@ export function getKeyPairFromPublic(publicKeyHex: string) {
   return ec.keyFromPublic(publicKeyHex, 'hex');
 }
 
-export function verifySignature(messageInBytes: Uint8Array, signature: Signature, publicKeyHex: string) {
+export function verifySignature(messageInBytes: Uint8Array, signature: EcSignature, publicKeyHex: string) {
   let keyPair = getKeyPairFromPublic(publicKeyHex);
   return keyPair.verify(messageInBytes, signature);
 }
@@ -135,6 +132,19 @@ function validatePublicKey(publicKeyHex: string) {
 
 export function verifyOrderOfPrivateKey(privateKeyHex: string) {
   return orderG.cmp(new BN(privateKeyHex, 16)) >= 0;
+}
+
+export function getPublicKeyByKeyPair(keyPair: KeyPair) {
+  let publicXKeyHex = keyPair
+    .getPublic()
+    .getX()
+    .toString('hex');
+  let publicYKeyHex = keyPair
+    .getPublic()
+    .getY()
+    .toString('hex');
+
+  return paddingPublicKeyByCoordinates(publicXKeyHex, publicYKeyHex);
 }
 
 export function paddingPublicKeyByCoordinates(publicKeyX: string, publicKeyY: string) {

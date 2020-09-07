@@ -156,11 +156,18 @@ type Constructor<T> = { new (...args: any[]): T };
 export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet {
   protected readonly indexToAddressHexMap: Map<number, string>;
   protected publicHash!: string;
+  protected trustScore!: number;
 
   constructor() {
     super();
     this.indexToAddressHexMap = new Map();
   }
+
+  async init() {
+    await this.setPublicHash();
+  }
+
+  public abstract async setPublicHash(): Promise<void>;
 
   private checkAddressIndexed(address: BaseAddress) {
     if (!(address instanceof IndexedAddress)) throw new Error('Address should be indexed');
@@ -219,6 +226,14 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
   }
 
   public abstract async generateAddressByIndex(index: number): Promise<T>;
+
+  public async getUserTrustScore() {
+    let { data } = await walletUtils.getUserTrustScore(this.publicHash);
+    if (!data) throw new Error(`Error getting user trust score, received no data`);
+    if (!data.trustScore) throw new Error('Error getting user trust score, unexpected response:' + data);
+    this.trustScore = data.trustScore;
+    return this.trustScore;
+  }
 }
 
 export class Wallet extends IndexedWallet<Address> {
@@ -235,6 +250,7 @@ export class Wallet extends IndexedWallet<Address> {
     else throw new Error('Invalid parameters for Wallet');
 
     this.generateAndSetKeyPair();
+    this.setPublicHash();
   }
 
   private checkSeedFormat(seed: string) {
@@ -250,6 +266,11 @@ export class Wallet extends IndexedWallet<Address> {
   private generateAndSetKeyPair() {
     this.keyPair = cryptoUtils.generateKeyPairFromSeed(this.seed);
   }
+
+  public async setPublicHash() {
+    this.publicHash = cryptoUtils.getPublicKeyByKeyPair(this.keyPair);
+  }
+
   private generateKeyPairByIndex(index: number) {
     return cryptoUtils.generateKeyPairFromSeed(this.seed, index);
   }
