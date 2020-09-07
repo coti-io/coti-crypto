@@ -1,6 +1,6 @@
 {
   "name": "coti-crypto",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Coti crypto library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -32,6 +32,7 @@
     "webstomp-client": "^1.2.6"
   },
   "scripts": {
+    "postinstall": "tsc --outDir ./dist",
     "build": "tsc",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"

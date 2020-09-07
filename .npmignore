@@ -1,0 +1,8 @@
+tsconfig.json
+settings.json
+src
+.idea
+.vscode
+*.iml
+.eslintrc
+.prettierrc
