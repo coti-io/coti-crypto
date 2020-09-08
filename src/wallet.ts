@@ -145,7 +145,14 @@ export class BaseWallet extends WalletEvent {
     console.log(
       `Adding transaction with hash: ${transaction.getHash()}, transactionConsensusUpdateTime: ${transaction.getTransactionConsensusUpdateTime()}`
     );
-    this.transactionMap.set(transaction.getHash(), new ReducedTransaction(transaction));
+    this.transactionMap.set(
+      transaction.getHash(),
+      new ReducedTransaction(
+        transaction.getHash(),
+        transaction.getCreateTime(),
+        transaction.getTransactionConsensusUpdateTime()
+      )
+    );
 
     this.emit('receivedTransaction', transaction);
   }
@@ -286,7 +293,10 @@ export class Wallet extends IndexedWallet<Address> {
 
   public getAddressFromIndexedAddress(indexedAddress: IndexedAddress) {
     const keyPair = this.generateKeyPairByIndex(indexedAddress.getIndex());
-    return new Address(keyPair, indexedAddress.getIndex());
+    const address = new Address(keyPair, indexedAddress.getIndex());
+    address.setBalance(indexedAddress.getBalance());
+    address.setPreBalance(indexedAddress.getPreBalance());
+    return address;
   }
 
   public checkAddressType(address: BaseAddress) {

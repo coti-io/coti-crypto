@@ -18,10 +18,10 @@ export class ReducedTransaction {
   createTime: number;
   transactionConsensusUpdateTime?: number;
 
-  constructor(transaction: Transaction) {
-    this.hash = transaction.getHash();
-    this.createTime = transaction.getCreateTime();
-    this.transactionConsensusUpdateTime = transaction.getTransactionConsensusUpdateTime();
+  constructor(hash: string, createTime: number, transactionConsensusUpdateTime?: number) {
+    this.hash = hash;
+    this.createTime = createTime;
+    this.transactionConsensusUpdateTime = transactionConsensusUpdateTime;
   }
 }
 

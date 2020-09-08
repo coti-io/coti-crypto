@@ -34,9 +34,8 @@ export async function getAddressesOfWallet<T extends IndexedAddress>(wallet: Ind
       addressesToCheck.push(address.getAddressHex());
     }
     let addressesResult = await checkAddressesExist(addressesToCheck);
-
     Object.keys(addressesResult)
-      .filter(addressHex => addressesResult.get(addressHex) === true)
+      .filter(addressHex => addressesResult[addressHex] === true)
       .forEach(addressHex => {
         const generatedAddress = generatedAddressMap.get(addressHex);
         if (generatedAddress) addressesThatExists.push(generatedAddress);
@@ -51,7 +50,7 @@ export async function getAddressesOfWallet<T extends IndexedAddress>(wallet: Ind
 async function checkAddressesExist(addressesToCheck: string[]) {
   try {
     const { data } = await axios.post(`${FULL_NODE_URL}/address`, { addresses: addressesToCheck });
-    return <Map<string, boolean>>data.addresses;
+    return data.addresses;
   } catch (error) {
     const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
     throw new Error(`Error checking existing addresses from fullnode: ${errorMessage}`);
