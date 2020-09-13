@@ -2,9 +2,9 @@ import { EventEmitter } from 'events';
 import { BaseAddress, IndexedAddress, Address } from './address';
 import { Transaction, ReducedTransaction } from './transaction';
 import * as walletUtils from './utils/walletUtils';
-import bigDecimal from 'js-big-decimal';
 import { SignatureData } from './signature';
 import * as cryptoUtils from './utils/cryptoUtils';
+import { BigDecimal } from './utils/utils';
 import BN from 'bn.js';
 
 type KeyPair = cryptoUtils.KeyPair;
@@ -78,22 +78,22 @@ export class BaseWallet extends WalletEvent {
     const addressesBalance = await walletUtils.checkBalances(addresses.map(address => address.getAddressHex()));
     for (const address of addresses) {
       let { addressBalance, addressPreBalance } = addressesBalance[address.getAddressHex()];
-      const balance = new bigDecimal(`${addressBalance}`);
-      const preBalance = new bigDecimal(`${addressPreBalance}`);
+      const balance = new BigDecimal(`${addressBalance}`);
+      const preBalance = new BigDecimal(`${addressPreBalance}`);
       const existingAddress = this.addressMap.get(address.getAddressHex());
       if (
         !existingAddress ||
-        existingAddress.getBalance().compareTo(balance) !== 0 ||
-        existingAddress.getPreBalance().compareTo(preBalance) !== 0
+        existingAddress.getBalance().comparedTo(balance) !== 0 ||
+        existingAddress.getPreBalance().comparedTo(preBalance) !== 0
       ) {
         this.setAddressWithBalance(address, balance, preBalance);
       }
     }
   }
 
-  public setAddressWithBalance(address: BaseAddress, balance: bigDecimal, preBalance: bigDecimal) {
+  public setAddressWithBalance(address: BaseAddress, balance: BigDecimal, preBalance: BigDecimal) {
     console.log(
-      `Setting balance for address: ${address.getAddressHex()}, balance: ${balance.getValue()}, preBalance: ${preBalance.getValue()}`
+      `Setting balance for address: ${address.getAddressHex()}, balance: ${balance.toString()}, preBalance: ${balance.toString()}`
     );
     address.setBalance(balance);
     address.setPreBalance(preBalance);
@@ -103,8 +103,8 @@ export class BaseWallet extends WalletEvent {
   }
 
   public getTotalBalance() {
-    let balance = new bigDecimal('0');
-    let prebalance = new bigDecimal('0');
+    let balance = new BigDecimal('0');
+    let prebalance = new BigDecimal('0');
     this.addressMap.forEach(address => {
       balance = balance.add(address.getBalance());
       prebalance = prebalance.add(address.getPreBalance());

@@ -1,9 +1,10 @@
 import { keccak256 } from 'js-sha3';
-import { BaseTransaction } from './baseTransaction';
+import { BaseTransaction, BaseTransactionName } from './baseTransaction';
 import * as utils from './utils/utils';
 import { BaseAddress, IndexedAddress } from './address';
 import { SignatureData } from './signature';
 import { IndexedWallet } from './wallet';
+import BigDecimal = utils.BigDecimal;
 
 export enum TransactionType {
   INITIAL = 'Initial',
@@ -33,7 +34,7 @@ export class Transaction {
   private transactionDescription: string;
   private trustScoreResults: string[];
   private senderHash: string;
-  private signatureData!: SignatureData;
+  private senderSignature!: SignatureData;
   private type: TransactionType;
 
   constructor(
@@ -57,8 +58,8 @@ export class Transaction {
     this.type = type || TransactionType.TRANSFER;
   }
 
-  public addBaseTransaction(address: BaseAddress, valueToSend: number, name: string) {
-    let baseTransaction = new BaseTransaction(address, valueToSend, name);
+  public addBaseTransaction(address: BaseAddress, valueToSend: BigDecimal, name: BaseTransactionName) {
+    let baseTransaction = new BaseTransaction(address.getAddressHex(), valueToSend, name);
     this.baseTransactions.push(baseTransaction);
   }
 
@@ -75,18 +76,6 @@ export class Transaction {
 
   public addTrustScoreMessageToTransaction(trustScoreMessage: string) {
     this.trustScoreResults.push(trustScoreMessage);
-  }
-
-  public setTrustScoreMessageSignatureData(signatureTrustScoreRequest: SignatureData) {
-    this.signatureData = signatureTrustScoreRequest;
-  }
-
-  public createTrustScoreMessage() {
-    return {
-      userHash: this.senderHash,
-      transactionHash: this.hash,
-      transactionTrustScoreSignature: this.signatureData
-    };
   }
 
   public getSenderHash() {
@@ -128,9 +117,9 @@ export class Transaction {
 
     messageInBytes = new Uint8Array(keccak256.update(messageInBytes).arrayBuffer());
 
-    this.signatureData = await wallet.signMessage(messageInBytes);
+    this.senderSignature = await wallet.signMessage(messageInBytes);
 
-    for (var i = 0; i < this.baseTransactions.length; i++) {
+    for (let i = 0; i < this.baseTransactions.length; i++) {
       await this.baseTransactions[i].sign(this.hash, wallet);
     }
   }

@@ -1,12 +1,12 @@
 import * as cryptoUtils from './utils/cryptoUtils';
-import bigDecimal from 'js-big-decimal';
+import { BigDecimal } from './utils/utils';
 
 type KeyPair = cryptoUtils.KeyPair;
 
 export class BaseAddress {
   protected addressHex: string;
-  protected preBalance!: bigDecimal;
-  protected balance!: bigDecimal;
+  protected preBalance!: BigDecimal;
+  protected balance!: BigDecimal;
 
   constructor(addressHex: string) {
     this.checkAddress(addressHex);
@@ -25,7 +25,7 @@ export class BaseAddress {
     return this.preBalance;
   }
 
-  public setPreBalance(preBalance: bigDecimal) {
+  public setPreBalance(preBalance: BigDecimal) {
     this.preBalance = preBalance;
   }
 
@@ -33,7 +33,7 @@ export class BaseAddress {
     return this.balance;
   }
 
-  public setBalance(balance: bigDecimal) {
+  public setBalance(balance: BigDecimal) {
     this.balance = balance;
   }
 }

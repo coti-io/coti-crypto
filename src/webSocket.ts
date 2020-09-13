@@ -1,9 +1,9 @@
-import bigDecimal from 'js-big-decimal';
 import * as stomp from 'webstomp-client';
 import SockJS from 'sockjs-client';
 import { checkBalances } from './utils/walletUtils';
+import { BigDecimal } from './utils/utils';
 import { BaseWallet, IndexedWallet } from './wallet';
-import { BaseAddress, IndexedAddress, Address } from './address';
+import { BaseAddress, IndexedAddress } from './address';
 
 const FULL_NODE_WEBSOCKET_ACTION = '/websocket';
 const FULL_NODE_URL = process.env.FULL_NODE_URL;
@@ -208,7 +208,7 @@ export class WebSocket {
 
       const balances = await checkBalances([addressHex]);
       const { addressBalance, addressPreBalance } = balances[addressHex];
-      this.setAddressWithBalance(new bigDecimal(addressBalance), new bigDecimal(addressPreBalance), address);
+      this.setAddressWithBalance(new BigDecimal(addressBalance), new BigDecimal(addressPreBalance), address);
 
       const addressIndex = address.getIndex();
       console.log(`Subscribing the balance and transactions for address: ${addressHex} and index: ${addressIndex}`);
@@ -216,7 +216,7 @@ export class WebSocket {
     }
   }
 
-  private setAddressWithBalance(addressBalance: bigDecimal, addressPreBalance: bigDecimal, address: BaseAddress) {
+  private setAddressWithBalance(addressBalance: BigDecimal, addressPreBalance: BigDecimal, address: BaseAddress) {
     this.wallet.setAddressWithBalance(address, addressBalance, addressPreBalance);
   }
 }

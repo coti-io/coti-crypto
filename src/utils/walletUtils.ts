@@ -100,14 +100,19 @@ export async function getTransactionsHistory(addresses: string[]) {
   return transactionMap;
 }
 
-export async function getFullNodeFees<T extends IndexedAddress>(wallet: IndexedWallet<T>, amountToTransfer: number) {
+export async function getFullNodeFees<T extends IndexedAddress>(
+  wallet: IndexedWallet<T>,
+  amountToTransfer: number,
+  feeIncluded?: boolean
+) {
   try {
     const userHash = wallet.getPublicHash();
-    const userSignature = new FullNodeFeeSignature(amountToTransfer).sign(wallet);
+    const userSignature = await new FullNodeFeeSignature(amountToTransfer).sign(wallet);
     const response = await axios.put(`${FULL_NODE_URL}/fee`, {
       originalAmount: amountToTransfer,
       userHash,
-      userSignature
+      userSignature,
+      feeIncluded
     });
     return response.data.fullNodeFee;
   } catch (error) {
@@ -116,9 +121,9 @@ export async function getFullNodeFees<T extends IndexedAddress>(wallet: IndexedW
   }
 }
 
-export async function getNetworkFees(fullNodeFeeData: BaseTransaction, userHash: string) {
+export async function getNetworkFees(fullNodeFeeData: BaseTransaction, userHash: string, feeIncluded?: boolean) {
   try {
-    const response = await axios.put(`${TRUSTSCORE_URL}/networkFee`, { fullNodeFeeData, userHash });
+    const response = await axios.put(`${TRUSTSCORE_URL}/networkFee`, { fullNodeFeeData, userHash, feeIncluded });
     return response.data.networkFeeData;
   } catch (error) {
     const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
@@ -135,9 +140,8 @@ export async function getTrustScoreFromTsNode<T extends IndexedAddress>(
   const createTrustScoreMessage = {
     userHash,
     transactionHash,
-    userSignature: wallet.signMessage(hexToBytes(transactionHash))
+    userSignature: await wallet.signMessage(hexToBytes(transactionHash))
   };
-
   try {
     const response = await axios.post(`${TRUSTSCORE_URL}/transactiontrustscore`, createTrustScoreMessage);
     return response.data.transactionTrustScoreData;
@@ -153,7 +157,6 @@ export async function createMiniConsensus(
   networkFeeData: BaseTransaction
 ) {
   const iteration = 3;
-
   let validationNetworkFeeMessage = {
     fullNodeFeeData,
     networkFeeData,

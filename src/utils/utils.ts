@@ -1,4 +1,37 @@
 import * as moment from 'moment';
+import Decimal from 'decimal.js';
+
+export type BigDecimalValue = Decimal.Value;
+
+export class BigDecimal extends Decimal {
+  constructor(n: BigDecimalValue) {
+    super(n);
+  }
+
+  public compareTo(other: BigDecimal) {
+    return super.comparedTo(other);
+  }
+
+  public stripTrailingZeros() {
+    return new BigDecimal(removeZerosFromEndOfStringOfNumber(this.toString()));
+  }
+
+  public add(other: BigDecimal): BigDecimal {
+    return new BigDecimal(super.add(other));
+  }
+
+  public subtract(other: BigDecimal) {
+    return new BigDecimal(super.sub(other));
+  }
+
+  public multiply(other: BigDecimal) {
+    return new BigDecimal(super.mul(other));
+  }
+
+  public divide(other: BigDecimal) {
+    return new BigDecimal(super.div(other));
+  }
+}
 
 export function getUtcInstant() {
   return moment.utc().valueOf() / 1000;
@@ -39,7 +72,7 @@ export function byteArrayToHexString(uint8arr: Uint8Array) {
 }
 
 export function numberToByteArray(num: number, byteLength: number) {
-  let bytes = new Uint8Array(byteLength - 1);
+  let bytes = new Uint8Array(byteLength);
   for (let k = 0; k < byteLength; k++) {
     bytes[byteLength - 1 - k] = num & 255;
     num = num / 256;
