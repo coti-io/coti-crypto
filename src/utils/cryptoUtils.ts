@@ -34,7 +34,7 @@ export function encryptGCM(data: string, password: string, iv: string): Encrypti
   const tag = cipher.getAuthTag();
   return {
     content: encrypted,
-    tag
+    tag,
   };
 }
 
@@ -80,7 +80,7 @@ export function generateKeyPair() {
 
 export function generateKeyPairFromSeed(seed: string, index?: number) {
   let privateKeyInBytes = utils.hexToBytes(seed);
-  if (index != undefined) {
+  if (index !== undefined) {
     const indexInBytes = new Uint8Array(toBytesInt32(index));
     privateKeyInBytes = utils.concatByteArrays([privateKeyInBytes, indexInBytes]);
   }
@@ -135,14 +135,8 @@ export function verifyOrderOfPrivateKey(privateKeyHex: string) {
 }
 
 export function getPublicKeyByKeyPair(keyPair: KeyPair) {
-  let publicXKeyHex = keyPair
-    .getPublic()
-    .getX()
-    .toString('hex');
-  let publicYKeyHex = keyPair
-    .getPublic()
-    .getY()
-    .toString('hex');
+  let publicXKeyHex = keyPair.getPublic().getX().toString('hex');
+  let publicYKeyHex = keyPair.getPublic().getY().toString('hex');
 
   return paddingPublicKeyByCoordinates(publicXKeyHex, publicYKeyHex);
 }

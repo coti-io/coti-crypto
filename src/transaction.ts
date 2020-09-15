@@ -11,7 +11,7 @@ export enum TransactionType {
   PAYMENT = 'Payment',
   TRANSFER = 'Transfer',
   ZEROSPEND = 'ZeroSpend',
-  CHARGEBACK = 'Chargeback'
+  CHARGEBACK = 'Chargeback',
 }
 
 export class ReducedTransaction {
@@ -112,7 +112,7 @@ export class Transaction {
       transactionHashInBytes,
       transactionTypeInBytes,
       utcTimeInByteArray,
-      transactionDescriptionInBytes
+      transactionDescriptionInBytes,
     ]);
 
     messageInBytes = new Uint8Array(keccak256.update(messageInBytes).arrayBuffer());

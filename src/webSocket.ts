@@ -196,10 +196,7 @@ export class WebSocket {
 
   private async checkBalanceAndSubscribeNewAddress<T extends IndexedAddress>(address: IndexedAddress) {
     if (this.wallet instanceof IndexedWallet) {
-      const nextPropagationAddressIndex =
-        Array.from(this.propagationSubscriptions.keys())
-          .pop()
-          .getIndex() + 1;
+      const nextPropagationAddressIndex = Array.from(this.propagationSubscriptions.keys()).pop().getIndex() + 1;
       const nextAddress = <T>await this.wallet.generateAddressByIndex(nextPropagationAddressIndex);
 
       this.addressPropagationSubscriber(nextAddress);

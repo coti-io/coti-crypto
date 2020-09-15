@@ -11,7 +11,7 @@ export enum BaseTransactionName {
   FULL_NODE_FEE = 'FFBT',
   NETWORK_FEE = 'NFBT',
   ROLLING_RESERVE = 'RRBT',
-  RECEIVER = 'RBT'
+  RECEIVER = 'RBT',
 }
 
 export interface Item {
@@ -107,11 +107,7 @@ export class BaseTransaction {
           let price = utils.getArrayFromString(utils.removeZerosFromEndOfNumber(item.itemPrice));
           let name = utils.getArrayFromString(item.itemName);
           let quantity = Array.from(utils.numberToByteArray(item.itemQuantity, 4));
-          itemsByteArray = itemsByteArray
-            .concat(id)
-            .concat(price)
-            .concat(name)
-            .concat(quantity);
+          itemsByteArray = itemsByteArray.concat(id).concat(price).concat(name).concat(quantity);
         });
         bytes = utils.concatByteArrays([bytes, new Uint8Array(itemsByteArray)]);
       }
@@ -176,7 +172,7 @@ export class BaseTransaction {
       items: this.items,
       rollingReserveTrustScoreNodeResult: this.rollingReserveTrustScoreNodeResult,
       receiverDescription: this.receiverDescription,
-      signatureData: this.signatureData!
+      signatureData: this.signatureData!,
     };
 
     return jsonToReturn;

@@ -12,7 +12,7 @@ const TRUSTSCORE_URL = process.env.TRUSTSCORE_URL;
 export async function getUserTrustScore(userHash: string) {
   try {
     return await axios.post(`${TRUSTSCORE_URL}/usertrustscore`, {
-      userHash
+      userHash,
     });
   } catch (error) {
     const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
@@ -112,7 +112,7 @@ export async function getFullNodeFees<T extends IndexedAddress>(
       originalAmount: amountToTransfer,
       userHash,
       userSignature,
-      feeIncluded
+      feeIncluded,
     });
     return response.data.fullNodeFee;
   } catch (error) {
@@ -140,7 +140,7 @@ export async function getTrustScoreFromTsNode<T extends IndexedAddress>(
   const createTrustScoreMessage = {
     userHash,
     transactionHash,
-    userSignature: await wallet.signMessage(hexToBytes(transactionHash))
+    userSignature: await wallet.signMessage(hexToBytes(transactionHash)),
   };
   try {
     const response = await axios.post(`${TRUSTSCORE_URL}/transactiontrustscore`, createTrustScoreMessage);
@@ -160,7 +160,7 @@ export async function createMiniConsensus(
   let validationNetworkFeeMessage = {
     fullNodeFeeData,
     networkFeeData,
-    userHash
+    userHash,
   };
   let response;
   try {
