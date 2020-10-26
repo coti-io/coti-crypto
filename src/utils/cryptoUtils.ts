@@ -184,7 +184,7 @@ function removeLeadingZeroBytesFromAddress(addressBytes: Uint8Array) {
   xPart = utils.removeZeroBytesFromByteArray(xPart);
   yPart = utils.removeZeroBytesFromByteArray(yPart);
 
-  let addressWithoutLeadingZeroBytes = new Uint8Array(xPart.byteLength + xPart.byteLength);
+  let addressWithoutLeadingZeroBytes = new Uint8Array(xPart.byteLength + yPart.byteLength);
   addressWithoutLeadingZeroBytes.set(new Uint8Array(xPart), 0);
   addressWithoutLeadingZeroBytes.set(new Uint8Array(yPart), xPart.byteLength);
   return addressWithoutLeadingZeroBytes;
