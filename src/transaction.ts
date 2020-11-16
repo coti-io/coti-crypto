@@ -5,6 +5,9 @@ import { BaseAddress, IndexedAddress } from './address';
 import { SignatureData } from './signature';
 import { IndexedWallet } from './wallet';
 import BigDecimal = utils.BigDecimal;
+import * as cryptoUtils from './utils/cryptoUtils';
+
+type KeyPair = cryptoUtils.KeyPair;
 
 export enum TransactionType {
   INITIAL = 'Initial',
@@ -41,7 +44,8 @@ export class Transaction {
     listOfBaseTransaction: BaseTransaction[],
     transactionDescription: string,
     userHash: string,
-    type?: TransactionType
+    type?: TransactionType,
+    createHash = true
   ) {
     if (!transactionDescription) throw new Error('Transaction must have a description');
 
@@ -56,6 +60,8 @@ export class Transaction {
     this.trustScoreResults = [];
     this.senderHash = userHash;
     this.type = type || TransactionType.TRANSFER;
+
+    if (createHash) this.createTransactionHash();
   }
 
   public addBaseTransaction(address: BaseAddress, valueToSend: BigDecimal, name: BaseTransactionName) {
@@ -103,6 +109,20 @@ export class Transaction {
   }
 
   public async signTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
+    const messageInBytes = this.getSignatureMessage();
+    this.senderSignature = await wallet.signMessage(messageInBytes);
+
+    for (let i = 0; i < this.baseTransactions.length; i++) {
+      await this.baseTransactions[i].sign(this.hash, wallet);
+    }
+  }
+
+  public signTransactionByKeyPair(keyPair: KeyPair) {
+    const messageInBytes = this.getSignatureMessage();
+    this.senderSignature = cryptoUtils.signByteArrayMessage(messageInBytes, keyPair);
+  }
+
+  private getSignatureMessage() {
     const transactionHashInBytes = utils.hexToBytes(this.hash);
     const transactionTypeInBytes = utils.getBytesFromString(this.type);
     const utcTime = this.createTime * 1000;
@@ -115,12 +135,6 @@ export class Transaction {
       transactionDescriptionInBytes,
     ]);
 
-    messageInBytes = new Uint8Array(keccak256.update(messageInBytes).arrayBuffer());
-
-    this.senderSignature = await wallet.signMessage(messageInBytes);
-
-    for (let i = 0; i < this.baseTransactions.length; i++) {
-      await this.baseTransactions[i].sign(this.hash, wallet);
-    }
+    return new Uint8Array(keccak256.update(messageInBytes).arrayBuffer());
   }
 }

@@ -4,6 +4,9 @@ import { IndexedAddress } from './address';
 import { SignatureData } from './signature';
 import { IndexedWallet } from './wallet';
 import BigDecimal = utils.BigDecimal;
+import * as cryptoUtils from './utils/cryptoUtils';
+
+type KeyPair = cryptoUtils.KeyPair;
 
 export enum BaseTransactionName {
   INPUT = 'IBT',
@@ -149,13 +152,26 @@ export class BaseTransaction {
 
   public async sign<T extends IndexedAddress>(transactionHash: string, wallet: IndexedWallet<T>) {
     if (this.shouldSignTransaction()) {
-      const messageInBytes = utils.hexToBytes(transactionHash);
+      const messageInBytes = this.getSignatureMessage(transactionHash);
       this.signatureData = await wallet.signMessage(messageInBytes, this.addressHash);
+    }
+  }
+
+  public signWithKeyPair(transactionHash: string, keyPair: KeyPair) {
+    if (this.shouldSignTransaction()) {
+      const addressHex = cryptoUtils.getAddressHexByKeyPair(keyPair);
+      if (addressHex !== this.addressHash) throw new Error('Wrong keyPair for base transaction address');
+      const messageInBytes = this.getSignatureMessage(transactionHash);
+      return cryptoUtils.signByteArrayMessage(messageInBytes, keyPair);
     }
   }
 
   private shouldSignTransaction() {
     return this.amount.isNegative();
+  }
+
+  private getSignatureMessage(transactionHash: string) {
+    return utils.hexToBytes(transactionHash);
   }
 
   public toJSON() {

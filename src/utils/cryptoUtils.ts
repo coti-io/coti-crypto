@@ -7,6 +7,7 @@ import { sha256 } from 'js-sha256';
 import { sha3_256 as sha3Bit256, keccak256 } from 'js-sha3';
 import { blake } from 'blakejs';
 import { SignatureData } from '../signature';
+import * as bip39 from 'bip39';
 
 const ec = new elliptic.ec('secp256k1');
 const regexp = /^[0-9a-fA-F]+$/;
@@ -68,9 +69,9 @@ export function getCrc32(arr: Uint8Array) {
 }
 
 export function toBytesInt32(num: number) {
-  let arr = new ArrayBuffer(4); // an Int32 takes 4 bytes
+  let arr = new ArrayBuffer(4);
   let view = new DataView(arr);
-  view.setInt32(0, num, false); // byteOffset = 0; litteEndian = false
+  view.setInt32(0, num, false);
   return arr;
 }
 
@@ -110,7 +111,7 @@ export function verifySignature(messageInBytes: Uint8Array, signature: EcSignatu
   return keyPair.verify(messageInBytes, signature);
 }
 
-export async function signByteArrayMessage(byteArray: Uint8Array, keyPair: KeyPair): Promise<SignatureData> {
+export function signByteArrayMessage(byteArray: Uint8Array, keyPair: KeyPair): SignatureData {
   const ecSignature = keyPair.sign(byteArray);
   return { r: ecSignature.r.toString(16), s: ecSignature.s.toString(16) };
 }
@@ -171,6 +172,13 @@ export function verifyAddressStructure(addressHex: string) {
   return checkSumHex === addressHex.substring(128, 136);
 }
 
+export function getAddressHexByKeyPair(keyPair: KeyPair) {
+  let paddedAddress = getPublicKeyByKeyPair(keyPair);
+  let checkSumHex = getCheckSumFromAddressHex(paddedAddress);
+
+  return paddedAddress + checkSumHex;
+}
+
 export function getCheckSumFromAddressHex(hexString: string) {
   let bytes = utils.hexToBytes(hexString);
   bytes = removeLeadingZeroBytesFromAddress(bytes);
@@ -195,4 +203,12 @@ export function generateSeed(key: string) {
   let sha3Array = sha3Bit256.update(key).array();
   let combinedArray = sha2Array.concat(sha3Array);
   return blake.blake2bHex(Buffer.from(combinedArray), null, 32);
+}
+
+export function generateMnemonic() {
+  return bip39.generateMnemonic();
+}
+
+export async function generateSeedFromMnemonic(mnemonic: string) {
+  return await bip39.mnemonicToSeed(mnemonic).then(bytes => utils.byteArrayToHexString(bytes));
 }

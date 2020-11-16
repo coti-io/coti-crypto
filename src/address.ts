@@ -56,11 +56,9 @@ export class Address extends IndexedAddress {
 
   constructor(keyPair: KeyPair, index: number, addressHex?: string) {
     if (!addressHex) {
-      let paddedAddress = cryptoUtils.getPublicKeyByKeyPair(keyPair);
-      let checkSumHex = cryptoUtils.getCheckSumFromAddressHex(paddedAddress);
-
-      addressHex = paddedAddress + checkSumHex;
+      addressHex = cryptoUtils.getAddressHexByKeyPair(keyPair);
     }
+
     super(index, addressHex);
     this.keyPair = keyPair;
   }

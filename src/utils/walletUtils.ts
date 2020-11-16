@@ -6,12 +6,12 @@ import { Transaction } from '../transaction';
 import { IndexedWallet } from '../wallet';
 import { hexToBytes } from './utils';
 
-const FULL_NODE_URL = process.env.FULL_NODE_URL;
-const TRUSTSCORE_URL = process.env.TRUSTSCORE_URL;
+const fullNodeUrl = process.env.FULL_NODE_URL;
+const trustScoreUrl = process.env.TRUSTSCORE_URL;
 
 export async function getUserTrustScore(userHash: string) {
   try {
-    return await axios.post(`${TRUSTSCORE_URL}/usertrustscore`, {
+    return await axios.post(`${trustScoreUrl}/usertrustscore`, {
       userHash,
     });
   } catch (error) {
@@ -49,7 +49,7 @@ export async function getAddressesOfWallet<T extends IndexedAddress>(wallet: Ind
 
 async function checkAddressesExist(addressesToCheck: string[]) {
   try {
-    const { data } = await axios.post(`${FULL_NODE_URL}/address`, { addresses: addressesToCheck });
+    const { data } = await axios.post(`${fullNodeUrl}/address`, { addresses: addressesToCheck });
     return data.addresses;
   } catch (error) {
     const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
@@ -59,7 +59,7 @@ async function checkAddressesExist(addressesToCheck: string[]) {
 
 export async function sendAddressToNode(address: BaseAddress) {
   try {
-    const { data } = await axios.put(`${FULL_NODE_URL}/address`, { address: address.getAddressHex() });
+    const { data } = await axios.put(`${fullNodeUrl}/address`, { address: address.getAddressHex() });
     return data;
   } catch (error) {
     const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
@@ -69,7 +69,7 @@ export async function sendAddressToNode(address: BaseAddress) {
 
 export async function checkBalances(addresses: string[]) {
   try {
-    const { data } = await axios.post(`${FULL_NODE_URL}/balance`, { addresses });
+    const { data } = await axios.post(`${fullNodeUrl}/balance`, { addresses });
     return data.addressesBalance;
   } catch (error) {
     const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
@@ -79,7 +79,7 @@ export async function checkBalances(addresses: string[]) {
 
 export async function getTransactionsHistory(addresses: string[]) {
   const transactionMap = new Map<string, Transaction>();
-  let response = await axios.post(`${FULL_NODE_URL}/transaction/addressTransactions/batch`, { addresses });
+  let response = await axios.post(`${fullNodeUrl}/transaction/addressTransactions/batch`, { addresses });
 
   let parsedData = response.data;
   if (typeof parsedData !== 'object') {
@@ -108,7 +108,7 @@ export async function getFullNodeFees<T extends IndexedAddress>(
   try {
     const userHash = wallet.getPublicHash();
     const userSignature = await new FullNodeFeeSignature(amountToTransfer).sign(wallet);
-    const response = await axios.put(`${FULL_NODE_URL}/fee`, {
+    const response = await axios.put(`${fullNodeUrl}/fee`, {
       originalAmount: amountToTransfer,
       userHash,
       userSignature,
@@ -123,7 +123,7 @@ export async function getFullNodeFees<T extends IndexedAddress>(
 
 export async function getNetworkFees(fullNodeFeeData: BaseTransaction, userHash: string, feeIncluded?: boolean) {
   try {
-    const response = await axios.put(`${TRUSTSCORE_URL}/networkFee`, { fullNodeFeeData, userHash, feeIncluded });
+    const response = await axios.put(`${trustScoreUrl}/networkFee`, { fullNodeFeeData, userHash, feeIncluded });
     return response.data.networkFeeData;
   } catch (error) {
     const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
@@ -143,7 +143,7 @@ export async function getTrustScoreFromTsNode<T extends IndexedAddress>(
     userSignature: await wallet.signMessage(hexToBytes(transactionHash)),
   };
   try {
-    const response = await axios.post(`${TRUSTSCORE_URL}/transactiontrustscore`, createTrustScoreMessage);
+    const response = await axios.post(`${trustScoreUrl}/transactiontrustscore`, createTrustScoreMessage);
     return response.data.transactionTrustScoreData;
   } catch (error) {
     const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
@@ -165,7 +165,7 @@ export async function createMiniConsensus(
   let response;
   try {
     for (let i = 1; i < iteration; i++) {
-      response = await axios.post(`${TRUSTSCORE_URL}/networkFee`, validationNetworkFeeMessage);
+      response = await axios.post(`${trustScoreUrl}/networkFee`, validationNetworkFeeMessage);
       validationNetworkFeeMessage.networkFeeData = response.data.networkFeeData;
     }
     if (response && response.data) return { fullNodeFee: fullNodeFeeData, networkFee: response.data.networkFeeData };

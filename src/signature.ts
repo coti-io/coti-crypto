@@ -2,6 +2,9 @@ import * as utils from './utils/utils';
 import { keccak256 } from 'js-sha3';
 import { IndexedAddress } from './address';
 import { IndexedWallet } from './wallet';
+import * as cryptoUtils from './utils/cryptoUtils';
+
+type KeyPair = cryptoUtils.KeyPair;
 
 export interface SignatureData {
   r: string;
@@ -14,7 +17,7 @@ export abstract class Signature {
   constructor() {}
 
   public async sign<T extends IndexedAddress>(wallet: IndexedWallet<T>, isHash = false) {
-    const messageInBytes = isHash ? this.getBytes() : this.createBasicSignatureHash();
+    const messageInBytes = this.getSignatureMessage(isHash);
     this.signatureData = await wallet.signMessage(messageInBytes);
     return this.signatureData;
   }
@@ -23,6 +26,15 @@ export abstract class Signature {
     let baseTxBytes = this.getBytes();
     let baseTxHashedArray = keccak256.update(baseTxBytes).array();
     return new Uint8Array(baseTxHashedArray);
+  }
+
+  public signByKeyPair(keyPair: KeyPair, isHash = false) {
+    const messageInBytes = this.getSignatureMessage(isHash);
+    this.signatureData = cryptoUtils.signByteArrayMessage(messageInBytes, keyPair);
+  }
+
+  private getSignatureMessage(isHash: boolean) {
+    return isHash ? this.getBytes() : this.createBasicSignatureHash();
   }
 
   abstract getBytes(): Uint8Array;
