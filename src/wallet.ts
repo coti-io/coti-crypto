@@ -4,7 +4,7 @@ import { Transaction, ReducedTransaction } from './transaction';
 import * as walletUtils from './utils/walletUtils';
 import { SignatureData } from './signature';
 import * as cryptoUtils from './utils/cryptoUtils';
-import { BigDecimal } from './utils/utils';
+import { BigDecimal, Network } from './utils/utils';
 import BN from 'bn.js';
 
 type KeyPair = cryptoUtils.KeyPair;
@@ -34,11 +34,13 @@ export abstract class WalletEvent extends EventEmitter {
 }
 
 export class BaseWallet extends WalletEvent {
+  protected readonly network: Network;
   protected readonly addressMap: Map<string, BaseAddress>;
   protected readonly transactionMap: Map<string, ReducedTransaction>;
 
-  constructor() {
+  constructor(network?: Network) {
     super();
+    this.network = network || 'mainnet';
     this.addressMap = new Map();
     this.transactionMap = new Map();
   }
@@ -48,6 +50,10 @@ export class BaseWallet extends WalletEvent {
     addresses.forEach(address => {
       this.setInitialAddressToMap(address);
     });
+  }
+
+  public getNetwork() {
+    return this.network;
   }
 
   public isAddressExists(addressHex: string) {
@@ -165,8 +171,8 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
   protected publicHash!: string;
   protected trustScore!: number;
 
-  constructor() {
-    super();
+  constructor(network?: Network) {
+    super(network);
     this.indexToAddressHexMap = new Map();
   }
 
@@ -247,8 +253,9 @@ export class Wallet extends IndexedWallet<Address> {
   private seed!: string;
   private keyPair!: KeyPair;
 
-  constructor(seed?: string, userSecret?: string, serverKey?: BN) {
-    super();
+  constructor(params: { seed?: string; userSecret?: string; serverKey?: BN; network?: Network }) {
+    const { seed, userSecret, serverKey, network } = params;
+    super(network);
     if (seed) {
       if (!this.checkSeedFormat(seed)) throw new Error('Seed is not in correct format');
       this.seed = seed;

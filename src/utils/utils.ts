@@ -1,6 +1,8 @@
 import * as moment from 'moment';
 import Decimal from 'decimal.js';
 
+export type Network = 'mainnet' | 'testnet';
+
 export type BigDecimalValue = Decimal.Value;
 
 export class BigDecimal extends Decimal {
