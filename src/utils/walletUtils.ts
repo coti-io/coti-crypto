@@ -10,17 +10,6 @@ import * as nodeUtils from './nodeUtils';
 const fullNodeUrl = process.env.FULL_NODE_URL;
 const trustScoreUrl = process.env.TRUSTSCORE_URL;
 
-export async function getUserTrustScore(userHash: string) {
-  try {
-    return await axios.post(`${trustScoreUrl}/usertrustscore`, {
-      userHash,
-    });
-  } catch (error) {
-    const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
-    throw new Error(`Error getting user trust score, error: ${errorMessage}`);
-  }
-}
-
 export async function getAddressesOfWallet<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
   let addressesToCheck: string[] = [];
   let addressesThatExists: T[] = [];
@@ -46,26 +35,6 @@ export async function getAddressesOfWallet<T extends IndexedAddress>(wallet: Ind
     nextChunk = nextChunk + 20;
   }
   return addressesThatExists;
-}
-
-export async function sendAddressToNode(address: BaseAddress) {
-  try {
-    const { data } = await axios.put(`${fullNodeUrl}/address`, { address: address.getAddressHex() });
-    return data;
-  } catch (error) {
-    const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
-    throw new Error(`Error sending address to fullnode: ${errorMessage}`);
-  }
-}
-
-export async function checkBalances(addresses: string[]) {
-  try {
-    const { data } = await axios.post(`${fullNodeUrl}/balance`, { addresses });
-    return data.addressesBalance;
-  } catch (error) {
-    const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
-    throw new Error(`Error checking address balances from fullnode: ${errorMessage} for addresses: ${addresses}`);
-  }
 }
 
 export async function getTransactionsHistory(addresses: string[]) {
@@ -96,20 +65,10 @@ export async function getFullNodeFees<T extends IndexedAddress>(
   amountToTransfer: number,
   feeIncluded?: boolean
 ) {
-  try {
-    const userHash = wallet.getPublicHash();
-    const userSignature = await new FullNodeFeeSignature(amountToTransfer).sign(wallet);
-    const response = await axios.put(`${fullNodeUrl}/fee`, {
-      originalAmount: amountToTransfer,
-      userHash,
-      userSignature,
-      feeIncluded,
-    });
-    return response.data.fullNodeFee;
-  } catch (error) {
-    const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
-    throw new Error(`Error getting full node fees: ${errorMessage} for amount: ${amountToTransfer}`);
-  }
+  const userHash = wallet.getPublicHash();
+  const userSignature = await new FullNodeFeeSignature(amountToTransfer).sign(wallet);
+  const network = wallet.getNetwork();
+  return await nodeUtils.getFullNodeFees(amountToTransfer, userHash, userSignature, network, feeIncluded);
 }
 
 export async function getTransactionTrustScoreFromTsNode<T extends IndexedAddress>(

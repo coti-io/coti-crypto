@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BaseAddress } from '../address';
 import { BaseTransaction } from '../baseTransaction';
 import { SignatureData } from '../signature';
 import * as utils from './utils';
@@ -16,7 +17,28 @@ const nodeUrl = {
   },
 };
 
-export async function checkAddressesExist(addressesToCheck: string[], network: Network) {
+export async function getUserTrustScore(userHash: string, network: Network = 'mainnet') {
+  try {
+    return await axios.post(`${nodeUrl[network].trustScoreNode}/usertrustscore`, {
+      userHash,
+    });
+  } catch (error) {
+    const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
+    throw new Error(`Error getting user trust score, error: ${errorMessage}`);
+  }
+}
+
+export async function sendAddressToNode(address: BaseAddress, network: Network = 'mainnet') {
+  try {
+    const { data } = await axios.put(`${nodeUrl[network].fullNode}/address`, { address: address.getAddressHex() });
+    return data;
+  } catch (error) {
+    const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
+    throw new Error(`Error sending address to fullnode: ${errorMessage}`);
+  }
+}
+
+export async function checkAddressesExist(addressesToCheck: string[], network: Network = 'mainnet') {
   try {
     const { data } = await axios.post(`${nodeUrl[network].fullNode}/address`, { addresses: addressesToCheck });
     return data.addresses;
@@ -26,10 +48,41 @@ export async function checkAddressesExist(addressesToCheck: string[], network: N
   }
 }
 
+export async function checkBalances(addresses: string[], network: Network = 'mainnet') {
+  try {
+    const { data } = await axios.post(`${nodeUrl[network].fullNode}/balance`, { addresses });
+    return data.addressesBalance;
+  } catch (error) {
+    const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
+    throw new Error(`Error checking address balances from fullnode: ${errorMessage} for addresses: ${addresses}`);
+  }
+}
+
+export async function getFullNodeFees(
+  amountToTransfer: number,
+  userHash: string,
+  userSignature: SignatureData,
+  network: Network = 'mainnet',
+  feeIncluded?: boolean
+) {
+  try {
+    const response = await axios.put(`${nodeUrl[network].fullNode}/fee`, {
+      originalAmount: amountToTransfer,
+      userHash,
+      userSignature,
+      feeIncluded,
+    });
+    return response.data.fullNodeFee;
+  } catch (error) {
+    const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
+    throw new Error(`Error getting full node fees: ${errorMessage} for amount: ${amountToTransfer}`);
+  }
+}
+
 export async function getNetworkFees(
   fullNodeFeeData: BaseTransaction,
   userHash: string,
-  network: Network,
+  network: Network = 'mainnet',
   feeIncluded?: boolean
 ) {
   try {
@@ -49,7 +102,7 @@ export async function createMiniConsensus(
   userHash: string,
   fullNodeFeeData: BaseTransaction,
   networkFeeData: BaseTransaction,
-  network: Network
+  network: Network = 'mainnet'
 ) {
   const iteration = 3;
   let validationNetworkFeeMessage = {
@@ -75,7 +128,7 @@ export async function getTransactionTrustScore(
   userHash: string,
   transactionHash: string,
   userSignature: SignatureData,
-  network: Network
+  network: Network = 'mainnet'
 ) {
   const createTrustScoreMessage = {
     userHash,
