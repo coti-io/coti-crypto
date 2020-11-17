@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { BaseAddress, IndexedAddress, Address } from './address';
 import { Transaction, ReducedTransaction } from './transaction';
-import * as walletUtils from './utils/walletUtils';
+import { walletUtils } from './utils/walletUtils';
 import { SignatureData } from './signature';
 import * as cryptoUtils from './utils/cryptoUtils';
 import { BigDecimal, Network } from './utils/utils';
@@ -81,7 +81,10 @@ export class BaseWallet extends WalletEvent {
   }
 
   public async checkBalancesOfAddresses(addresses: BaseAddress[]) {
-    const addressesBalance = await walletUtils.checkBalances(addresses.map(address => address.getAddressHex()));
+    const addressesBalance = await walletUtils.checkBalances(
+      addresses.map(address => address.getAddressHex()),
+      this
+    );
     for (const address of addresses) {
       let { addressBalance, addressPreBalance } = addressesBalance[address.getAddressHex()];
       const balance = new BigDecimal(`${addressBalance}`);
@@ -98,9 +101,7 @@ export class BaseWallet extends WalletEvent {
   }
 
   public setAddressWithBalance(address: BaseAddress, balance: BigDecimal, preBalance: BigDecimal) {
-    console.log(
-      `Setting balance for address: ${address.getAddressHex()}, balance: ${balance.toString()}, preBalance: ${balance.toString()}`
-    );
+    console.log(`Setting balance for address: ${address.getAddressHex()}, balance: ${balance.toString()}, preBalance: ${balance.toString()}`);
     address.setBalance(balance);
     address.setPreBalance(preBalance);
     this.setAddressToMap(address);
@@ -132,7 +133,7 @@ export class BaseWallet extends WalletEvent {
 
   public async getTransactionHistory() {
     const addresses = this.getAddressHexes();
-    const transactions = await walletUtils.getTransactionsHistory(addresses);
+    const transactions = await walletUtils.getTransactionsHistory(addresses, this);
     transactions.forEach(t => {
       this.setTransaction(t);
     });
@@ -142,22 +143,14 @@ export class BaseWallet extends WalletEvent {
     const existingTransaction = this.transactionMap.get(transaction.getHash());
 
     // If the transaction was already confirmed, no need to reprocess it
-    if (
-      existingTransaction &&
-      existingTransaction.transactionConsensusUpdateTime === transaction.getTransactionConsensusUpdateTime()
-    )
-      return;
+    if (existingTransaction && existingTransaction.transactionConsensusUpdateTime === transaction.getTransactionConsensusUpdateTime()) return;
 
     console.log(
       `Adding transaction with hash: ${transaction.getHash()}, transactionConsensusUpdateTime: ${transaction.getTransactionConsensusUpdateTime()}`
     );
     this.transactionMap.set(
       transaction.getHash(),
-      new ReducedTransaction(
-        transaction.getHash(),
-        transaction.getCreateTime(),
-        transaction.getTransactionConsensusUpdateTime()
-      )
+      new ReducedTransaction(transaction.getHash(), transaction.getCreateTime(), transaction.getTransactionConsensusUpdateTime())
     );
 
     this.emit('receivedTransaction', transaction);
@@ -241,7 +234,7 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
   public abstract async generateAddressByIndex(index: number): Promise<T>;
 
   public async getUserTrustScore() {
-    let { data } = await walletUtils.getUserTrustScore(this.publicHash);
+    let { data } = await walletUtils.getUserTrustScore(this);
     if (!data) throw new Error(`Error getting user trust score, received no data`);
     if (!data.trustScore) throw new Error('Error getting user trust score, unexpected response:' + data);
     this.trustScore = data.trustScore;

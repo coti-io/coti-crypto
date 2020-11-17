@@ -1,6 +1,6 @@
 import * as stomp from 'webstomp-client';
 import SockJS from 'sockjs-client';
-import { checkBalances } from './utils/walletUtils';
+import { walletUtils } from './utils/walletUtils';
 import { BigDecimal } from './utils/utils';
 import { BaseWallet, IndexedWallet } from './wallet';
 import { BaseAddress, IndexedAddress } from './address';
@@ -54,17 +54,10 @@ export class WebSocket {
   private async addressesUnsubscribe() {
     this.propagationSubscriptions.forEach(async propagationSubscription => await propagationSubscription.unsubscribe());
     this.balanceSubscriptions.forEach(async balanceSubscription => await balanceSubscription.unsubscribe());
-    this.transactionsSubscriptions.forEach(
-      async transactionsSubscription => await transactionsSubscription.unsubscribe()
-    );
+    this.transactionsSubscriptions.forEach(async transactionsSubscription => await transactionsSubscription.unsubscribe());
   }
 
-  private reconnect(
-    socketUrl: string,
-    successCallback: () => void,
-    reconnectFailedCallback: () => void,
-    addresses: string[]
-  ) {
+  private reconnect(socketUrl: string, successCallback: () => void, reconnectFailedCallback: () => void, addresses: string[]) {
     let connected = false;
 
     this.setClient();
@@ -136,24 +129,19 @@ export class WebSocket {
     }
 
     if (!this.transactionsSubscriptions.get(addressHex)) {
-      let transactionSubscription = this.client.subscribe(
-        `/topic/addressTransactions/${addressHex}`,
-        async ({ body }) => {
-          try {
-            const data = JSON.parse(body);
-            const { transactionData } = data;
-            transactionData.createTime = new Date(transactionData.createTime).getTime();
-            if (transactionData.transactionConsensusUpdateTime) {
-              transactionData.transactionConsensusUpdateTime = new Date(
-                transactionData.transactionConsensusUpdateTime
-              ).getTime();
-            }
-            this.wallet.setTransaction(transactionData);
-          } catch (error) {
-            console.log(error);
+      let transactionSubscription = this.client.subscribe(`/topic/addressTransactions/${addressHex}`, async ({ body }) => {
+        try {
+          const data = JSON.parse(body);
+          const { transactionData } = data;
+          transactionData.createTime = new Date(transactionData.createTime).getTime();
+          if (transactionData.transactionConsensusUpdateTime) {
+            transactionData.transactionConsensusUpdateTime = new Date(transactionData.transactionConsensusUpdateTime).getTime();
           }
+          this.wallet.setTransaction(transactionData);
+        } catch (error) {
+          console.log(error);
         }
-      );
+      });
 
       this.transactionsSubscriptions.set(addressHex, transactionSubscription);
     }
@@ -170,12 +158,7 @@ export class WebSocket {
     let addressPropagationSubscription = this.client.subscribe(`/topic/address/${addressHex}`, ({ body }) => {
       try {
         const data = JSON.parse(body);
-        console.log(
-          'Received an address through address propagation:',
-          data.addressHash,
-          ' index:',
-          address.getIndex()
-        );
+        console.log('Received an address through address propagation:', data.addressHash, ' index:', address.getIndex());
         if (data.addressHash !== addressHex) throw new Error('Error in addressPropagationSubscriber');
 
         const subscription = this.propagationSubscriptions.get(address);
@@ -203,7 +186,7 @@ export class WebSocket {
 
       const addressHex = address.getAddressHex();
 
-      const balances = await checkBalances([addressHex]);
+      const balances = await walletUtils.checkBalances([addressHex], this.wallet);
       const { addressBalance, addressPreBalance } = balances[addressHex];
       this.setAddressWithBalance(new BigDecimal(addressBalance), new BigDecimal(addressPreBalance), address);
 
