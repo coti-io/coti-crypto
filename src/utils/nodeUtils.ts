@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { BaseAddress } from '../address';
-import { BaseTransaction } from '../baseTransaction';
+import { BaseTransaction, BaseTransactionObject } from '../baseTransaction';
 import { SignatureData } from '../signature';
 import * as utils from './utils';
 import { Transaction } from '../transaction';
@@ -96,7 +96,7 @@ export namespace nodeUtils {
     userSignature: SignatureData,
     network: Network = 'mainnet',
     feeIncluded?: boolean
-  ) {
+  ): Promise<BaseTransactionObject> {
     try {
       const response = await axios.put(`${nodeUrl[network].fullNode}/fee`, {
         originalAmount: amountToTransfer,
@@ -111,7 +111,12 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getNetworkFees(fullNodeFeeData: BaseTransaction, userHash: string, network: Network = 'mainnet', feeIncluded?: boolean) {
+  export async function getNetworkFees(
+    fullNodeFeeData: BaseTransactionObject,
+    userHash: string,
+    network: Network = 'mainnet',
+    feeIncluded?: boolean
+  ): Promise<BaseTransactionObject> {
     try {
       const response = await axios.put(`${nodeUrl[network].trustScoreNode}/networkFee`, {
         fullNodeFeeData,
@@ -127,10 +132,10 @@ export namespace nodeUtils {
 
   export async function createMiniConsensus(
     userHash: string,
-    fullNodeFeeData: BaseTransaction,
-    networkFeeData: BaseTransaction,
+    fullNodeFeeData: BaseTransactionObject,
+    networkFeeData: BaseTransactionObject,
     network: Network = 'mainnet'
-  ) {
+  ): Promise<BaseTransactionObject> {
     const iteration = 3;
     let validationNetworkFeeMessage = {
       fullNodeFeeData,
@@ -143,7 +148,7 @@ export namespace nodeUtils {
         response = await axios.post(`${nodeUrl[network].trustScoreNode}/networkFee`, validationNetworkFeeMessage);
         validationNetworkFeeMessage.networkFeeData = response.data.networkFeeData;
       }
-      if (response && response.data) return { fullNodeFee: fullNodeFeeData, networkFee: response.data.networkFeeData };
+      if (response && response.data) return response.data.networkFeeData;
       else throw new Error(`Error in createMiniConsensus: No response`);
     } catch (error) {
       const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;

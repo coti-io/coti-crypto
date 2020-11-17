@@ -52,6 +52,9 @@ export function hexToBytes(hex: string) {
 }
 
 export function hexToArray(hex: string) {
+  if (hex.length % 2 !== 0) {
+    throw new Error(`hexBinary needs to be even-length: ${hex}`);
+  }
   let array: number[] = [];
   for (let c = 0; c < hex.length; c += 2) {
     array.push(parseInt(hex.substr(c, 2), 16));

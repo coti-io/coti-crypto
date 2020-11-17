@@ -31,6 +31,7 @@ export abstract class Signature {
   public signByKeyPair(keyPair: KeyPair, isHash = false) {
     const messageInBytes = this.getSignatureMessage(isHash);
     this.signatureData = cryptoUtils.signByteArrayMessage(messageInBytes, keyPair);
+    return this.signatureData;
   }
 
   private getSignatureMessage(isHash: boolean) {

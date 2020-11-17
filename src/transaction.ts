@@ -40,13 +40,7 @@ export class Transaction {
   private senderSignature!: SignatureData;
   private type: TransactionType;
 
-  constructor(
-    listOfBaseTransaction: BaseTransaction[],
-    transactionDescription: string,
-    userHash: string,
-    type?: TransactionType,
-    createHash = true
-  ) {
+  constructor(listOfBaseTransaction: BaseTransaction[], transactionDescription: string, userHash: string, type?: TransactionType, createHash = true) {
     if (!transactionDescription) throw new Error('Transaction must have a description');
 
     this.baseTransactions = [];
@@ -128,12 +122,7 @@ export class Transaction {
     const utcTime = this.createTime * 1000;
     const utcTimeInByteArray = utils.numberToByteArray(utcTime, 8);
     const transactionDescriptionInBytes = utils.getBytesFromString(this.transactionDescription);
-    let messageInBytes = utils.concatByteArrays([
-      transactionHashInBytes,
-      transactionTypeInBytes,
-      utcTimeInByteArray,
-      transactionDescriptionInBytes,
-    ]);
+    let messageInBytes = utils.concatByteArrays([transactionHashInBytes, transactionTypeInBytes, utcTimeInByteArray, transactionDescriptionInBytes]);
 
     return new Uint8Array(keccak256.update(messageInBytes).arrayBuffer());
   }

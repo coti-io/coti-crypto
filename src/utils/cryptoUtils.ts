@@ -95,6 +95,10 @@ export function generateKeyPairFromSeed(seed: string, index?: number) {
 
 export function generatePrivateKey() {
   const keyPair = generateKeyPair();
+  return getPrivateKeyFromKeyPair(keyPair);
+}
+
+export function getPrivateKeyFromKeyPair(keyPair: KeyPair) {
   return keyPair.getPrivate('hex');
 }
 
@@ -123,12 +127,7 @@ export function getPublicKeyFromHexString(publicKeyHex: string): PublicKey {
 }
 
 function validatePublicKey(publicKeyHex: string) {
-  return (
-    publicKeyHex !== null &&
-    publicKeyHex !== undefined &&
-    publicKeyHex.length === publicKeyLength &&
-    regexp.test(publicKeyHex)
-  );
+  return publicKeyHex !== null && publicKeyHex !== undefined && publicKeyHex.length === publicKeyLength && regexp.test(publicKeyHex);
 }
 
 export function verifyOrderOfPrivateKey(privateKeyHex: string) {
@@ -211,4 +210,9 @@ export function generateMnemonic() {
 
 export async function generateSeedFromMnemonic(mnemonic: string) {
   return await bip39.mnemonicToSeed(mnemonic).then(bytes => utils.byteArrayToHexString(bytes));
+}
+
+export async function generateKeyPairFromMnemonic(mnemonic: string, index?: number) {
+  const seed = await generateSeedFromMnemonic(mnemonic);
+  return generateKeyPairFromSeed(seed, index);
 }

@@ -114,8 +114,7 @@ export class BaseTransaction {
         });
         bytes = utils.concatByteArrays([bytes, new Uint8Array(itemsByteArray)]);
       }
-      if (this.encryptedMerchantName)
-        bytes = utils.concatByteArrays([bytes, utils.getBytesFromString(this.encryptedMerchantName)]);
+      if (this.encryptedMerchantName) bytes = utils.concatByteArrays([bytes, utils.getBytesFromString(this.encryptedMerchantName)]);
     }
 
     return bytes;
