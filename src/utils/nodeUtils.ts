@@ -176,6 +176,16 @@ export namespace nodeUtils {
     }
   }
 
+  export async function sendTransaction(transaction: Transaction, network: Network = 'mainnet') {
+    try {
+      const response = await axios.put(`${nodeUrl[network].fullNode}/transaction`, transaction);
+      return response.data;
+    } catch (error) {
+      const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
+      throw new Error(`Error sending transaction with hash ${transaction.getHash()}: ${errorMessage} `);
+    }
+  }
+
   export function getSocketUrl(network: Network) {
     const fullNodeWebsocketAction = '/websocket';
     return nodeUrl[network].fullNode + fullNodeWebsocketAction;

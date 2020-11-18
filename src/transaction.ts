@@ -6,6 +6,7 @@ import { SignatureData } from './signature';
 import { IndexedWallet } from './wallet';
 import BigDecimal = utils.BigDecimal;
 import * as cryptoUtils from './utils/cryptoUtils';
+import { PrivateKey } from './ecKeyPair';
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -40,7 +41,13 @@ export class Transaction {
   private senderSignature!: SignatureData;
   private type: TransactionType;
 
-  constructor(listOfBaseTransaction: BaseTransaction[], transactionDescription = '', userHash: string, type?: TransactionType, createHash = true) {
+  constructor(
+    listOfBaseTransaction: BaseTransaction[],
+    transactionDescription = 'No description',
+    userHash: string,
+    type?: TransactionType,
+    createHash = true
+  ) {
     this.baseTransactions = [];
 
     for (let i = 0; i < listOfBaseTransaction.length; i++) {
@@ -109,9 +116,26 @@ export class Transaction {
     }
   }
 
-  public signTransactionByKeyPair(keyPair: KeyPair) {
+  public signWithPrivateKeys(userPrivateKey: string, inputPrivateKeys: string[]) {
+    const userKeyPair = new PrivateKey(userPrivateKey).keyPair;
+    const inputKeyPairs = inputPrivateKeys.map(inputPrivateKey => new PrivateKey(inputPrivateKey).keyPair);
+    this.signWithKeyPairs(userKeyPair, inputKeyPairs);
+  }
+
+  public signWithKeyPairs(userKeyPair: KeyPair, inputKeyPairs: KeyPair[]) {
     const messageInBytes = this.getSignatureMessage();
-    this.senderSignature = cryptoUtils.signByteArrayMessage(messageInBytes, keyPair);
+    this.senderSignature = cryptoUtils.signByteArrayMessage(messageInBytes, userKeyPair);
+
+    const inputBaseTransactions = this.getInputBaseTransactions();
+    if (inputBaseTransactions.length !== inputKeyPairs.length) throw new Error(`Error at number of input key pairs`);
+
+    for (let i = 0; i < inputBaseTransactions.length; i++) {
+      inputBaseTransactions[i].signWithKeyPair(this.hash, inputKeyPairs[i]);
+    }
+  }
+
+  public getInputBaseTransactions() {
+    return this.baseTransactions.filter(baseTransaction => baseTransaction.isInput());
   }
 
   private getSignatureMessage() {

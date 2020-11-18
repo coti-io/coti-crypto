@@ -150,22 +150,22 @@ export class BaseTransaction {
   }
 
   public async sign<T extends IndexedAddress>(transactionHash: string, wallet: IndexedWallet<T>) {
-    if (this.shouldSignTransaction()) {
+    if (this.isInput()) {
       const messageInBytes = this.getSignatureMessage(transactionHash);
       this.signatureData = await wallet.signMessage(messageInBytes, this.addressHash);
     }
   }
 
   public signWithKeyPair(transactionHash: string, keyPair: KeyPair) {
-    if (this.shouldSignTransaction()) {
+    if (this.isInput()) {
       const addressHex = cryptoUtils.getAddressHexByKeyPair(keyPair);
       if (addressHex !== this.addressHash) throw new Error('Wrong keyPair for base transaction address');
       const messageInBytes = this.getSignatureMessage(transactionHash);
-      return cryptoUtils.signByteArrayMessage(messageInBytes, keyPair);
+      this.signatureData = cryptoUtils.signByteArrayMessage(messageInBytes, keyPair);
     }
   }
 
-  private shouldSignTransaction() {
+  public isInput() {
     return this.amount.isNegative();
   }
 

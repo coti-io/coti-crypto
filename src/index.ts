@@ -1,11 +1,11 @@
 import * as utils from './utils/utils';
 import * as cryptoUtils from './utils/cryptoUtils';
-import * as walletUtils from './utils/walletUtils';
-import * as nodeUtils from './utils/nodeUtils';
 import * as transactionUtils from './utils/transactionUtils';
 
-export { utils, cryptoUtils, walletUtils, nodeUtils, transactionUtils };
+export { utils, cryptoUtils, transactionUtils };
 export { BigDecimal } from './utils/utils';
+export { walletUtils } from './utils/walletUtils';
+export { nodeUtils } from './utils/nodeUtils';
 export * from './ecKeyPair';
 export * from './address';
 export * from './baseTransaction';
