@@ -40,9 +40,7 @@ export class Transaction {
   private senderSignature!: SignatureData;
   private type: TransactionType;
 
-  constructor(listOfBaseTransaction: BaseTransaction[], transactionDescription: string, userHash: string, type?: TransactionType, createHash = true) {
-    if (!transactionDescription) throw new Error('Transaction must have a description');
-
+  constructor(listOfBaseTransaction: BaseTransaction[], transactionDescription = '', userHash: string, type?: TransactionType, createHash = true) {
     this.baseTransactions = [];
 
     for (let i = 0; i < listOfBaseTransaction.length; i++) {

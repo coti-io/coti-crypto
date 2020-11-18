@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { BaseAddress } from '../address';
-import { BaseTransaction, BaseTransactionObject } from '../baseTransaction';
+import { BaseTransactionObject } from '../baseTransaction';
 import { SignatureData } from '../signature';
 import * as utils from './utils';
 import { Transaction } from '../transaction';
@@ -156,9 +156,9 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getTransactionTrustScore(
-    userHash: string,
+  export async function getTrustScoreForTransaction(
     transactionHash: string,
+    userHash: string,
     userSignature: SignatureData,
     network: Network = 'mainnet'
   ) {
@@ -174,5 +174,10 @@ export namespace nodeUtils {
       const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
       throw new Error(`Error getting trust score from trust score node: ${errorMessage}`);
     }
+  }
+
+  export function getSocketUrl(network: Network) {
+    const fullNodeWebsocketAction = '/websocket';
+    return nodeUrl[network].fullNode + fullNodeWebsocketAction;
   }
 }

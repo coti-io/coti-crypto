@@ -1,18 +1,16 @@
 import * as stomp from 'webstomp-client';
 import SockJS from 'sockjs-client';
 import { walletUtils } from './utils/walletUtils';
+import { nodeUtils } from './utils/nodeUtils';
 import { BigDecimal } from './utils/utils';
 import { BaseWallet, IndexedWallet } from './wallet';
 import { BaseAddress, IndexedAddress } from './address';
-
-const FULL_NODE_WEBSOCKET_ACTION = '/websocket';
-const FULL_NODE_URL = process.env.FULL_NODE_URL;
-const socketUrl = FULL_NODE_URL + FULL_NODE_WEBSOCKET_ACTION;
 
 export type StompClient = stomp.Client;
 
 export class WebSocket {
   private readonly wallet: BaseWallet;
+  private readonly socketUrl: string;
   private client!: StompClient;
   private reconnectCounter = 0;
   private readonly propagationSubscriptions = new Map();
@@ -21,6 +19,7 @@ export class WebSocket {
 
   constructor(wallet: BaseWallet, successCallback: () => void, reconnectFailedCallback: () => void) {
     this.wallet = wallet;
+    this.socketUrl = nodeUtils.getSocketUrl(wallet.getNetwork());
     this.openWebSocketConnection(wallet, successCallback, reconnectFailedCallback);
   }
 
@@ -36,13 +35,13 @@ export class WebSocket {
       error => {
         console.error(error);
         this.addressesUnsubscribe();
-        this.reconnect(socketUrl, successCallback, reconnectFailedCallback, addresses);
+        this.reconnect(this.socketUrl, successCallback, reconnectFailedCallback, addresses);
       }
     );
   }
 
   private setClient() {
-    const ws = new SockJS(socketUrl);
+    const ws = new SockJS(this.socketUrl);
     this.client = stomp.over(ws);
   }
 

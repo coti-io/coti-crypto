@@ -82,6 +82,7 @@ export function generateKeyPair() {
 export function generateKeyPairFromSeed(seed: string, index?: number) {
   let privateKeyInBytes = utils.hexToBytes(seed);
   if (index !== undefined) {
+    if (!Number.isInteger(index)) throw new Error(`Index should be integer`);
     const indexInBytes = new Uint8Array(toBytesInt32(index));
     privateKeyInBytes = utils.concatByteArrays([privateKeyInBytes, indexInBytes]);
   }

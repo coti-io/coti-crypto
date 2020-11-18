@@ -52,14 +52,10 @@ export namespace walletUtils {
     return await nodeUtils.getFullNodeFees(amountToTransfer, userHash, userSignature, network, feeIncluded);
   }
 
-  export async function getTransactionTrustScoreFromTsNode<T extends IndexedAddress>(
-    wallet: IndexedWallet<T>,
-    userHash: string,
-    transaction: Transaction
-  ) {
+  export async function getTrustScoreForTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>, userHash: string, transaction: Transaction) {
     const transactionHash = transaction.getHash() || transaction.createTransactionHash();
     const userSignature = await wallet.signMessage(utils.hexToBytes(transactionHash));
     const network = wallet.getNetwork();
-    return await nodeUtils.getTransactionTrustScore(userHash, transactionHash, userSignature, network);
+    return await nodeUtils.getTrustScoreForTransaction(transactionHash, userHash, userSignature, network);
   }
 }

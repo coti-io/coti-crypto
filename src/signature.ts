@@ -53,3 +53,16 @@ export class FullNodeFeeSignature extends Signature {
     return utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.amount));
   }
 }
+
+export class TransactionTrustScoreSignature extends Signature {
+  private transactionHash: string;
+
+  constructor(transactionHash: string) {
+    super();
+    this.transactionHash = transactionHash;
+  }
+
+  getBytes() {
+    return utils.hexToBytes(this.transactionHash);
+  }
+}
