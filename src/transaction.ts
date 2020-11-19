@@ -1,5 +1,5 @@
 import { keccak256 } from 'js-sha3';
-import { BaseTransaction, BaseTransactionName } from './baseTransaction';
+import { BaseTransaction, BaseTransactionName, BaseTransactionObject } from './baseTransaction';
 import * as utils from './utils/utils';
 import { BaseAddress, IndexedAddress } from './address';
 import { SignatureData } from './signature';
@@ -21,14 +21,50 @@ export enum TransactionType {
 export type TransactionStatus = 'pending' | 'confirmed';
 
 export class ReducedTransaction {
-  hash: string;
-  createTime: number;
-  transactionConsensusUpdateTime?: number;
+  readonly hash: string;
+  readonly createTime: number;
+  readonly transactionConsensusUpdateTime?: number;
 
   constructor(hash: string, createTime: number, transactionConsensusUpdateTime?: number) {
     this.hash = hash;
     this.createTime = createTime;
     this.transactionConsensusUpdateTime = transactionConsensusUpdateTime;
+  }
+}
+
+export interface TransactionData {
+  hash: string;
+  baseTransactions: BaseTransactionObject[];
+  createTime: number;
+  attachmentTime: number;
+  transactionConsensusUpdateTime?: number;
+  childrenTransactionHashes: string[];
+  leftParentHash: string;
+  rightParentHash: string;
+  transactionDescription: string;
+  trustChainConsensus: string;
+  trustChainTrustScore: number;
+  type: TransactionType;
+  senderHash: string;
+  status: TransactionStatus;
+  isValid: boolean;
+}
+
+export class TransactionData {
+  constructor(transactionData: TransactionData) {
+    Object.assign(this, transactionData);
+  }
+
+  public setStatus() {
+    this.status = this.transactionConsensusUpdateTime ? 'confirmed' : 'pending';
+  }
+
+  public secondsToMilliSeconds() {
+    this.createTime = this.createTime * 1000;
+    this.attachmentTime = this.attachmentTime * 1000;
+    if (this.transactionConsensusUpdateTime) {
+      this.transactionConsensusUpdateTime = this.transactionConsensusUpdateTime * 1000;
+    }
   }
 }
 
@@ -107,10 +143,6 @@ export class Transaction {
 
   public setTransactionConsensusUpdateTime(transactionConsensusUpdateTime: number) {
     this.transactionConsensusUpdateTime = transactionConsensusUpdateTime;
-  }
-
-  public getStatus(): TransactionStatus {
-    return this.transactionConsensusUpdateTime ? 'confirmed' : 'pending';
   }
 
   public async signTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>) {

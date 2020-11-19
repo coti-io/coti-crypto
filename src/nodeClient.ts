@@ -20,4 +20,8 @@ export class NodeClient {
   async getTransactionsHistory(addresses: string[]) {
     return await nodeUtils.getTransactionsHistory(addresses, this.network);
   }
+
+  async checkBalances(addresses: string[]) {
+    return await nodeUtils.checkBalances(addresses, this.network);
+  }
 }

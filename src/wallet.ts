@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { BaseAddress, IndexedAddress, Address } from './address';
-import { Transaction, ReducedTransaction } from './transaction';
+import { ReducedTransaction, TransactionData } from './transaction';
 import { walletUtils } from './utils/walletUtils';
 import { SignatureData } from './signature';
 import * as cryptoUtils from './utils/cryptoUtils';
@@ -12,11 +12,11 @@ type KeyPair = cryptoUtils.KeyPair;
 export interface WalletEvent {
   on(event: 'balanceChange', listener: (address: BaseAddress) => void): this;
   on(event: 'generateAddress', listener: (addressHex: string) => void): this;
-  on(event: 'receivedTransaction', listener: (transaction: Transaction) => void): this;
+  on(event: 'receivedTransaction', listener: (transaction: TransactionData) => void): this;
 
   emit(event: 'balanceChange', address: BaseAddress): boolean;
   emit(event: 'generateAddress', addressHex: string): boolean;
-  emit(event: 'receivedTransaction', transaction: Transaction): boolean;
+  emit(event: 'receivedTransaction', transaction: TransactionData): boolean;
 }
 
 export abstract class WalletEvent extends EventEmitter {
@@ -28,7 +28,7 @@ export abstract class WalletEvent extends EventEmitter {
     return this.on('generateAddress', listener);
   }
 
-  public onReceivedTransaction(listener: (transaction: Transaction) => void): this {
+  public onReceivedTransaction(listener: (transaction: TransactionData) => void): this {
     return this.on('receivedTransaction', listener);
   }
 }
@@ -139,18 +139,16 @@ export class BaseWallet extends WalletEvent {
     });
   }
 
-  public setTransaction(transaction: Transaction) {
-    const existingTransaction = this.transactionMap.get(transaction.getHash());
+  public setTransaction(transaction: TransactionData) {
+    const existingTransaction = this.transactionMap.get(transaction.hash);
 
     // If the transaction was already confirmed, no need to reprocess it
-    if (existingTransaction && existingTransaction.transactionConsensusUpdateTime === transaction.getTransactionConsensusUpdateTime()) return;
+    if (existingTransaction && existingTransaction.transactionConsensusUpdateTime === transaction.transactionConsensusUpdateTime) return;
 
-    console.log(
-      `Adding transaction with hash: ${transaction.getHash()}, transactionConsensusUpdateTime: ${transaction.getTransactionConsensusUpdateTime()}`
-    );
+    console.log(`Adding transaction with hash: ${transaction.hash}, transactionConsensusUpdateTime: ${transaction.transactionConsensusUpdateTime}`);
     this.transactionMap.set(
-      transaction.getHash(),
-      new ReducedTransaction(transaction.getHash(), transaction.getCreateTime(), transaction.getTransactionConsensusUpdateTime())
+      transaction.hash,
+      new ReducedTransaction(transaction.hash, transaction.createTime, transaction.transactionConsensusUpdateTime)
     );
 
     this.emit('receivedTransaction', transaction);

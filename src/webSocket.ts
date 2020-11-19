@@ -5,6 +5,7 @@ import { nodeUtils } from './utils/nodeUtils';
 import { BigDecimal } from './utils/utils';
 import { BaseWallet, IndexedWallet } from './wallet';
 import { BaseAddress, IndexedAddress } from './address';
+import { TransactionData } from './transaction';
 
 export type StompClient = stomp.Client;
 
@@ -131,11 +132,9 @@ export class WebSocket {
       let transactionSubscription = this.client.subscribe(`/topic/addressTransactions/${addressHex}`, async ({ body }) => {
         try {
           const data = JSON.parse(body);
-          const { transactionData } = data;
-          transactionData.createTime = new Date(transactionData.createTime).getTime();
-          if (transactionData.transactionConsensusUpdateTime) {
-            transactionData.transactionConsensusUpdateTime = new Date(transactionData.transactionConsensusUpdateTime).getTime();
-          }
+          let { transactionData } = data;
+          transactionData = new TransactionData(transactionData);
+          transactionData.setStatus();
           this.wallet.setTransaction(transactionData);
         } catch (error) {
           console.log(error);

@@ -3,7 +3,7 @@ import { BaseAddress } from '../address';
 import { BaseTransactionObject } from '../baseTransaction';
 import { SignatureData } from '../signature';
 import * as utils from './utils';
-import { Transaction } from '../transaction';
+import { Transaction, TransactionData } from '../transaction';
 
 type Network = utils.Network;
 
@@ -67,14 +67,13 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getTransaction(transactionHash: string, network: Network = 'mainnet'): Promise<Transaction> {
+  export async function getTransaction(transactionHash: string, network: Network = 'mainnet') {
     try {
       const { data } = await axios.post(`${nodeUrl[network].fullNode}/transaction`, { transactionHash });
-      const transaction = data.transactionData;
-      transaction.createTime = transaction.createTime * 1000;
-      if (transaction.transactionConsensusUpdateTime) {
-        transaction.transactionConsensusUpdateTime = transaction.transactionConsensusUpdateTime * 1000;
-      }
+      let transaction: TransactionData = data.transactionData;
+      transaction = new TransactionData(transaction);
+      transaction.setStatus();
+      transaction.secondsToMilliSeconds();
       return transaction;
     } catch (error) {
       const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
@@ -83,23 +82,21 @@ export namespace nodeUtils {
   }
 
   export async function getTransactionsHistory(addresses: string[], network: Network = 'mainnet') {
-    const transactionMap = new Map<string, Transaction>();
+    const transactionMap = new Map<string, TransactionData>();
     let response = await axios.post(`${nodeUrl[network].fullNode}/transaction/addressTransactions/batch`, { addresses });
 
     let parsedData = response.data;
     if (typeof parsedData !== 'object') {
       parsedData = JSON.parse(parsedData.substring(0, parsedData.length - 2).concat(']'));
     }
-    const transactionsData: Transaction[] = parsedData;
+    const transactionsData: TransactionData[] = parsedData;
     transactionsData.forEach(transaction => {
-      if (transactionMap.get(transaction.getHash())) return;
+      if (transactionMap.get(transaction.hash)) return;
 
-      transaction.setCreateTime(transaction.getCreateTime() * 1000);
-      const transactionConsensusUpdateTime = transaction.getTransactionConsensusUpdateTime();
-      if (transactionConsensusUpdateTime) {
-        transaction.setTransactionConsensusUpdateTime(transactionConsensusUpdateTime * 1000);
-      }
-      transactionMap.set(transaction.getHash(), transaction);
+      transaction = new TransactionData(transaction);
+      transaction.setStatus();
+      transaction.secondsToMilliSeconds();
+      transactionMap.set(transaction.hash, transaction);
     });
 
     return transactionMap;
