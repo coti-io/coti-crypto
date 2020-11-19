@@ -6,6 +6,7 @@ export { utils, cryptoUtils, transactionUtils };
 export { BigDecimal } from './utils/utils';
 export { walletUtils } from './utils/walletUtils';
 export { nodeUtils } from './utils/nodeUtils';
+export * from './nodeClient';
 export * from './ecKeyPair';
 export * from './address';
 export * from './baseTransaction';

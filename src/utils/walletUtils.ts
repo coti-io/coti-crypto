@@ -1,8 +1,7 @@
-import { FullNodeFeeSignature } from '../signature';
+import { FullNodeFeeSignature, TransactionTrustScoreSignature } from '../signature';
 import { IndexedAddress } from '../address';
 import { Transaction } from '../transaction';
 import { IndexedWallet, BaseWallet } from '../wallet';
-import * as utils from './utils';
 import { nodeUtils } from './nodeUtils';
 
 export namespace walletUtils {
@@ -54,7 +53,7 @@ export namespace walletUtils {
 
   export async function getTrustScoreForTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>, userHash: string, transaction: Transaction) {
     const transactionHash = transaction.getHash() || transaction.createTransactionHash();
-    const userSignature = await wallet.signMessage(utils.hexToBytes(transactionHash));
+    const userSignature = await new TransactionTrustScoreSignature(transactionHash).sign(wallet, true);
     const network = wallet.getNetwork();
     return await nodeUtils.getTrustScoreForTransaction(transactionHash, userHash, userSignature, network);
   }

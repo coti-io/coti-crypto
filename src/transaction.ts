@@ -18,6 +18,8 @@ export enum TransactionType {
   CHARGEBACK = 'Chargeback',
 }
 
+export type TransactionStatus = 'pending' | 'confirmed';
+
 export class ReducedTransaction {
   hash: string;
   createTime: number;
@@ -105,6 +107,10 @@ export class Transaction {
 
   public setTransactionConsensusUpdateTime(transactionConsensusUpdateTime: number) {
     this.transactionConsensusUpdateTime = transactionConsensusUpdateTime;
+  }
+
+  public getStatus(): TransactionStatus {
+    return this.transactionConsensusUpdateTime ? 'confirmed' : 'pending';
   }
 
   public async signTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>) {

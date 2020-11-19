@@ -67,6 +67,21 @@ export namespace nodeUtils {
     }
   }
 
+  export async function getTransaction(transactionHash: string, network: Network = 'mainnet'): Promise<Transaction> {
+    try {
+      const { data } = await axios.post(`${nodeUrl[network].fullNode}/transaction`, { transactionHash });
+      const transaction = data.transactionData;
+      transaction.createTime = transaction.createTime * 1000;
+      if (transaction.transactionConsensusUpdateTime) {
+        transaction.transactionConsensusUpdateTime = transaction.transactionConsensusUpdateTime * 1000;
+      }
+      return transaction;
+    } catch (error) {
+      const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
+      throw new Error(`Error getting transaction from fullnode: ${errorMessage} for hash: ${transactionHash}`);
+    }
+  }
+
   export async function getTransactionsHistory(addresses: string[], network: Network = 'mainnet') {
     const transactionMap = new Map<string, Transaction>();
     let response = await axios.post(`${nodeUrl[network].fullNode}/transaction/addressTransactions/batch`, { addresses });
