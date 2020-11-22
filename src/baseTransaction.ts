@@ -30,7 +30,7 @@ export interface TrustScoreNodeResult {
   valid: true;
 }
 
-export interface BaseTransactionObject {
+export interface BaseTransactionData {
   hash: string;
   addressHash: string;
   amount: string;
@@ -44,6 +44,12 @@ export interface BaseTransactionObject {
   reducedAmount?: string;
   receiverDescription?: string;
   signatureData: SignatureData;
+}
+
+export class BaseTransactionData {
+  constructor(baseTransactionData: BaseTransactionData) {
+    Object.assign(this, baseTransactionData);
+  }
 }
 
 export class BaseTransaction {
@@ -124,26 +130,26 @@ export class BaseTransaction {
     return utils.hexToArray(this.hash);
   }
 
-  public static getBaseTransactionFromFeeObject(feeObject: BaseTransactionObject) {
-    let baseTransaction = new BaseTransaction(feeObject.addressHash, new BigDecimal(feeObject.amount), feeObject.name);
+  public static getBaseTransactionFromFeeData(feeData: BaseTransactionData) {
+    let baseTransaction = new BaseTransaction(feeData.addressHash, new BigDecimal(feeData.amount), feeData.name);
 
-    baseTransaction.createTime = feeObject.createTime;
-    if (feeObject.originalAmount) {
-      baseTransaction.originalAmount = new BigDecimal(feeObject.originalAmount);
+    baseTransaction.createTime = feeData.createTime;
+    if (feeData.originalAmount) {
+      baseTransaction.originalAmount = new BigDecimal(feeData.originalAmount);
     }
-    baseTransaction.hash = feeObject.hash;
-    if (feeObject.reducedAmount) {
-      baseTransaction.reducedAmount = new BigDecimal(feeObject.reducedAmount);
+    baseTransaction.hash = feeData.hash;
+    if (feeData.reducedAmount) {
+      baseTransaction.reducedAmount = new BigDecimal(feeData.reducedAmount);
     }
-    if (feeObject.name === BaseTransactionName.ROLLING_RESERVE) {
-      baseTransaction.rollingReserveTrustScoreNodeResult = feeObject.rollingReserveTrustScoreNodeResult;
-    } else if (feeObject.name === BaseTransactionName.NETWORK_FEE) {
-      baseTransaction.networkFeeTrustScoreNodeResult = feeObject.networkFeeTrustScoreNodeResult;
-    } else if (feeObject.name === BaseTransactionName.RECEIVER) {
-      baseTransaction.receiverDescription = feeObject.receiverDescription;
-      baseTransaction.signatureData = feeObject.signatureData;
+    if (feeData.name === BaseTransactionName.ROLLING_RESERVE) {
+      baseTransaction.rollingReserveTrustScoreNodeResult = feeData.rollingReserveTrustScoreNodeResult;
+    } else if (feeData.name === BaseTransactionName.NETWORK_FEE) {
+      baseTransaction.networkFeeTrustScoreNodeResult = feeData.networkFeeTrustScoreNodeResult;
+    } else if (feeData.name === BaseTransactionName.RECEIVER) {
+      baseTransaction.receiverDescription = feeData.receiverDescription;
+      baseTransaction.signatureData = feeData.signatureData;
     } else {
-      baseTransaction.signatureData = feeObject.signatureData;
+      baseTransaction.signatureData = feeData.signatureData;
     }
 
     return baseTransaction;
@@ -174,7 +180,7 @@ export class BaseTransaction {
   }
 
   public toJSON() {
-    let jsonToReturn: BaseTransactionObject = {
+    let jsonToReturn: BaseTransactionData = {
       hash: this.hash,
       addressHash: this.addressHash,
       amount: this.amount.toString(),

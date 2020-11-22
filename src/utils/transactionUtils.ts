@@ -3,7 +3,7 @@ import * as cryptoUtils from './cryptoUtils';
 import { FullNodeFeeSignature, TransactionTrustScoreSignature } from '../signature';
 import { PrivateKey } from '../ecKeyPair';
 import { nodeUtils } from './nodeUtils';
-import { BaseTransaction, BaseTransactionName, BaseTransactionObject } from '../baseTransaction';
+import { BaseTransaction, BaseTransactionName, BaseTransactionData } from '../baseTransaction';
 import { Transaction } from '../transaction';
 
 const amountRegex = /^\d+(\.\d{1,8})?$/;
@@ -106,8 +106,8 @@ function addInputBaseTranction(balanceObject: any, address: string, amount: numb
 
 function addOutputBaseTransactions(
   originalAmount: BigDecimal,
-  fullNodeFee: BaseTransactionObject,
-  networkFee: BaseTransactionObject,
+  fullNodeFee: BaseTransactionData,
+  networkFee: BaseTransactionData,
   destinationAddress: string,
   baseTransactions: BaseTransaction[],
   feeIncluded: boolean
@@ -117,8 +117,8 @@ function addOutputBaseTransactions(
     : originalAmount;
 
   const RBT = new BaseTransaction(destinationAddress, amountRBT, BaseTransactionName.RECEIVER, undefined, undefined, originalAmount);
-  const fullNodeTransactionFee = BaseTransaction.getBaseTransactionFromFeeObject(fullNodeFee);
-  const transactionNetworkFee = BaseTransaction.getBaseTransactionFromFeeObject(networkFee);
+  const fullNodeTransactionFee = BaseTransaction.getBaseTransactionFromFeeData(fullNodeFee);
+  const transactionNetworkFee = BaseTransaction.getBaseTransactionFromFeeData(networkFee);
 
   baseTransactions.push(fullNodeTransactionFee);
   baseTransactions.push(transactionNetworkFee);

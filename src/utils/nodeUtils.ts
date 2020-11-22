@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { BaseAddress } from '../address';
-import { BaseTransactionObject } from '../baseTransaction';
+import { BaseTransactionData } from '../baseTransaction';
 import { SignatureData } from '../signature';
 import * as utils from './utils';
 import { Transaction, TransactionData } from '../transaction';
@@ -108,7 +108,7 @@ export namespace nodeUtils {
     userSignature: SignatureData,
     network: Network = 'mainnet',
     feeIncluded?: boolean
-  ): Promise<BaseTransactionObject> {
+  ) {
     try {
       const response = await axios.put(`${nodeUrl[network].fullNode}/fee`, {
         originalAmount: amountToTransfer,
@@ -116,26 +116,21 @@ export namespace nodeUtils {
         userSignature,
         feeIncluded,
       });
-      return response.data.fullNodeFee;
+      return new BaseTransactionData(response.data.fullNodeFee);
     } catch (error) {
       const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
       throw new Error(`Error getting full node fees: ${errorMessage} for amount: ${amountToTransfer}`);
     }
   }
 
-  export async function getNetworkFees(
-    fullNodeFeeData: BaseTransactionObject,
-    userHash: string,
-    network: Network = 'mainnet',
-    feeIncluded?: boolean
-  ): Promise<BaseTransactionObject> {
+  export async function getNetworkFees(fullNodeFeeData: BaseTransactionData, userHash: string, network: Network = 'mainnet', feeIncluded?: boolean) {
     try {
       const response = await axios.put(`${nodeUrl[network].trustScoreNode}/networkFee`, {
         fullNodeFeeData,
         userHash,
         feeIncluded,
       });
-      return response.data.networkFeeData;
+      return new BaseTransactionData(response.data.networkFeeData);
     } catch (error) {
       const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
       throw new Error(`Error getting network fee: ${errorMessage}`);
@@ -144,10 +139,10 @@ export namespace nodeUtils {
 
   export async function createMiniConsensus(
     userHash: string,
-    fullNodeFeeData: BaseTransactionObject,
-    networkFeeData: BaseTransactionObject,
+    fullNodeFeeData: BaseTransactionData,
+    networkFeeData: BaseTransactionData,
     network: Network = 'mainnet'
-  ): Promise<BaseTransactionObject> {
+  ) {
     const iteration = 3;
     let validationNetworkFeeMessage = {
       fullNodeFeeData,
@@ -160,7 +155,7 @@ export namespace nodeUtils {
         response = await axios.post(`${nodeUrl[network].trustScoreNode}/networkFee`, validationNetworkFeeMessage);
         validationNetworkFeeMessage.networkFeeData = response.data.networkFeeData;
       }
-      if (response && response.data) return response.data.networkFeeData;
+      if (response && response.data) return new BaseTransactionData(response.data.networkFeeData);
       else throw new Error(`Error in createMiniConsensus: No response`);
     } catch (error) {
       const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;

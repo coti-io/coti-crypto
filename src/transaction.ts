@@ -1,5 +1,5 @@
 import { keccak256 } from 'js-sha3';
-import { BaseTransaction, BaseTransactionName, BaseTransactionObject } from './baseTransaction';
+import { BaseTransaction, BaseTransactionName, BaseTransactionData } from './baseTransaction';
 import * as utils from './utils/utils';
 import { BaseAddress, IndexedAddress } from './address';
 import { SignatureData } from './signature';
@@ -34,7 +34,7 @@ export class ReducedTransaction {
 
 export interface TransactionData {
   hash: string;
-  baseTransactions: BaseTransactionObject[];
+  baseTransactions: BaseTransactionData[];
   createTime: number;
   attachmentTime: number;
   transactionConsensusUpdateTime?: number;
@@ -52,7 +52,9 @@ export interface TransactionData {
 
 export class TransactionData {
   constructor(transactionData: TransactionData) {
-    Object.assign(this, transactionData);
+    Object.assign(this, transactionData, {
+      baseTransactions: transactionData.baseTransactions.map(baseTransactionData => new BaseTransactionData(baseTransactionData)),
+    });
   }
 
   public setStatus() {
