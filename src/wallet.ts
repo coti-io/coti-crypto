@@ -101,7 +101,6 @@ export class BaseWallet extends WalletEvent {
   }
 
   public setAddressWithBalance(address: BaseAddress, balance: BigDecimal, preBalance: BigDecimal) {
-    console.log(`Setting balance for address: ${address.getAddressHex()}, balance: ${balance.toString()}, preBalance: ${balance.toString()}`);
     address.setBalance(balance);
     address.setPreBalance(preBalance);
     this.setAddressToMap(address);
@@ -132,11 +131,13 @@ export class BaseWallet extends WalletEvent {
   }
 
   public async getTransactionHistory() {
+    console.log('Starting to get transaction history');
     const addresses = this.getAddressHexes();
     const transactions = await walletUtils.getTransactionsHistory(addresses, this);
     transactions.forEach(t => {
       this.setTransaction(t);
     });
+    console.log(`Finished to get transaction history. Total transactions: ${transactions.size}`);
   }
 
   public setTransaction(transaction: TransactionData) {
@@ -145,7 +146,6 @@ export class BaseWallet extends WalletEvent {
     // If the transaction was already confirmed, no need to reprocess it
     if (existingTransaction && existingTransaction.transactionConsensusUpdateTime === transaction.transactionConsensusUpdateTime) return;
 
-    console.log(`Adding transaction with hash: ${transaction.hash}, transactionConsensusUpdateTime: ${transaction.transactionConsensusUpdateTime}`);
     this.transactionMap.set(
       transaction.hash,
       new ReducedTransaction(transaction.hash, transaction.createTime, transaction.transactionConsensusUpdateTime)
@@ -224,8 +224,10 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
   public abstract async signMessage(messageInBytes: Uint8Array, addressHex?: string): Promise<SignatureData>;
 
   public async autoDiscoverAddresses() {
+    console.log(`Starting to discover addresses`);
     const addresses = await walletUtils.getAddressesOfWallet(this);
     addresses.length > 0 ? await this.checkBalancesOfAddresses(addresses) : console.log('No addresses');
+    console.log(`Finished to discover addresses. Total addresses: ${addresses.length}`);
     return this.getAddressMap();
   }
 

@@ -30,6 +30,8 @@ export interface TrustScoreNodeResult {
   valid: true;
 }
 
+type BaseTransactionTime = 'createTime';
+
 export interface BaseTransactionData {
   hash: string;
   addressHash: string;
@@ -49,10 +51,15 @@ export interface BaseTransactionData {
 export class BaseTransactionData {
   constructor(baseTransactionData: BaseTransactionData) {
     Object.assign(this, baseTransactionData);
+    this.setTime('createTime', baseTransactionData.createTime);
   }
 
-  public dateToSeconds() {
-    this.createTime = utils.utcStringToSeconds(this.createTime.toString());
+  public setTime(timeField: BaseTransactionTime, time: number | string) {
+    if (typeof time === 'string') {
+      this[timeField] = utils.utcStringToSeconds(time);
+    } else {
+      this[timeField] = time;
+    }
   }
 }
 

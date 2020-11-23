@@ -30,7 +30,7 @@ export class WebSocket {
     this.client.connect(
       {},
       () => {
-        console.info('Web socket client connected:');
+        console.info('Web socket client connected.');
         this.onConnected(addresses, successCallback);
       },
       error => {
@@ -43,7 +43,7 @@ export class WebSocket {
 
   private setClient() {
     const ws = new SockJS(this.socketUrl);
-    this.client = stomp.over(ws);
+    this.client = stomp.over(ws, { debug: false });
   }
 
   private closeSocketConnection() {
@@ -64,7 +64,7 @@ export class WebSocket {
     this.client.connect(
       {},
       async () => {
-        console.info('Web socket client reconnected:');
+        console.info('Web socket client reconnected.');
         connected = true;
         await this.onConnected(addresses, successCallback);
       },
@@ -135,7 +135,6 @@ export class WebSocket {
           let { transactionData } = data;
           transactionData = new TransactionData(transactionData);
           transactionData.setStatus();
-          transactionData.dateToSeconds();
           this.wallet.setTransaction(transactionData);
         } catch (error) {
           console.log(error);

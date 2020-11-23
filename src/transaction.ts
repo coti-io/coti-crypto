@@ -32,6 +32,8 @@ export class ReducedTransaction {
   }
 }
 
+type TransactionTime = 'createTime' | 'attachmentTime' | 'transactionConsensusUpdateTime';
+
 export interface TransactionData {
   hash: string;
   baseTransactions: BaseTransactionData[];
@@ -55,19 +57,21 @@ export class TransactionData {
     Object.assign(this, transactionData, {
       baseTransactions: transactionData.baseTransactions.map(baseTransactionData => new BaseTransactionData(baseTransactionData)),
     });
+    this.setTime('createTime', transactionData.createTime);
+    this.setTime('attachmentTime', transactionData.attachmentTime);
+    this.setTime('transactionConsensusUpdateTime', transactionData.transactionConsensusUpdateTime);
   }
 
   public setStatus() {
     this.status = this.transactionConsensusUpdateTime ? 'confirmed' : 'pending';
   }
 
-  public dateToSeconds() {
-    this.createTime = utils.utcStringToSeconds(this.createTime.toString());
-    this.attachmentTime = utils.utcStringToSeconds(this.attachmentTime.toString());
-    if (this.transactionConsensusUpdateTime) {
-      this.transactionConsensusUpdateTime = utils.utcStringToSeconds(this.transactionConsensusUpdateTime.toString());
+  public setTime(timeField: TransactionTime, time?: number | string) {
+    if (typeof time === 'string') {
+      this[timeField] = utils.utcStringToSeconds(time);
+    } else if(typeof time === 'number'){
+      this[timeField] = time;
     }
-    this.baseTransactions.forEach(baseTransaction => baseTransaction.dateToSeconds());
   }
 }
 
