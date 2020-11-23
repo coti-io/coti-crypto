@@ -73,7 +73,6 @@ export namespace nodeUtils {
       let transaction: TransactionData = data.transactionData;
       transaction = new TransactionData(transaction);
       transaction.setStatus();
-      transaction.secondsToMilliSeconds();
       return transaction;
     } catch (error) {
       const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
@@ -95,7 +94,6 @@ export namespace nodeUtils {
 
       transaction = new TransactionData(transaction);
       transaction.setStatus();
-      transaction.secondsToMilliSeconds();
       transactionMap.set(transaction.hash, transaction);
     });
 

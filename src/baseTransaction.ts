@@ -50,6 +50,10 @@ export class BaseTransactionData {
   constructor(baseTransactionData: BaseTransactionData) {
     Object.assign(this, baseTransactionData);
   }
+
+  public dateToSeconds() {
+    this.createTime = utils.utcStringToSeconds(this.createTime.toString());
+  }
 }
 
 export class BaseTransaction {
@@ -77,7 +81,7 @@ export class BaseTransaction {
   ) {
     this.addressHash = addressHash;
     this.amount = amount.stripTrailingZeros();
-    this.createTime = utils.getUtcInstant();
+    this.createTime = utils.utcNowToSeconds();
     this.name = name;
     if (name === BaseTransactionName.RECEIVER && originalAmount) {
       this.originalAmount = originalAmount.stripTrailingZeros();
@@ -180,7 +184,7 @@ export class BaseTransaction {
   }
 
   public toJSON() {
-    let jsonToReturn: BaseTransactionData = {
+    let jsonToReturn = {
       hash: this.hash,
       addressHash: this.addressHash,
       amount: this.amount.toString(),

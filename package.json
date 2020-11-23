@@ -25,7 +25,7 @@
     "js-sha256": "^0.9.0",
     "js-sha3": "^0.7.0",
     "mocha": "^8.2.1",
-    "moment": "^2.24.0",
+    "moment": "^2.29.1",
     "node-cleanup": "^2.1.2",
     "sockjs-client": "^1.3.0",
     "stompjs": "^2.3.3",

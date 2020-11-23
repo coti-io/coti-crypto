@@ -135,6 +135,7 @@ export class WebSocket {
           let { transactionData } = data;
           transactionData = new TransactionData(transactionData);
           transactionData.setStatus();
+          transactionData.dateToSeconds();
           this.wallet.setTransaction(transactionData);
         } catch (error) {
           console.log(error);

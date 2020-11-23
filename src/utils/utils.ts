@@ -35,8 +35,12 @@ export class BigDecimal extends Decimal {
   }
 }
 
-export function getUtcInstant() {
+export function utcNowToSeconds() {
   return moment.utc().valueOf() / 1000;
+}
+
+export function utcStringToSeconds(utcString: string) {
+  return moment.utc(utcString).valueOf() / 1000;
 }
 
 export function getBytesFromString(str: string) {

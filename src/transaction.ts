@@ -61,12 +61,13 @@ export class TransactionData {
     this.status = this.transactionConsensusUpdateTime ? 'confirmed' : 'pending';
   }
 
-  public secondsToMilliSeconds() {
-    this.createTime = this.createTime * 1000;
-    this.attachmentTime = this.attachmentTime * 1000;
+  public dateToSeconds() {
+    this.createTime = utils.utcStringToSeconds(this.createTime.toString());
+    this.attachmentTime = utils.utcStringToSeconds(this.attachmentTime.toString());
     if (this.transactionConsensusUpdateTime) {
-      this.transactionConsensusUpdateTime = this.transactionConsensusUpdateTime * 1000;
+      this.transactionConsensusUpdateTime = utils.utcStringToSeconds(this.transactionConsensusUpdateTime.toString());
     }
+    this.baseTransactions.forEach(baseTransaction => baseTransaction.dateToSeconds());
   }
 }
 
@@ -94,7 +95,7 @@ export class Transaction {
       this.baseTransactions.push(listOfBaseTransaction[i]);
     }
 
-    this.createTime = utils.getUtcInstant(); //it gets the utc time in milliseconds
+    this.createTime = utils.utcNowToSeconds();
     this.transactionDescription = transactionDescription;
     this.trustScoreResults = [];
     this.senderHash = userHash;
