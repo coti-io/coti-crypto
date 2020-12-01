@@ -1,7 +1,7 @@
 import * as moment from 'moment';
 import Decimal from 'decimal.js';
 
-export type Network = 'mainnet' | 'testnet' | 'testnetStaging';
+export type Network = 'mainnet' | 'testnet' | 'testnet_staging';
 
 export type BigDecimalValue = Decimal.Value;
 

@@ -69,7 +69,7 @@ export class TransactionData {
   public setTime(timeField: TransactionTime, time?: number | string) {
     if (typeof time === 'string') {
       this[timeField] = utils.utcStringToSeconds(time);
-    } else if(typeof time === 'number'){
+    } else if (typeof time === 'number') {
       this[timeField] = time;
     }
   }
