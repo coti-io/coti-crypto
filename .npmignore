@@ -5,4 +5,5 @@ src
 .vscode
 *.iml
 .eslintrc
+.eslintignore
 .prettierrc
