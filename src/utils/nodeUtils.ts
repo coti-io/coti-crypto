@@ -198,7 +198,7 @@ export namespace nodeUtils {
 
   export async function setTrustScore(apiKey: string, userHash: string, network: Network = 'mainnet') {
     if (!apiKey) throw new NodeError('Api key is missing');
-    const headers = { 'Exchange-api-key': apiKey };
+    const headers = { 'exchange-api-key': apiKey };
     const setTrustScoreMessage = {
       userHash,
       network,
