@@ -24,9 +24,10 @@ const nodeUrl = {
 export namespace nodeUtils {
   export async function getUserTrustScore(userHash: string, network: Network = 'mainnet') {
     try {
-      return await axios.post(`${nodeUrl[network].trustScoreNode}/usertrustscore`, {
+      const { data } = await axios.post(`${nodeUrl[network].trustScoreNode}/usertrustscore`, {
         userHash,
       });
+      return data;
     } catch (error) {
       const errorMessage = getErrorMessage(error);
       throw new NodeError(errorMessage, { debugMessage: `Error getting user trust score` });
