@@ -19,11 +19,6 @@ const nodeUrl = {
     trustScoreNode: 'https://testnet-trustscore1.coti.io',
     api: 'https://cca.coti.io',
   },
-  testnet_staging: {
-    fullNode: 'https://testnet-staging-fullnode1.coti.io',
-    trustScoreNode: 'https://testnet-staging-trustscore1.coti.io',
-    api: 'https://cca-qa.coti.io',
-  },
 };
 
 export namespace nodeUtils {
