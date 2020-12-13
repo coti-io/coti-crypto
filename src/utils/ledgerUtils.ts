@@ -11,14 +11,14 @@ export async function connect() {
   return new HWSDK(transport);
 }
 
-export async function getPublicKey(index: number, interactive: boolean) {
+export async function getPublicKey(index: number, interactive?: boolean) {
   const hw = await connect();
 
   const res = await hw.getPublicKey(index, interactive);
   return res.publicKey;
 }
 
-export async function getUserPublicKey(interactive: boolean) {
+export async function getUserPublicKey(interactive?: boolean) {
   const hw = await connect();
 
   const res = await hw.getUserPublicKey(interactive);

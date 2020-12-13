@@ -1,11 +1,13 @@
 import { EventEmitter } from 'events';
-import { BaseAddress, IndexedAddress, Address } from './address';
+import { BaseAddress, IndexedAddress, Address, LedgerAddress } from './address';
 import { ReducedTransaction, TransactionData } from './transaction';
 import { walletUtils } from './utils/walletUtils';
 import { SignatureData } from './signature';
 import * as cryptoUtils from './utils/cryptoUtils';
 import { BigDecimal, Network } from './utils/utils';
+import * as ledgerUtils from './utils/ledgerUtils';
 import BN from 'bn.js';
+import { utils } from 'elliptic';
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -234,7 +236,7 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
   public abstract async generateAddressByIndex(index: number): Promise<T>;
 
   public async getUserTrustScore() {
-    let { data } = await walletUtils.getUserTrustScore(this);
+    let data = await walletUtils.getUserTrustScore(this);
     if (!data) throw new Error(`Error getting user trust score, received no data`);
     if (!data.trustScore) throw new Error('Error getting user trust score, unexpected response:' + data);
     this.trustScore = data.trustScore;
@@ -311,5 +313,47 @@ export class Wallet extends IndexedWallet<Address> {
       keyPair = (<Address>address).getAddressKeyPair();
     } else keyPair = this.getKeyPair();
     return cryptoUtils.signByteArrayMessage(messageInBytes, keyPair);
+  }
+}
+
+export class LedgerWallet extends IndexedWallet<LedgerAddress> {
+  private interactive?: boolean;
+
+  constructor(params: { network?: Network; interactive?: boolean }) {
+    const { network, interactive } = params;
+    super(network);
+    this.interactive = interactive;
+  }
+
+  public async setPublicHash() {
+    this.publicHash = await ledgerUtils.getUserPublicKey(this.interactive);
+  }
+
+  public checkAddressType(address: BaseAddress) {
+    this.addressTypeGuard(address, LedgerAddress);
+  }
+
+  public async generateAddressByIndex(index: number) {
+    const ledgerPublicKey = await ledgerUtils.getPublicKey(index, this.interactive);
+    return new LedgerAddress(index, ledgerPublicKey);
+  }
+
+  public getAddressFromIndexedAddress(indexedAddress: IndexedAddress) {
+    const address = new LedgerAddress(indexedAddress.getIndex(), undefined, indexedAddress.getAddressHex());
+    address.setBalance(indexedAddress.getBalance());
+    address.setPreBalance(indexedAddress.getPreBalance());
+    return address;
+  }
+
+  public async signMessage(messageInBytes: Uint8Array, addressHex?: string) {
+    const messageInHex = utils.byteArrayToHexString(messageInBytes);
+    if (addressHex) {
+      const address = this.getAddressByAddressHex(addressHex);
+      if (!address) throw new Error(`Wallet doesn't contain the address`);
+      const index = (<LedgerAddress>address).getIndex();
+      return await ledgerUtils.signMessage(index, messageInHex);
+    } else {
+      return await ledgerUtils.signUserMessage(messageInHex);
+    }
   }
 }

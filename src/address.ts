@@ -67,3 +67,15 @@ export class Address extends IndexedAddress {
     return this.keyPair;
   }
 }
+
+export class LedgerAddress extends IndexedAddress {
+  constructor(index: number, ledgerPublicKey?: string, addressHex?: string) {
+    if (ledgerPublicKey) {
+      const keyPair = cryptoUtils.getKeyPairFromPublic(ledgerPublicKey);
+      const ledgerAddressHex = cryptoUtils.getAddressHexByKeyPair(keyPair);
+      if (addressHex && ledgerAddressHex !== addressHex) throw new Error(`Wrong addressHex inserted`);
+      addressHex = ledgerAddressHex;
+    } else if (!addressHex) throw new Error(`Address hex should be inserted`);
+    super(index, addressHex);
+  }
+}
