@@ -8,6 +8,7 @@ import { BigDecimal, Network } from './utils/utils';
 import * as ledgerUtils from './utils/ledgerUtils';
 import BN from 'bn.js';
 import { utils } from 'elliptic';
+import Transport from '@ledgerhq/hw-transport';
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -317,16 +318,20 @@ export class Wallet extends IndexedWallet<Address> {
 }
 
 export class LedgerWallet extends IndexedWallet<LedgerAddress> {
+  private transport?: Transport;
   private interactive?: boolean;
 
-  constructor(params: { network?: Network; interactive?: boolean }) {
-    const { network, interactive } = params;
+  constructor(params: { network?: Network; interactive?: boolean; transport?: Transport }) {
+    const { network, interactive, transport } = params;
     super(network);
+    this.transport = transport;
     this.interactive = interactive;
   }
 
   public async setPublicHash() {
-    this.publicHash = await ledgerUtils.getUserPublicKey(this.interactive);
+    const ledgerPublicKey = await ledgerUtils.getUserPublicKey(this.interactive, this.transport);
+    const keyPair = cryptoUtils.getKeyPairFromPublic(ledgerPublicKey);
+    this.publicHash = cryptoUtils.getPublicKeyByKeyPair(keyPair);
   }
 
   public checkAddressType(address: BaseAddress) {
@@ -334,7 +339,7 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
   }
 
   public async generateAddressByIndex(index: number) {
-    const ledgerPublicKey = await ledgerUtils.getPublicKey(index, this.interactive);
+    const ledgerPublicKey = await ledgerUtils.getPublicKey(index, this.interactive, this.transport);
     return new LedgerAddress(index, ledgerPublicKey);
   }
 
@@ -351,9 +356,9 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
       const address = this.getAddressByAddressHex(addressHex);
       if (!address) throw new Error(`Wallet doesn't contain the address`);
       const index = (<LedgerAddress>address).getIndex();
-      return await ledgerUtils.signMessage(index, messageInHex);
+      return await ledgerUtils.signMessage(index, messageInHex, this.transport);
     } else {
-      return await ledgerUtils.signUserMessage(messageInHex);
+      return await ledgerUtils.signUserMessage(messageInHex, this.transport);
     }
   }
 }
