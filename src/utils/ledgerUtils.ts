@@ -5,6 +5,11 @@ import { SignatureData } from '../signature';
 
 const defaultTimeout = 60000;
 
+export type LedgerIndexedPublicKey = {
+  index: number;
+  publicKey: string;
+};
+
 export type LedgerTransportType = 'node' | 'web';
 
 const ledgerTransport = {
@@ -24,6 +29,16 @@ export async function getPublicKey(index: number, interactive?: boolean, transpo
 
   const res = await hw.getPublicKey(index, interactive);
   return res.publicKey;
+}
+
+export async function getPublicKeys(indexes: number[], interactive?: boolean, transportType?: LedgerTransportType) {
+  const hw = await connect(transportType);
+  const publicKeys: LedgerIndexedPublicKey[] = [];
+  for (const index of indexes) {
+    const res = await hw.getPublicKey(index, interactive);
+    publicKeys.push({ index, publicKey: res.publicKey });
+  }
+  return publicKeys;
 }
 
 export async function getUserPublicKey(interactive?: boolean, transportType?: LedgerTransportType) {

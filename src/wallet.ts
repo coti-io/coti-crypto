@@ -237,6 +237,8 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
 
   public abstract async generateAddressByIndex(index: number): Promise<T>;
 
+  public abstract async generateAddressesByIndex(indexes: number[]): Promise<T[]>;
+
   public async getUserTrustScore() {
     let data = await walletUtils.getUserTrustScore(this);
     if (!data) throw new Error(`Error getting user trust score, received no data`);
@@ -294,6 +296,15 @@ export class Wallet extends IndexedWallet<Address> {
     return new Address(keyPair, index);
   }
 
+  public async generateAddressesByIndex(indexes: number[]) {
+    const addresses: Address[] = [];
+    for (const index of indexes) {
+      const keyPair = this.generateKeyPairByIndex(index);
+      addresses.push(new Address(keyPair, index));
+    }
+    return addresses;
+  }
+
   public getAddressFromIndexedAddress(indexedAddress: IndexedAddress) {
     const keyPair = this.generateKeyPairByIndex(indexedAddress.getIndex());
     const address = new Address(keyPair, indexedAddress.getIndex());
@@ -341,6 +352,15 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
   public async generateAddressByIndex(index: number) {
     const ledgerPublicKey = await ledgerUtils.getPublicKey(index, this.interactive, this.transportType);
     return new LedgerAddress(index, ledgerPublicKey);
+  }
+
+  public async generateAddressesByIndex(indexes: number[]) {
+    const ledgerIndexedPublicKeys = await ledgerUtils.getPublicKeys(indexes, this.interactive, this.transportType);
+    const ledgerAddresses: LedgerAddress[] = [];
+    for (const ledgerIndexedPublicKey of ledgerIndexedPublicKeys) {
+      ledgerAddresses.push(new LedgerAddress(ledgerIndexedPublicKey.index, ledgerIndexedPublicKey.publicKey));
+    }
+    return ledgerAddresses;
   }
 
   public getAddressFromIndexedAddress(indexedAddress: IndexedAddress) {

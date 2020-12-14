@@ -20,9 +20,11 @@ export namespace walletUtils {
     let notExistsAddressFound = false;
     const generatedAddressMap = new Map<string, T>();
 
+    console.log(`Starting to check existed addresses in Coti network`);
     while (!notExistsAddressFound) {
-      for (let i = nextChunk; i < nextChunk + 20; i++) {
-        const address = await wallet.generateAddressByIndex(i);
+      const indexes = Array.from({ length: 20 }, (v, k) => k + nextChunk);
+      const addresses = await wallet.generateAddressesByIndex(indexes);
+      for (const address of addresses) {
         generatedAddressMap.set(address.getAddressHex(), address);
         addressesToCheck.push(address.getAddressHex());
       }
@@ -37,6 +39,7 @@ export namespace walletUtils {
       addressesToCheck = [];
       nextChunk = nextChunk + 20;
     }
+    console.log(`Finished to check existed addresses in Coti network`);
     return addressesThatExists;
   }
 
