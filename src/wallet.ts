@@ -8,9 +8,9 @@ import { BigDecimal, Network } from './utils/utils';
 import * as ledgerUtils from './utils/ledgerUtils';
 import BN from 'bn.js';
 import { utils } from 'elliptic';
-import Transport from '@ledgerhq/hw-transport';
 
 type KeyPair = cryptoUtils.KeyPair;
+type LedgerTransportType = ledgerUtils.LedgerTransportType;
 
 export interface WalletEvent {
   on(event: 'balanceChange', listener: (address: BaseAddress) => void): this;
@@ -256,7 +256,6 @@ export class Wallet extends IndexedWallet<Address> {
       if (!this.checkSeedFormat(seed)) throw new Error('Seed is not in correct format');
       this.seed = seed;
     } else if (userSecret && serverKey) this.generateSeed(userSecret, serverKey);
-    // should call to server before to get a serverkey ...
     else throw new Error('Invalid parameters for Wallet');
 
     this.generateAndSetKeyPair();
@@ -318,18 +317,18 @@ export class Wallet extends IndexedWallet<Address> {
 }
 
 export class LedgerWallet extends IndexedWallet<LedgerAddress> {
-  private transport?: Transport;
+  private transportType?: LedgerTransportType;
   private interactive?: boolean;
 
-  constructor(params: { network?: Network; interactive?: boolean; transport?: Transport }) {
-    const { network, interactive, transport } = params;
+  constructor(params: { network?: Network; interactive?: boolean; transportType?: LedgerTransportType }) {
+    const { network, interactive, transportType } = params;
     super(network);
-    this.transport = transport;
+    this.transportType = transportType;
     this.interactive = interactive;
   }
 
   public async setPublicHash() {
-    const ledgerPublicKey = await ledgerUtils.getUserPublicKey(this.interactive, this.transport);
+    const ledgerPublicKey = await ledgerUtils.getUserPublicKey(this.interactive, this.transportType);
     const keyPair = cryptoUtils.getKeyPairFromPublic(ledgerPublicKey);
     this.publicHash = cryptoUtils.getPublicKeyByKeyPair(keyPair);
   }
@@ -339,7 +338,7 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
   }
 
   public async generateAddressByIndex(index: number) {
-    const ledgerPublicKey = await ledgerUtils.getPublicKey(index, this.interactive, this.transport);
+    const ledgerPublicKey = await ledgerUtils.getPublicKey(index, this.interactive, this.transportType);
     return new LedgerAddress(index, ledgerPublicKey);
   }
 
@@ -356,9 +355,9 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
       const address = this.getAddressByAddressHex(addressHex);
       if (!address) throw new Error(`Wallet doesn't contain the address`);
       const index = (<LedgerAddress>address).getIndex();
-      return await ledgerUtils.signMessage(index, messageInHex, this.transport);
+      return await ledgerUtils.signMessage(index, messageInHex, this.transportType);
     } else {
-      return await ledgerUtils.signUserMessage(messageInHex, this.transport);
+      return await ledgerUtils.signUserMessage(messageInHex, this.transportType);
     }
   }
 }
