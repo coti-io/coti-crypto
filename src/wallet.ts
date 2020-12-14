@@ -214,9 +214,10 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     return address ? <T>address : await this.generateAndSetAddressByIndex(index);
   }
 
-  public async generateAndSetAddressByIndex(index: number) {
+  public async generateAndSetAddressByIndex(index: number, sendToNode = true) {
     const address = await this.generateAddressByIndex(index);
     this.setAddressToMap(address);
+    if (sendToNode) await walletUtils.sendAddressToNode(address, this);
     return address;
   }
 

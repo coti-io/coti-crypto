@@ -5,8 +5,8 @@ type KeyPair = cryptoUtils.KeyPair;
 
 export class BaseAddress {
   protected addressHex: string;
-  protected preBalance!: BigDecimal;
-  protected balance!: BigDecimal;
+  protected preBalance: BigDecimal = new BigDecimal('0');
+  protected balance: BigDecimal = new BigDecimal('0');
 
   constructor(addressHex: string) {
     this.checkAddress(addressHex);

@@ -1,5 +1,5 @@
 import { FullNodeFeeSignature, TransactionTrustScoreSignature } from '../signature';
-import { IndexedAddress } from '../address';
+import { BaseAddress, IndexedAddress } from '../address';
 import { Transaction } from '../transaction';
 import { IndexedWallet, BaseWallet } from '../wallet';
 import { nodeUtils } from './nodeUtils';
@@ -7,6 +7,10 @@ import { nodeUtils } from './nodeUtils';
 export namespace walletUtils {
   export async function getUserTrustScore<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
     return await nodeUtils.getUserTrustScore(wallet.getPublicHash(), wallet.getNetwork());
+  }
+
+  export async function sendAddressToNode(address: BaseAddress, wallet: BaseWallet) {
+    return await nodeUtils.sendAddressToNode(address, wallet.getNetwork());
   }
 
   export async function getAddressesOfWallet<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
