@@ -90,7 +90,8 @@ export class WebSocket {
       this.connectToAddress(address);
     });
     if (this.wallet instanceof IndexedWallet) {
-      for (let i = addresses.length; i < addresses.length + 10; i++) {
+      const maxAddress = this.wallet.getMaxAddress();
+      for (let i = addresses.length; i < addresses.length + 10 && (!maxAddress || i < maxAddress); i++) {
         const address = await this.wallet.generateAddressByIndex(i);
         this.addressPropagationSubscriber(address);
       }

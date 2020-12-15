@@ -161,6 +161,7 @@ export class BaseWallet extends WalletEvent {
 type Constructor<T> = { new (...args: any[]): T };
 
 export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet {
+  protected maxAddress?: number;
   protected readonly indexToAddressHexMap: Map<number, string>;
   protected publicHash!: string;
   protected trustScore!: number;
@@ -176,6 +177,10 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
 
   public abstract async setPublicHash(): Promise<void>;
 
+  public getMaxAddress() {
+    return this.maxAddress;
+  }
+
   private checkAddressIndexed(address: BaseAddress) {
     if (!(address instanceof IndexedAddress)) throw new Error('Address should be indexed');
   }
@@ -188,6 +193,7 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
 
   protected setAddressToMap(address: BaseAddress) {
     this.checkAddressType(address);
+    if (this.maxAddress && this.addressMap.size >= this.maxAddress) throw new Error(`Address map size can not exceed ${this.maxAddress}`);
     super.setAddressToMap(address);
     const index = (<T>address).getIndex();
     this.indexToAddressHexMap.set(index, address.getAddressHex());
@@ -326,12 +332,18 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
     super(network);
     this.transportType = transportType;
     this.interactive = interactive;
+    this.maxAddress = 20;
   }
 
   public async setPublicHash() {
     const ledgerPublicKey = await ledgerUtils.getUserPublicKey(this.interactive, this.transportType);
     const keyPair = cryptoUtils.getKeyPairFromPublic(ledgerPublicKey);
     this.publicHash = cryptoUtils.getPublicKeyByKeyPair(keyPair);
+  }
+
+  public async loadAddresses(addresses: BaseAddress[]) {
+    if (addresses && addresses.length > this.maxAddress!) throw new Error(`Number of addresses should be less than ${this.maxAddress}`);
+    await super.loadAddresses(addresses);
   }
 
   public checkAddressType(address: BaseAddress) {
