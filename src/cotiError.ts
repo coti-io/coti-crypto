@@ -2,6 +2,7 @@ export interface CotiErrorOptions {
   cause?: Error;
   debugMessage?: string;
 }
+
 export class CotiError extends Error {
   cause?: Error;
   debugMessage?: string;
@@ -19,6 +20,12 @@ export class CotiError extends Error {
 }
 
 export class NodeError extends CotiError {
+  constructor(message: string, options?: CotiErrorOptions) {
+    super(message, options);
+  }
+}
+
+export class LedgerError extends CotiError {
   constructor(message: string, options?: CotiErrorOptions) {
     super(message, options);
   }
