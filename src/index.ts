@@ -8,6 +8,7 @@ export { walletUtils } from './utils/walletUtils';
 export { nodeUtils } from './utils/nodeUtils';
 export * from './nodeClient';
 export * from './ecKeyPair';
+export * from './ledgerDevice';
 export * from './address';
 export * from './baseTransaction';
 export * from './transaction';

@@ -3,6 +3,7 @@ import TransportNodeHid from '@ledgerhq/hw-transport-node-hid';
 import { HWSDK } from '@coti-io/ledger-sdk';
 import { SignatureData } from '../signature';
 import { LedgerError } from '../cotiError';
+import { Descriptor, DescriptorEvent, Observer } from '@ledgerhq/hw-transport';
 
 const listenTimeout = 3000;
 const exchangeTimeout = 60000;
@@ -13,6 +14,10 @@ const ledgerTransport = {
   node: TransportNodeHid,
   web: TransportWebUSB,
 };
+
+export function listen(observer: Observer<DescriptorEvent<Descriptor>>, transportType: LedgerTransportType = 'web') {
+  ledgerTransport[transportType].listen(observer);
+}
 
 export async function connect(transportType: LedgerTransportType = 'web') {
   const transport = await ledgerTransport[transportType].create(undefined, listenTimeout);
