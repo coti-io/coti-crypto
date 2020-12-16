@@ -18,27 +18,34 @@ export class WebSocket {
   private readonly balanceSubscriptions = new Map();
   private readonly transactionsSubscriptions = new Map();
 
-  constructor(wallet: BaseWallet, successCallback: () => void, reconnectFailedCallback: () => void) {
+  constructor(wallet: BaseWallet) {
     this.wallet = wallet;
     this.socketUrl = nodeUtils.getSocketUrl(wallet.getNetwork());
-    this.openWebSocketConnection(wallet, successCallback, reconnectFailedCallback);
   }
 
-  public openWebSocketConnection(wallet: BaseWallet, successCallback: () => void, reconnectFailedCallback: () => void) {
-    const addresses = wallet.getAddressHexes();
+  public connect(successCallback?: () => Promise<void>, reconnectFailedCallback?: () => Promise<void>) {
+    const addressesInHex = this.wallet.getAddressHexes();
+    console.log(`Connecting to web socket with url ${this.socketUrl}`);
     this.setClient();
-    this.client.connect(
-      {},
-      () => {
-        console.info('Web socket client connected.');
-        this.onConnected(addresses, successCallback);
-      },
-      error => {
-        console.error(error);
-        this.addressesUnsubscribe();
-        this.reconnect(this.socketUrl, successCallback, reconnectFailedCallback, addresses);
-      }
-    );
+    return new Promise((resolve, reject) => {
+      let timeout = setTimeout(() => {
+        clearTimeout(timeout);
+        reject(`Web socket connection timeout`);
+      }, 120000);
+      this.client.connect(
+        {},
+        async () => {
+          console.log('Web socket client connected.');
+          await this.onConnected(addressesInHex, successCallback);
+          resolve();
+        },
+        error => {
+          console.error('Web socket connection error:', error);
+          this.addressesUnsubscribe();
+          this.reconnect(this.socketUrl, addressesInHex, successCallback, reconnectFailedCallback);
+        }
+      );
+    });
   }
 
   private setClient() {
@@ -57,14 +64,14 @@ export class WebSocket {
     this.transactionsSubscriptions.forEach(async transactionsSubscription => await transactionsSubscription.unsubscribe());
   }
 
-  private reconnect(socketUrl: string, successCallback: () => void, reconnectFailedCallback: () => void, addresses: string[]) {
+  private reconnect(socketUrl: string, addresses: string[], successCallback?: () => Promise<void>, reconnectFailedCallback?: () => Promise<void>) {
     let connected = false;
-
+    console.log(`Reconnecting to web socket with url ${this.socketUrl}`);
     this.setClient();
     this.client.connect(
       {},
       async () => {
-        console.info('Web socket client reconnected.');
+        console.log('Web socket client reconnected.');
         connected = true;
         await this.onConnected(addresses, successCallback);
       },
@@ -72,16 +79,16 @@ export class WebSocket {
         if (!connected && this.reconnectCounter <= 6) {
           console.log('Web socket trying to reconnect. Counter: ', this.reconnectCounter);
           this.reconnectCounter++;
-          this.reconnect(socketUrl, successCallback, reconnectFailedCallback, addresses);
+          this.reconnect(socketUrl, addresses, successCallback, reconnectFailedCallback);
         } else {
           console.log('Web socket client reconnect unsuccessful');
-          reconnectFailedCallback();
+          if (reconnectFailedCallback) reconnectFailedCallback();
         }
       }
     );
   }
 
-  private async onConnected(addresses: string[], callback: () => void) {
+  private async onConnected(addresses: string[], callback?: () => Promise<void>) {
     this.reconnectCounter = 0;
     console.log('Connected and monitoring addresses: ', addresses);
     if (!addresses) addresses = [];
@@ -103,7 +110,7 @@ export class WebSocket {
     console.log('BalanceSubscriptions: ', [...this.balanceSubscriptions.keys()]);
     console.log('TransactionsSubscriptions: ', [...this.transactionsSubscriptions.keys()]);
 
-    if (callback) return callback();
+    if (callback) return await callback();
   }
 
   private connectToAddress(addressHex: string) {
@@ -121,8 +128,8 @@ export class WebSocket {
             const { balance, preBalance } = data;
             this.setAddressWithBalance(balance === null ? 0 : balance, preBalance === null ? 0 : preBalance, address);
           }
-        } catch (error) {
-          console.log(error);
+        } catch (e) {
+          console.error(`Address balance subscription callback error for address ${addressHex}: `, e);
         }
       });
 
@@ -137,8 +144,8 @@ export class WebSocket {
           transactionData = new TransactionData(transactionData);
           transactionData.setStatus();
           this.wallet.setTransaction(transactionData);
-        } catch (error) {
-          console.log(error);
+        } catch (e) {
+          console.error(`Address transaction subscription callback error for address ${addressHex}: `, e);
         }
       });
 
@@ -154,7 +161,7 @@ export class WebSocket {
       console.log('Attempting to resubscribe in address propagation, skip resubscription of:', addressHex);
     }
 
-    let addressPropagationSubscription = this.client.subscribe(`/topic/address/${addressHex}`, ({ body }) => {
+    let addressPropagationSubscription = this.client.subscribe(`/topic/address/${addressHex}`, async ({ body }) => {
       try {
         const data = JSON.parse(body);
         console.log('Received an address through address propagation:', data.addressHash, ' index:', address.getIndex());
@@ -165,12 +172,10 @@ export class WebSocket {
           subscription.unsubscribe();
           this.propagationSubscriptions.delete(address);
           this.wallet.emit('generateAddress', addressHex);
-          this.checkBalanceAndSubscribeNewAddress(address);
+          await this.checkBalanceAndSubscribeNewAddress(address);
         }
-      } catch (err) {
-        if (err) {
-          console.log('Error: ', err);
-        }
+      } catch (e) {
+        console.error(`Propagation subscription callback error for address ${addressHex}: `, e);
       }
     });
     this.propagationSubscriptions.set(address, addressPropagationSubscription);
