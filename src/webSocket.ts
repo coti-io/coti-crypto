@@ -14,6 +14,10 @@ export class WebSocket {
   private readonly socketUrl: string;
   private client!: StompClient;
   private reconnectCounter = 0;
+  private initialConnection = false;
+  private connected = true;
+  private successCallback?: () => Promise<void>;
+  private reconnectFailedCallback?: () => Promise<void>;
   private readonly propagationSubscriptions = new Map();
   private readonly balanceSubscriptions = new Map();
   private readonly transactionsSubscriptions = new Map();
@@ -24,6 +28,9 @@ export class WebSocket {
   }
 
   public connect(successCallback?: () => Promise<void>, reconnectFailedCallback?: () => Promise<void>) {
+    if (successCallback) this.successCallback = successCallback;
+    if (reconnectFailedCallback) this.reconnectFailedCallback = reconnectFailedCallback;
+
     const addressesInHex = this.wallet.getAddressHexes();
     console.log(`Connecting to web socket with url ${this.socketUrl}`);
     this.setClient();
@@ -31,21 +38,48 @@ export class WebSocket {
       let timeout = setTimeout(() => {
         clearTimeout(timeout);
         reject(`Web socket connection timeout`);
-      }, 120000);
+      }, 10000);
       this.client.connect(
         {},
         async () => {
           console.log('Web socket client connected.');
-          await this.onConnected(addressesInHex, successCallback);
+          clearTimeout(timeout);
+          this.connected = true;
+          await this.onConnected(addressesInHex);
+          if (!this.initialConnection) this.initialConnection = true;
           resolve();
         },
-        error => {
-          console.error('Web socket connection error:', error);
+        async error => {
+          console.error(`Web socket connection error: ${error.toString()}`);
+          clearTimeout(timeout);
           this.addressesUnsubscribe();
-          this.reconnect(this.socketUrl, addressesInHex, successCallback, reconnectFailedCallback);
+          if (this.connected) {
+            this.connected = false;
+            await this.reconnect().catch(e => {
+              if (!this.initialConnection) {
+                this.initialConnection = true;
+                reject(e);
+              } else {
+                console.error(e);
+              }
+            });
+          }
         }
       );
     });
+  }
+
+  private async reconnect() {
+    while (!this.connected && this.reconnectCounter <= 6) {
+      console.log('Web socket trying to reconnect. Counter: ', this.reconnectCounter);
+      await this.connect();
+      this.reconnectCounter++;
+    }
+    if (!this.connected) {
+      if (this.reconnectFailedCallback) await this.reconnectFailedCallback();
+      return Promise.reject(`Web socket reconnection failed`);
+    }
+    this.reconnectCounter = 0;
   }
 
   private setClient() {
@@ -64,31 +98,7 @@ export class WebSocket {
     this.transactionsSubscriptions.forEach(async transactionsSubscription => await transactionsSubscription.unsubscribe());
   }
 
-  private reconnect(socketUrl: string, addresses: string[], successCallback?: () => Promise<void>, reconnectFailedCallback?: () => Promise<void>) {
-    let connected = false;
-    console.log(`Reconnecting to web socket with url ${this.socketUrl}`);
-    this.setClient();
-    this.client.connect(
-      {},
-      async () => {
-        console.log('Web socket client reconnected.');
-        connected = true;
-        await this.onConnected(addresses, successCallback);
-      },
-      () => {
-        if (!connected && this.reconnectCounter <= 6) {
-          console.log('Web socket trying to reconnect. Counter: ', this.reconnectCounter);
-          this.reconnectCounter++;
-          this.reconnect(socketUrl, addresses, successCallback, reconnectFailedCallback);
-        } else {
-          console.log('Web socket client reconnect unsuccessful');
-          if (reconnectFailedCallback) reconnectFailedCallback();
-        }
-      }
-    );
-  }
-
-  private async onConnected(addresses: string[], callback?: () => Promise<void>) {
+  private async onConnected(addresses: string[]) {
     this.reconnectCounter = 0;
     console.log('Connected and monitoring addresses: ', addresses);
     if (!addresses) addresses = [];
@@ -110,7 +120,7 @@ export class WebSocket {
     console.log('BalanceSubscriptions: ', [...this.balanceSubscriptions.keys()]);
     console.log('TransactionsSubscriptions: ', [...this.transactionsSubscriptions.keys()]);
 
-    if (callback) return await callback();
+    if (this.successCallback) return await this.successCallback();
   }
 
   private connectToAddress(addressHex: string) {
@@ -184,9 +194,11 @@ export class WebSocket {
   private async checkBalanceAndSubscribeNewAddress<T extends IndexedAddress>(address: IndexedAddress) {
     if (this.wallet instanceof IndexedWallet) {
       const nextPropagationAddressIndex = Array.from(this.propagationSubscriptions.keys()).pop().getIndex() + 1;
-      const nextAddress = <T>await this.wallet.generateAddressByIndex(nextPropagationAddressIndex);
-
-      this.addressPropagationSubscriber(nextAddress);
+      const maxAddress = this.wallet.getMaxAddress();
+      if (!maxAddress || nextPropagationAddressIndex < maxAddress) {
+        const nextAddress = <T>await this.wallet.generateAddressByIndex(nextPropagationAddressIndex);
+        this.addressPropagationSubscriber(nextAddress);
+      }
 
       const addressHex = address.getAddressHex();
 
