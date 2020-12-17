@@ -203,7 +203,6 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     this.checkAddressIndexed(address);
     const typedAddress = this.getAddressFromIndexedAddress(<IndexedAddress>address);
     super.setInitialAddressToMap(typedAddress);
-    this.indexToAddressHexMap.set(typedAddress.getIndex(), typedAddress.getAddressHex());
   }
 
   public abstract getAddressFromIndexedAddress(indexedAddress: IndexedAddress): T;

@@ -15,7 +15,7 @@ export class WebSocket {
   private client!: StompClient;
   private reconnectCounter = 0;
   private initialConnection = false;
-  private connected = true;
+  private connected?: boolean;
   private successCallback?: () => Promise<void>;
   private reconnectFailedCallback?: () => Promise<void>;
   private readonly propagationSubscriptions = new Map();
@@ -46,14 +46,15 @@ export class WebSocket {
           clearTimeout(timeout);
           this.connected = true;
           await this.onConnected(addressesInHex);
-          if (!this.initialConnection) this.initialConnection = true;
+          this.initialConnection = true;
           resolve();
         },
         async error => {
-          console.error(`Web socket connection error: ${error.toString()}`);
+          console.error(`Web socket connection error:`);
+          console.error(error instanceof stomp.Frame ? error.body : error.reason);
           clearTimeout(timeout);
           this.addressesUnsubscribe();
-          if (this.connected) {
+          if (this.connected === undefined || this.connected) {
             this.connected = false;
             await this.reconnect().catch(e => {
               if (!this.initialConnection) {
@@ -64,6 +65,7 @@ export class WebSocket {
               }
             });
           }
+          resolve();
         }
       );
     });
