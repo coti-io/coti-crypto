@@ -20,6 +20,10 @@ export abstract class LedgerEvent extends EventEmitter {
   public onRemove(listener: (ledgerEvent: DescriptorEvent<Descriptor>) => void): this {
     return this.on('remove', listener);
   }
+
+  public onError(listener: (error: Error) => void): this {
+    return this.on('error', listener);
+  }
 }
 
 export class LedgerDevice extends LedgerEvent {
@@ -30,24 +34,19 @@ export class LedgerDevice extends LedgerEvent {
     this.transportType = transportType;
   }
 
-  listen() {
-    ledgerUtils.listen({ next: this.next, error: this.error, complete: this.complete }, this.transportType);
+  public listen() {
+    ledgerUtils.listen({ next: event => this.next(event), error: error => this.error(error), complete: () => this.complete() }, this.transportType);
   }
 
-  next(event: DescriptorEvent<Descriptor>) {
-    console.log(`Event`);
-    console.log(event);
-    //  this.emit(event.type, event);
+  public next(event: DescriptorEvent<Descriptor>) {
+    this.emit(event.type, event);
   }
 
-  error(error: Error) {
-    console.log(`Error`);
-    console.log(error);
-    //  this.emit('error', error);
+  public error(error: Error) {
+    this.emit('error', error);
   }
 
-  complete() {
+  public complete() {
     console.log(`Complete`);
-    //  console.log('Complete');
   }
 }
