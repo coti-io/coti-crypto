@@ -1,19 +1,18 @@
 import { EventEmitter } from 'events';
 import { Descriptor, DescriptorEvent } from '@ledgerhq/hw-transport';
-//import type Log from '@ledgerhq/logs';
-import { listen } from '@ledgerhq/logs';
 import * as ledgerUtils from './utils/ledgerUtils';
 
 type LedgerTransportType = ledgerUtils.LedgerTransportType;
+type LedgerLog = ledgerUtils.LedgerLog;
 
 export interface LedgerEvent {
   on(event: 'add' | 'remove', listener: (ledgerEvent: DescriptorEvent<Descriptor>) => void): this;
   on(event: 'error', listener: (error: Error) => void): this;
-  on(event: 'log', listener: (ledgerLog: any) => void): this;
+  on(event: 'log', listener: (ledgerLog: LedgerLog) => void): this;
 
   emit(event: 'add' | 'remove', ledgerEvent: DescriptorEvent<Descriptor>): boolean;
   emit(event: 'error', error: Error): boolean;
-  emit(event: 'log', ledgerLog: any): boolean;
+  emit(event: 'log', ledgerLog: LedgerLog): boolean;
 }
 
 export abstract class LedgerEvent extends EventEmitter {
@@ -43,7 +42,11 @@ export class LedgerDevice extends LedgerEvent {
   }
 
   public listenLog() {
-    listen((ledgerLog: any) => this.emit('log', ledgerLog));
+    ledgerUtils.listenLog(ledgerLog => this.log(ledgerLog));
+  }
+
+  public log(ledgerLog: LedgerLog) {
+    this.emit('log', ledgerLog);
   }
 
   public next(event: DescriptorEvent<Descriptor>) {
