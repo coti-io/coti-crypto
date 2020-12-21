@@ -116,7 +116,7 @@ export class BaseTransaction {
     let bytes = utils.hexToBytes(this.addressHash);
     bytes = utils.concatByteArrays([bytes, amountInBytes, utcTimeInByteArray]);
     if (this.name === BaseTransactionName.RECEIVER && this.originalAmount !== undefined) {
-      let originalAmountInBytes = utils.getBytesFromString(this.amount.stripTrailingZeros().toString());
+      let originalAmountInBytes = utils.getBytesFromString(this.originalAmount.stripTrailingZeros().toString());
       bytes = utils.concatByteArrays([bytes, originalAmountInBytes]);
     }
     if (this.name === BaseTransactionName.PAYMENT_INPUT) {
