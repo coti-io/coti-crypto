@@ -102,7 +102,7 @@ export class WebSocket {
 
   private async onConnected(addresses: string[]) {
     this.reconnectCounter = 0;
-    console.log('Connected and monitoring addresses: ', addresses);
+    console.log(`Starting to websocket subscriptions of ${addresses.length} addresses.`);
     if (!addresses) addresses = [];
 
     addresses.forEach(address => {
@@ -114,13 +114,8 @@ export class WebSocket {
         const address = await this.wallet.generateAddressByIndex(i);
         this.addressPropagationSubscriber(address);
       }
-      console.log(
-        'PropagationSubscriptions: ',
-        [...this.propagationSubscriptions.keys()].map(a => a.getAddressHex())
-      );
     }
-    console.log('BalanceSubscriptions: ', [...this.balanceSubscriptions.keys()]);
-    console.log('TransactionsSubscriptions: ', [...this.transactionsSubscriptions.keys()]);
+    console.log(`Finished to websocket subscriptions.`);
 
     if (this.successCallback) return await this.successCallback();
   }
