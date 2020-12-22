@@ -71,19 +71,34 @@ export class BaseWallet extends WalletEvent {
     return [...this.addressMap.keys()];
   }
 
+  public getAddresses() {
+    return [...this.addressMap.values()];
+  }
+
   protected setInitialAddressToMap(address: BaseAddress) {
     this.setAddressToMap(address);
   }
 
   protected setAddressToMap(address: BaseAddress) {
+    if (!(address instanceof BaseAddress)) throw new Error('BaseAddress required');
     this.addressMap.set(address.getAddressHex(), address);
+  }
+
+  public async setAddress(address: BaseAddress, checkNetwork = true) {
+    this.setInitialAddressToMap(address);
+    if (checkNetwork) {
+      await this.checkBalancesOfAddresses([address]);
+      await this.checkTransactionHistory([address]);
+    }
   }
 
   public getAddressByAddressHex(addressHex: string) {
     return this.addressMap.get(addressHex);
   }
 
-  public async checkBalancesOfAddresses(addresses: BaseAddress[]) {
+  public async checkBalancesOfAddresses(addresses?: BaseAddress[]) {
+    if (addresses === undefined) addresses = this.getAddresses();
+    if (addresses.length === 0) return;
     const addressesBalance = await walletUtils.checkBalances(
       addresses.map(address => address.getAddressHex()),
       this
@@ -122,10 +137,11 @@ export class BaseWallet extends WalletEvent {
     return { balance, prebalance };
   }
 
-  public async loadTransactionHistory(transactions: ReducedTransaction[]) {
+  public async loadTransactions(transactions: ReducedTransaction[]) {
     if (!transactions || !transactions.length) return;
-    transactions.forEach(tx => {
-      this.transactionMap.set(tx.hash, tx);
+    transactions.forEach(reducedTransaction => {
+      if (!(reducedTransaction instanceof ReducedTransaction)) throw new Error('ReducedTransaction instance required');
+      this.transactionMap.set(reducedTransaction.hash, reducedTransaction);
     });
   }
 
@@ -133,14 +149,14 @@ export class BaseWallet extends WalletEvent {
     return this.transactionMap.get(hash);
   }
 
-  public async getTransactionHistory() {
+  public async checkTransactionHistory(addresses?: BaseAddress[]) {
     console.log('Starting to get transaction history');
-    const addresses = this.getAddressHexes();
-    const transactions = await walletUtils.getTransactionsHistory(addresses, this);
-    transactions.forEach(t => {
+    const addressHexes = addresses === undefined ? this.getAddressHexes() : addresses.map(address => address.getAddressHex());
+    const transactionHistoryMap = await walletUtils.getTransactionsHistory(addressHexes, this);
+    transactionHistoryMap.forEach(t => {
       this.setTransaction(t);
     });
-    console.log(`Finished to get transaction history. Total transactions: ${transactions.size}`);
+    console.log(`Finished to get transaction history. Total transactions: ${transactionHistoryMap.size}`);
   }
 
   public setTransaction(transaction: TransactionData) {
@@ -192,8 +208,8 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
   public abstract checkAddressType(address: BaseAddress): void;
 
   protected setAddressToMap(address: BaseAddress) {
-    this.checkAddressType(address);
     if (this.maxAddress && this.addressMap.size >= this.maxAddress) throw new Error(`Address map size can not exceed ${this.maxAddress}`);
+    this.checkAddressType(address);
     super.setAddressToMap(address);
     const index = (<T>address).getIndex();
     this.indexToAddressHexMap.set(index, address.getAddressHex());

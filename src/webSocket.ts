@@ -125,7 +125,7 @@ export class WebSocket {
     if (this.successCallback) return await this.successCallback();
   }
 
-  private connectToAddress(addressHex: string) {
+  public connectToAddress(addressHex: string) {
     if (!this.balanceSubscriptions.get(addressHex)) {
       let balanceSubscription = this.client.subscribe(`/topic/${addressHex}`, async ({ body }) => {
         try {
@@ -138,7 +138,7 @@ export class WebSocket {
               throw new Error(errorMsg);
             }
             const { balance, preBalance } = data;
-            this.setAddressWithBalance(balance === null ? 0 : balance, preBalance === null ? 0 : preBalance, address);
+            this.setAddressWithBalance(address, balance === null ? 0 : balance, preBalance === null ? 0 : preBalance);
           }
         } catch (e) {
           console.error(`Address balance subscription callback error for address ${addressHex}: `, e);
@@ -206,7 +206,7 @@ export class WebSocket {
 
       const balances = await walletUtils.checkBalances([addressHex], this.wallet);
       const { addressBalance, addressPreBalance } = balances[addressHex];
-      this.setAddressWithBalance(new BigDecimal(addressBalance), new BigDecimal(addressPreBalance), address);
+      this.setAddressWithBalance(address, new BigDecimal(addressBalance), new BigDecimal(addressPreBalance));
 
       const addressIndex = address.getIndex();
       console.log(`Subscribing the balance and transactions for address: ${addressHex} and index: ${addressIndex}`);
@@ -214,7 +214,7 @@ export class WebSocket {
     }
   }
 
-  private setAddressWithBalance(addressBalance: BigDecimal, addressPreBalance: BigDecimal, address: BaseAddress) {
+  private setAddressWithBalance(address: BaseAddress, addressBalance: BigDecimal, addressPreBalance: BigDecimal) {
     this.wallet.setAddressWithBalance(address, addressBalance, addressPreBalance);
   }
 }
