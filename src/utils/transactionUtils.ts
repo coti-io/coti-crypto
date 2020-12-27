@@ -5,13 +5,16 @@ import { PrivateKey } from '../ecKeyPair';
 import { nodeUtils } from './nodeUtils';
 import { BaseTransaction, BaseTransactionName, BaseTransactionData } from '../baseTransaction';
 import { Transaction } from '../transaction';
+import { IndexedWallet } from '../wallet';
+import { IndexedAddress } from '../address';
 
 const amountRegex = /^\d+(\.\d{1,8})?$/;
 
 type KeyPair = cryptoUtils.KeyPair;
 
-export async function createTransaction(parameterObject: {
-  userPrivateKey: string;
+export async function createTransaction<T extends IndexedAddress>(parameterObject: {
+  userPrivateKey?: string;
+  wallet?: IndexedWallet<T>;
   inputMap: Map<string, number>;
   feeAddress?: string;
   destinationAddress: string;
@@ -19,8 +22,9 @@ export async function createTransaction(parameterObject: {
   network?: Network;
   feeIncluded?: boolean;
 }) {
-  const { userPrivateKey, inputMap, feeAddress, destinationAddress, description, network, feeIncluded = false } = parameterObject;
+  const { userPrivateKey, wallet, inputMap, feeAddress, destinationAddress, description, network, feeIncluded = false } = parameterObject;
 
+  if (!userPrivateKey && !wallet) throw Error('UserPrivateKey or wallet should be defined');
   if (!feeIncluded) {
     if (!feeAddress) throw new Error(`Missing fee address`);
     if (!cryptoUtils.verifyAddressStructure(feeAddress)) throw new Error(`Invalid fee address: ${feeAddress}`);
@@ -46,11 +50,17 @@ export async function createTransaction(parameterObject: {
 
   originalAmount = originalAmount.stripTrailingZeros();
 
-  const privateKey = new PrivateKey(userPrivateKey);
-  const keyPair = privateKey.keyPair;
-  const userHash = privateKey.getPublicKey();
+  let keyPair;
+  let userHash;
+  if (userPrivateKey) {
+    const privateKey = new PrivateKey(userPrivateKey);
+    keyPair = privateKey.keyPair;
+    userHash = privateKey.getPublicKey();
+  } else {
+    userHash = wallet?.getPublicHash();
+  }
 
-  let { fullNodeFee, networkFee } = await getFees(originalAmount, userHash, keyPair, feeIncluded, network);
+  let { fullNodeFee, networkFee } = await getFees(originalAmount, userHash!, keyPair, wallet, feeIncluded, network);
 
   if (!feeIncluded) {
     const feeAmount = new BigDecimal(fullNodeFee.amount.toString()).add(new BigDecimal(networkFee.amount.toString()));
@@ -67,24 +77,32 @@ export async function createTransaction(parameterObject: {
     addInputBaseTranction(balanceObject, address, amount, baseTransactions);
   });
 
-  networkFee = await nodeUtils.createMiniConsensus(userHash, fullNodeFee, networkFee, network);
+  networkFee = await nodeUtils.createMiniConsensus(userHash!, fullNodeFee, networkFee, network);
 
-  await addOutputBaseTransactions(originalAmount, fullNodeFee, networkFee, destinationAddress, baseTransactions, feeIncluded);
+  addOutputBaseTransactions(originalAmount, fullNodeFee, networkFee, destinationAddress, baseTransactions, feeIncluded);
 
-  const transaction = new Transaction(baseTransactions, description, userHash);
+  const transaction = new Transaction(baseTransactions, description, userHash!);
 
-  await addTrustScoreToTransaction(transaction, userHash, keyPair, network);
+  await addTrustScoreToTransaction(transaction, userHash!, keyPair, wallet, network);
 
   return transaction;
 }
 
-function getFullNodeFeeSignature(originalAmount: number, keyPair: KeyPair) {
-  return new FullNodeFeeSignature(originalAmount).signByKeyPair(keyPair);
+async function getFullNodeFeeSignature<T extends IndexedAddress>(originalAmount: number, keyPair?: KeyPair, wallet?: IndexedWallet<T>) {
+  const fullNodeFeeSignature = new FullNodeFeeSignature(originalAmount);
+  return keyPair ? fullNodeFeeSignature.signByKeyPair(keyPair) : await fullNodeFeeSignature.sign(wallet!);
 }
 
-async function getFees(originalAmount: BigDecimal, userHash: string, keyPair: KeyPair, feeIncluded: boolean, network?: Network) {
+async function getFees<T extends IndexedAddress>(
+  originalAmount: BigDecimal,
+  userHash: string,
+  keyPair?: KeyPair,
+  wallet?: IndexedWallet<T>,
+  feeIncluded?: boolean,
+  network?: Network
+) {
   const originalAmountInNumber = Number(originalAmount.toString());
-  const fullNodeFeeSignature = getFullNodeFeeSignature(originalAmountInNumber, keyPair);
+  const fullNodeFeeSignature = await getFullNodeFeeSignature(originalAmountInNumber, keyPair, wallet);
   const fullNodeFee = await nodeUtils.getFullNodeFees(originalAmountInNumber, userHash, fullNodeFeeSignature, network, feeIncluded);
   const networkFee = await nodeUtils.getNetworkFees(fullNodeFee, userHash, network, feeIncluded);
   return { fullNodeFee, networkFee };
@@ -125,13 +143,20 @@ function addOutputBaseTransactions(
   baseTransactions.push(RBT);
 }
 
-function getTransactionTrustScoreSignature(transactionHash: string, keyPair: KeyPair) {
-  return new TransactionTrustScoreSignature(transactionHash).signByKeyPair(keyPair, true);
+async function getTransactionTrustScoreSignature<T extends IndexedAddress>(transactionHash: string, keyPair?: KeyPair, wallet?: IndexedWallet<T>) {
+  const transactionTrustScoreSignature = new TransactionTrustScoreSignature(transactionHash);
+  return keyPair ? transactionTrustScoreSignature.signByKeyPair(keyPair, true) : await transactionTrustScoreSignature.sign(wallet!, true);
 }
 
-async function addTrustScoreToTransaction(transaction: Transaction, userHash: string, keyPair: KeyPair, network?: Network) {
+async function addTrustScoreToTransaction<T extends IndexedAddress>(
+  transaction: Transaction,
+  userHash: string,
+  keyPair?: KeyPair,
+  wallet?: IndexedWallet<T>,
+  network?: Network
+) {
   const transactionHash = transaction.getHash();
-  const transactionTrustScoreSignature = getTransactionTrustScoreSignature(transactionHash, keyPair);
+  const transactionTrustScoreSignature = await getTransactionTrustScoreSignature(transactionHash, keyPair, wallet);
   const transactionTrustScoreData = await nodeUtils.getTrustScoreForTransaction(transactionHash, userHash, transactionTrustScoreSignature, network);
   transaction.addTrustScoreMessageToTransaction(transactionTrustScoreData);
 }
