@@ -23,9 +23,9 @@ export abstract class Signature {
   }
 
   public createBasicSignatureHash() {
-    let baseTxBytes = this.getBytes();
-    let baseTxHashedArray = keccak256.update(baseTxBytes).array();
-    return new Uint8Array(baseTxHashedArray);
+    let messageInBytes = this.getBytes();
+    let messageHashedArray = keccak256.update(messageInBytes).array();
+    return new Uint8Array(messageHashedArray);
   }
 
   public signByKeyPair(keyPair: KeyPair, isHash = false) {
