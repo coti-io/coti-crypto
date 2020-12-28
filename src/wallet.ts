@@ -5,9 +5,9 @@ import { walletUtils } from './utils/walletUtils';
 import { SignatureData } from './signature';
 import * as cryptoUtils from './utils/cryptoUtils';
 import { BigDecimal, Network } from './utils/utils';
+import * as utils from './utils/utils';
 import * as ledgerUtils from './utils/ledgerUtils';
 import BN from 'bn.js';
-import { utils } from 'elliptic';
 
 type KeyPair = cryptoUtils.KeyPair;
 type LedgerTransportType = ledgerUtils.LedgerTransportType;
