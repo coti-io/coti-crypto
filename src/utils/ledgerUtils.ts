@@ -55,22 +55,22 @@ export async function getUserPublicKey(interactive?: boolean, transportType?: Le
   }
 }
 
-export async function signMessage(index: number, messageHex: string, transportType?: LedgerTransportType): Promise<SignatureData> {
+export async function signMessage(index: number, messageHex: string, hashed?: boolean, transportType?: LedgerTransportType): Promise<SignatureData> {
   try {
     const hw = await connect(transportType);
 
-    const res = await hw.signMessage(index, messageHex);
+    const res = await hw.signMessage(index, messageHex, hashed);
     return { r: res.r, s: res.s };
   } catch (error) {
     throw new LedgerError(error.message, { debugMessage: `Error signing message at ledger wallet`, cause: error });
   }
 }
 
-export async function signUserMessage(messageHex: string, transportType?: LedgerTransportType): Promise<SignatureData> {
+export async function signUserMessage(messageHex: string, hashed?: boolean, transportType?: LedgerTransportType): Promise<SignatureData> {
   try {
     const hw = await connect(transportType);
 
-    const res = await hw.signUserMessage(messageHex);
+    const res = await hw.signUserMessage(messageHex, hashed);
     return { r: res.r, s: res.s };
   } catch (error) {
     throw new LedgerError(error.message, { debugMessage: `Error signing user message at ledger wallet`, cause: error });

@@ -383,9 +383,9 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
       const address = this.getAddressByAddressHex(addressHex);
       if (!address) throw new Error(`Wallet doesn't contain the address`);
       const index = (<LedgerAddress>address).getIndex();
-      return await ledgerUtils.signMessage(index, messageInHex, this.transportType);
+      return await ledgerUtils.signMessage(index, messageInHex, true, this.transportType);
     } else {
-      return await ledgerUtils.signUserMessage(messageInHex, this.transportType);
+      return await ledgerUtils.signUserMessage(messageInHex, true, this.transportType);
     }
   }
 }
