@@ -7,6 +7,7 @@ import * as cryptoUtils from './utils/cryptoUtils';
 import { BigDecimal, Network } from './utils/utils';
 import * as utils from './utils/utils';
 import * as ledgerUtils from './utils/ledgerUtils';
+import { LedgerSigningType } from './utils/ledgerUtils';
 import BN from 'bn.js';
 
 type KeyPair = cryptoUtils.KeyPair;
@@ -108,11 +109,7 @@ export class BaseWallet extends WalletEvent {
       const balance = new BigDecimal(`${addressBalance}`);
       const preBalance = new BigDecimal(`${addressPreBalance}`);
       const existingAddress = this.addressMap.get(address.getAddressHex());
-      if (
-        !existingAddress ||
-        existingAddress.getBalance().comparedTo(balance) !== 0 ||
-        existingAddress.getPreBalance().comparedTo(preBalance) !== 0
-      ) {
+      if (!existingAddress || existingAddress.getBalance().comparedTo(balance) !== 0 || existingAddress.getPreBalance().comparedTo(preBalance) !== 0) {
         this.setAddressWithBalance(address, balance, preBalance);
       }
     }
@@ -165,10 +162,7 @@ export class BaseWallet extends WalletEvent {
     // If the transaction was already confirmed, no need to reprocess it
     if (existingTransaction && existingTransaction.transactionConsensusUpdateTime === transaction.transactionConsensusUpdateTime) return;
 
-    this.transactionMap.set(
-      transaction.hash,
-      new ReducedTransaction(transaction.hash, transaction.createTime, transaction.transactionConsensusUpdateTime)
-    );
+    this.transactionMap.set(transaction.hash, new ReducedTransaction(transaction.hash, transaction.createTime, transaction.transactionConsensusUpdateTime));
 
     this.emit('receivedTransaction', transaction);
   }
@@ -377,15 +371,18 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
     return address;
   }
 
-  public async signMessage(messageInBytes: Uint8Array, addressHex?: string) {
+  public async signMessage(messageInBytes: Uint8Array, addressHex?: string): Promise<SignatureData>;
+  public async signMessage(messageInBytes: Uint8Array, addressHex?: string, signingType?: LedgerSigningType): Promise<SignatureData>;
+
+  public async signMessage(messageInBytes: Uint8Array, addressHex?: string, signingType = LedgerSigningType.MESSAGE) {
     const messageInHex = utils.byteArrayToHexString(messageInBytes);
     if (addressHex) {
       const address = this.getAddressByAddressHex(addressHex);
       if (!address) throw new Error(`Wallet doesn't contain the address`);
       const index = (<LedgerAddress>address).getIndex();
-      return await ledgerUtils.signMessage(index, messageInHex, true, this.transportType);
+      return await ledgerUtils.signMessage(index, messageInHex, signingType, true, this.transportType);
     } else {
-      return await ledgerUtils.signUserMessage(messageInHex, true, this.transportType);
+      return await ledgerUtils.signUserMessage(messageInHex, signingType, true, this.transportType);
     }
   }
 }

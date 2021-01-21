@@ -115,9 +115,7 @@ function addInputBaseTranction(balanceObject: any, address: string, amount: numb
   const addressMaxAmount = preBalance.compareTo(balance) < 0 ? preBalance : balance;
   const decimalAmount = new BigDecimal(amount.toString());
   if (addressMaxAmount.compareTo(decimalAmount) < 0)
-    throw new Error(
-      `Error at create transaction - Trying to send ${decimalAmount}, current balance is ${addressMaxAmount}. Not enough balance in address: ${address}`
-    );
+    throw new Error(`Error at create transaction - Trying to send ${decimalAmount}, current balance is ${addressMaxAmount}. Not enough balance in address: ${address}`);
   const spendFromAddress = decimalAmount.multiply(new BigDecimal('-1'));
   baseTransactions.push(new BaseTransaction(address, spendFromAddress, BaseTransactionName.INPUT));
 }
@@ -130,9 +128,7 @@ function addOutputBaseTransactions(
   baseTransactions: BaseTransaction[],
   feeIncluded: boolean
 ) {
-  const amountRBT = feeIncluded
-    ? originalAmount.subtract(new BigDecimal(fullNodeFee.amount)).subtract(new BigDecimal(networkFee.amount))
-    : originalAmount;
+  const amountRBT = feeIncluded ? originalAmount.subtract(new BigDecimal(fullNodeFee.amount)).subtract(new BigDecimal(networkFee.amount)) : originalAmount;
 
   const RBT = new BaseTransaction(destinationAddress, amountRBT, BaseTransactionName.RECEIVER, undefined, undefined, originalAmount);
   const fullNodeTransactionFee = BaseTransaction.getBaseTransactionFromFeeData(fullNodeFee);
@@ -148,13 +144,7 @@ async function getTransactionTrustScoreSignature<T extends IndexedAddress>(trans
   return keyPair ? transactionTrustScoreSignature.signByKeyPair(keyPair, true) : await transactionTrustScoreSignature.sign(wallet!, true);
 }
 
-async function addTrustScoreToTransaction<T extends IndexedAddress>(
-  transaction: Transaction,
-  userHash: string,
-  keyPair?: KeyPair,
-  wallet?: IndexedWallet<T>,
-  network?: Network
-) {
+async function addTrustScoreToTransaction<T extends IndexedAddress>(transaction: Transaction, userHash: string, keyPair?: KeyPair, wallet?: IndexedWallet<T>, network?: Network) {
   const transactionHash = transaction.getHash();
   const transactionTrustScoreSignature = await getTransactionTrustScoreSignature(transactionHash, keyPair, wallet);
   const transactionTrustScoreData = await nodeUtils.getTrustScoreForTransaction(transactionHash, userHash, transactionTrustScoreSignature, network);

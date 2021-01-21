@@ -1,6 +1,6 @@
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import TransportNodeHid from '@ledgerhq/hw-transport-node-hid';
-import { HWSDK } from '@coti-io/ledger-sdk';
+import { HWSDK, SigningType } from '@coti-io/ledger-sdk';
 import { listen as listenLedgerLog, Log } from '@ledgerhq/logs';
 import { SignatureData } from '../signature';
 import { LedgerError } from '../cotiError';
@@ -12,6 +12,8 @@ const exchangeTimeout = 60000;
 export type LedgerTransportType = 'node' | 'web';
 
 export type LedgerLog = Log;
+
+export { SigningType as LedgerSigningType };
 
 const ledgerTransport = {
   node: TransportNodeHid,
@@ -55,22 +57,22 @@ export async function getUserPublicKey(interactive?: boolean, transportType?: Le
   }
 }
 
-export async function signMessage(index: number, messageHex: string, hashed?: boolean, transportType?: LedgerTransportType): Promise<SignatureData> {
+export async function signMessage(index: number, messageHex: string, signingType: SigningType, hashed?: boolean, transportType?: LedgerTransportType): Promise<SignatureData> {
   try {
     const hw = await connect(transportType);
 
-    const res = await hw.signMessage(index, messageHex, hashed);
+    const res = await hw.signMessage(index, messageHex, signingType, hashed);
     return { r: res.r, s: res.s };
   } catch (error) {
     throw new LedgerError(error.message, { debugMessage: `Error signing message at ledger wallet`, cause: error });
   }
 }
 
-export async function signUserMessage(messageHex: string, hashed?: boolean, transportType?: LedgerTransportType): Promise<SignatureData> {
+export async function signUserMessage(messageHex: string, signingType: SigningType, hashed?: boolean, transportType?: LedgerTransportType): Promise<SignatureData> {
   try {
     const hw = await connect(transportType);
 
-    const res = await hw.signUserMessage(messageHex, hashed);
+    const res = await hw.signUserMessage(messageHex, signingType, hashed);
     return { r: res.r, s: res.s };
   } catch (error) {
     throw new LedgerError(error.message, { debugMessage: `Error signing user message at ledger wallet`, cause: error });

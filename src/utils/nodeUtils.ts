@@ -97,13 +97,7 @@ export namespace nodeUtils {
     return transactionMap;
   }
 
-  export async function getFullNodeFees(
-    amountToTransfer: number,
-    userHash: string,
-    userSignature: SignatureData,
-    network: Network = 'mainnet',
-    feeIncluded?: boolean
-  ) {
+  export async function getFullNodeFees(amountToTransfer: number, userHash: string, userSignature: SignatureData, network: Network = 'mainnet', feeIncluded?: boolean) {
     try {
       const response = await axios.put(`${nodeUrl[network].fullNode}/fee`, {
         originalAmount: amountToTransfer,
@@ -132,12 +126,7 @@ export namespace nodeUtils {
     }
   }
 
-  export async function createMiniConsensus(
-    userHash: string,
-    fullNodeFeeData: BaseTransactionData,
-    networkFeeData: BaseTransactionData,
-    network: Network = 'mainnet'
-  ) {
+  export async function createMiniConsensus(userHash: string, fullNodeFeeData: BaseTransactionData, networkFeeData: BaseTransactionData, network: Network = 'mainnet') {
     const iteration = 3;
     let validationNetworkFeeMessage = {
       fullNodeFeeData,
@@ -158,12 +147,7 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getTrustScoreForTransaction(
-    transactionHash: string,
-    userHash: string,
-    userSignature: SignatureData,
-    network: Network = 'mainnet'
-  ) {
+  export async function getTrustScoreForTransaction(transactionHash: string, userHash: string, userSignature: SignatureData, network: Network = 'mainnet') {
     const trustScoreMessage = {
       userHash,
       transactionHash,

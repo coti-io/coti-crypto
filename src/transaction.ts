@@ -3,10 +3,11 @@ import { BaseTransaction, BaseTransactionName, BaseTransactionData } from './bas
 import * as utils from './utils/utils';
 import { BaseAddress, IndexedAddress } from './address';
 import { SignatureData } from './signature';
-import { IndexedWallet } from './wallet';
+import { IndexedWallet, LedgerWallet } from './wallet';
 import BigDecimal = utils.BigDecimal;
 import * as cryptoUtils from './utils/cryptoUtils';
 import { PrivateKey } from './ecKeyPair';
+import { LedgerSigningType } from './utils/ledgerUtils';
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -86,13 +87,7 @@ export class Transaction {
   private senderSignature!: SignatureData;
   private type: TransactionType;
 
-  constructor(
-    listOfBaseTransaction: BaseTransaction[],
-    transactionDescription = 'No description',
-    userHash: string,
-    type?: TransactionType,
-    createHash = true
-  ) {
+  constructor(listOfBaseTransaction: BaseTransaction[], transactionDescription = 'No description', userHash: string, type?: TransactionType, createHash = true) {
     this.baseTransactions = [];
 
     for (let i = 0; i < listOfBaseTransaction.length; i++) {
@@ -154,7 +149,9 @@ export class Transaction {
 
   public async signTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
     const messageInBytes = this.getSignatureMessage();
-    this.senderSignature = await wallet.signMessage(messageInBytes);
+    this.senderSignature = await (wallet instanceof LedgerWallet
+      ? (<LedgerWallet>wallet).signMessage(messageInBytes, undefined, LedgerSigningType.TX)
+      : wallet.signMessage(messageInBytes));
 
     for (let i = 0; i < this.baseTransactions.length; i++) {
       await this.baseTransactions[i].sign(this.hash, wallet);
