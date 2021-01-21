@@ -59,7 +59,7 @@ export async function signMessage(index: number, messageHex: string, hashed?: bo
   try {
     const hw = await connect(transportType);
 
-    const res = await hw.signMessage(index, messageHex, hashed);
+    const res = await hw.signMessage(index, messageHex, undefined, hashed);
     return { r: res.r, s: res.s };
   } catch (error) {
     throw new LedgerError(error.message, { debugMessage: `Error signing message at ledger wallet`, cause: error });
@@ -70,7 +70,7 @@ export async function signUserMessage(messageHex: string, hashed?: boolean, tran
   try {
     const hw = await connect(transportType);
 
-    const res = await hw.signUserMessage(messageHex, hashed);
+    const res = await hw.signUserMessage(messageHex, undefined, hashed);
     return { r: res.r, s: res.s };
   } catch (error) {
     throw new LedgerError(error.message, { debugMessage: `Error signing user message at ledger wallet`, cause: error });
