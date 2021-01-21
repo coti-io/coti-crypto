@@ -6,19 +6,33 @@ import * as cryptoUtils from './utils/cryptoUtils';
 
 type KeyPair = cryptoUtils.KeyPair;
 
+export enum SigningType {
+  FULL_NODE_FEE = 'FullNode Fee',
+  TX_TRUST_SCORE = 'Transaction TrustScore',
+  BASE_TX = 'BaseTransaction',
+  TX = 'Transaction',
+}
+
+export type SigningTypeKey = keyof typeof SigningType;
+
+export const signingTypeKeyMap = new Map<SigningType, SigningTypeKey>(
+  Object.entries(SigningType).map(([keyString, value]: [string, SigningType]) => [value, keyString as keyof typeof SigningType])
+);
+
 export interface SignatureData {
   r: string;
   s: string;
 }
 
 export abstract class Signature {
+  protected signingType!: SigningType;
   protected signatureData!: SignatureData;
 
   constructor() {}
 
   public async sign<T extends IndexedAddress>(wallet: IndexedWallet<T>, isHash = false) {
     const messageInBytes = this.getSignatureMessage(isHash);
-    this.signatureData = await wallet.signMessage(messageInBytes);
+    this.signatureData = await wallet.signMessage(messageInBytes, this.signingType);
     return this.signatureData;
   }
 
@@ -46,6 +60,7 @@ export class FullNodeFeeSignature extends Signature {
 
   constructor(amount: number) {
     super();
+    this.signingType = SigningType.FULL_NODE_FEE;
     this.amount = amount;
   }
 
@@ -59,6 +74,7 @@ export class TransactionTrustScoreSignature extends Signature {
 
   constructor(transactionHash: string) {
     super();
+    this.signingType = SigningType.TX_TRUST_SCORE;
     this.transactionHash = transactionHash;
   }
 

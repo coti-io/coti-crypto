@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { BaseAddress, IndexedAddress, Address, LedgerAddress } from './address';
 import { ReducedTransaction, TransactionData } from './transaction';
 import { walletUtils } from './utils/walletUtils';
-import { SignatureData } from './signature';
+import { SignatureData, SigningType } from './signature';
 import * as cryptoUtils from './utils/cryptoUtils';
 import { BigDecimal, Network } from './utils/utils';
 import * as utils from './utils/utils';
@@ -246,7 +246,7 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     return this.publicHash;
   }
 
-  public abstract async signMessage(messageInBytes: Uint8Array, addressHex?: string): Promise<SignatureData>;
+  public abstract async signMessage(messageInBytes: Uint8Array, signingType?: SigningType, addressHex?: string): Promise<SignatureData>;
 
   public async autoDiscoverAddresses() {
     console.log(`Starting to discover addresses`);
@@ -327,7 +327,9 @@ export class Wallet extends IndexedWallet<Address> {
     this.addressTypeGuard(address, Address);
   }
 
-  public async signMessage(messageInBytes: Uint8Array, addressHex?: string) {
+  public async signMessage(messageInBytes: Uint8Array, signingType?: SigningType, addressHex?: string) {
+    console.log(`Signing message of type ${signingType}`);
+
     let keyPair;
     if (addressHex) {
       const address = this.getAddressByAddressHex(addressHex);
@@ -377,15 +379,17 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
     return address;
   }
 
-  public async signMessage(messageInBytes: Uint8Array, addressHex?: string) {
+  public async signMessage(messageInBytes: Uint8Array, signingType?: SigningType, addressHex?: string) {
+    console.log(`Ledger device signing message of type ${signingType}`);
+
     const messageInHex = utils.byteArrayToHexString(messageInBytes);
     if (addressHex) {
       const address = this.getAddressByAddressHex(addressHex);
       if (!address) throw new Error(`Wallet doesn't contain the address`);
       const index = (<LedgerAddress>address).getIndex();
-      return await ledgerUtils.signMessage(index, messageInHex, true, this.transportType);
+      return await ledgerUtils.signMessage(index, messageInHex, signingType, true, this.transportType);
     } else {
-      return await ledgerUtils.signUserMessage(messageInHex, true, this.transportType);
+      return await ledgerUtils.signUserMessage(messageInHex, signingType, true, this.transportType);
     }
   }
 }

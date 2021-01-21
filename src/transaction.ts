@@ -2,7 +2,7 @@ import { keccak256 } from 'js-sha3';
 import { BaseTransaction, BaseTransactionName, BaseTransactionData } from './baseTransaction';
 import * as utils from './utils/utils';
 import { BaseAddress, IndexedAddress } from './address';
-import { SignatureData } from './signature';
+import { SignatureData, SigningType } from './signature';
 import { IndexedWallet } from './wallet';
 import BigDecimal = utils.BigDecimal;
 import * as cryptoUtils from './utils/cryptoUtils';
@@ -153,12 +153,12 @@ export class Transaction {
   }
 
   public async signTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
-    const messageInBytes = this.getSignatureMessage();
-    this.senderSignature = await wallet.signMessage(messageInBytes);
-
     for (let i = 0; i < this.baseTransactions.length; i++) {
       await this.baseTransactions[i].sign(this.hash, wallet);
     }
+
+    const messageInBytes = this.getSignatureMessage();
+    this.senderSignature = await wallet.signMessage(messageInBytes, SigningType.TX);
   }
 
   public signWithPrivateKeys(userPrivateKey: string, inputPrivateKeys: string[]) {
@@ -168,15 +168,15 @@ export class Transaction {
   }
 
   public signWithKeyPairs(userKeyPair: KeyPair, inputKeyPairs: KeyPair[]) {
-    const messageInBytes = this.getSignatureMessage();
-    this.senderSignature = cryptoUtils.signByteArrayMessage(messageInBytes, userKeyPair);
-
     const inputBaseTransactions = this.getInputBaseTransactions();
     if (inputBaseTransactions.length !== inputKeyPairs.length) throw new Error(`Error at number of input key pairs`);
 
     for (let i = 0; i < inputBaseTransactions.length; i++) {
       inputBaseTransactions[i].signWithKeyPair(this.hash, inputKeyPairs[i]);
     }
+
+    const messageInBytes = this.getSignatureMessage();
+    this.senderSignature = cryptoUtils.signByteArrayMessage(messageInBytes, userKeyPair);
   }
 
   public getInputBaseTransactions() {

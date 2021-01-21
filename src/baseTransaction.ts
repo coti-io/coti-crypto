@@ -1,7 +1,7 @@
 import * as utils from './utils/utils';
 import { keccak256 } from 'js-sha3';
 import { IndexedAddress } from './address';
-import { SignatureData } from './signature';
+import { SignatureData, SigningType } from './signature';
 import { IndexedWallet } from './wallet';
 import BigDecimal = utils.BigDecimal;
 import * as cryptoUtils from './utils/cryptoUtils';
@@ -169,7 +169,7 @@ export class BaseTransaction {
   public async sign<T extends IndexedAddress>(transactionHash: string, wallet: IndexedWallet<T>) {
     if (this.isInput()) {
       const messageInBytes = this.getSignatureMessage(transactionHash);
-      this.signatureData = await wallet.signMessage(messageInBytes, this.addressHash);
+      this.signatureData = await wallet.signMessage(messageInBytes, SigningType.BASE_TX, this.addressHash);
     }
   }
 
