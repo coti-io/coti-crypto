@@ -8,6 +8,7 @@ import { BigDecimal, Network } from './utils/utils';
 import * as utils from './utils/utils';
 import * as ledgerUtils from './utils/ledgerUtils';
 import BN from 'bn.js';
+import moment from 'moment';
 
 type KeyPair = cryptoUtils.KeyPair;
 type LedgerTransportType = ledgerUtils.LedgerTransportType;
@@ -163,7 +164,15 @@ export class BaseWallet extends WalletEvent {
     const existingTransaction = this.transactionMap.get(transaction.hash);
 
     // If the transaction was already confirmed, no need to reprocess it
-    if (existingTransaction && existingTransaction.transactionConsensusUpdateTime === transaction.transactionConsensusUpdateTime) return;
+    let consensusDiffInSeconds;
+    if (existingTransaction && existingTransaction.transactionConsensusUpdateTime && transaction.transactionConsensusUpdateTime) {
+      consensusDiffInSeconds = Math.abs(
+        moment
+          .duration(moment.unix(existingTransaction.transactionConsensusUpdateTime).diff(moment.unix(transaction.transactionConsensusUpdateTime)))
+          .asSeconds()
+      );
+      if (consensusDiffInSeconds <= 600) return;
+    }
 
     this.transactionMap.set(
       transaction.hash,
