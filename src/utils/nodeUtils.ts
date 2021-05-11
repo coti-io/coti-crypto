@@ -8,6 +8,8 @@ import { NodeError } from '../cotiError';
 
 type Network = utils.Network;
 
+type UserType = 'consumer' | 'fullnode';
+
 const nodeUrl = {
   mainnet: {
     fullNode: 'https://mainnet-fullnode1.coti.io',
@@ -205,6 +207,23 @@ export namespace nodeUtils {
     } catch (error) {
       const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
       throw new NodeError(errorMessage, { debugMessage: `Error setting trust score at trust score node` });
+    }
+  }
+
+  export async function updateUserType(apiKey: string, userHash: string, network: Network = 'mainnet', userType: UserType) {
+    if (!apiKey) throw new NodeError('Api key is missing');
+    const headers = { 'exchange-api-key': apiKey };
+    const updateUserTypeMessage = {
+      userHash,
+      network,
+      userType,
+    };
+    try {
+      const response = await axios.put(`${nodeUrl[network].api}/exchange/userType`, updateUserTypeMessage, { headers });
+      return response.data.message;
+    } catch (error) {
+      const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
+      throw new NodeError(errorMessage, { debugMessage: `Error update user type at trust score node` });
     }
   }
 
