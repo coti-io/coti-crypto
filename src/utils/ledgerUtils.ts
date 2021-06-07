@@ -1,5 +1,5 @@
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
-import TransportNodeHid from '@ledgerhq/hw-transport-node-hid';
+//import TransportNodeHid from '@ledgerhq/hw-transport-node-hid';
 import { HWSDK, SigningType as LedgerSigningType } from '@coti-io/ledger-sdk';
 import { listen as listenLedgerLog, Log } from '@ledgerhq/logs';
 import { SignatureData, SigningType } from '../signature';
@@ -10,12 +10,12 @@ import { Descriptor, DescriptorEvent, Observer } from '@ledgerhq/hw-transport';
 const listenTimeout = 3000;
 const exchangeTimeout = 60000;
 
-export type LedgerTransportType = 'node' | 'web';
+export type LedgerTransportType = /*'node' |*/ 'web';
 
 export type LedgerLog = Log;
 
 const ledgerTransport = {
-  node: TransportNodeHid,
+  //node: TransportNodeHid,
   web: TransportWebUSB,
 };
 
