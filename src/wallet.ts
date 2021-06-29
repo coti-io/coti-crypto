@@ -270,10 +270,10 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
 
   public abstract async signMessage(messageInBytes: Uint8Array, signingType?: SigningType, addressHex?: string): Promise<SignatureData>;
 
-  public async autoDiscoverAddresses() {
+  public async autoDiscoverAddresses(addressGap?: number) {
     console.log(`Starting to discover addresses`);
-    const addresses = await walletUtils.getAddressesOfWallet(this);
-    addresses.length > 0 ? await this.checkBalancesOfAddresses(addresses) : console.log('No addresses');
+    const addresses = await walletUtils.getAddressesOfWallet(this, addressGap);
+    if (addresses.length > 0) await this.checkBalancesOfAddresses(addresses);
     console.log(`Finished to discover addresses. Total addresses: ${addresses.length}`);
     return this.getAddressMap();
   }
