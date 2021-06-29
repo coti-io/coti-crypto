@@ -13,17 +13,18 @@ export namespace walletUtils {
     return await nodeUtils.sendAddressToNode(address, wallet.getNetwork());
   }
 
-  export async function getAddressesOfWallet<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
+  export async function getAddressesOfWallet<T extends IndexedAddress>(wallet: IndexedWallet<T>, addressGap?: number) {
     let addressesToCheck: string[] = [];
     let addressesThatExists: T[] = [];
     let nextChunk = 0;
     let notExistsAddressFound = false;
     let maxAddressReached = false;
     const generatedAddressMap = new Map<string, T>();
-
+    addressGap = addressGap || 20;
+    console.log(`Getting wallet addresses from fullnode with addressGap ${addressGap}`);
     while (!notExistsAddressFound && !maxAddressReached) {
       const maxAddress = wallet.getMaxAddress();
-      for (let i = nextChunk; i < nextChunk + 20; i++) {
+      for (let i = nextChunk; i < nextChunk + addressGap; i++) {
         const address = await wallet.generateAddressByIndex(i);
         generatedAddressMap.set(address.getAddressHex(), address);
         addressesToCheck.push(address.getAddressHex());
@@ -41,7 +42,7 @@ export namespace walletUtils {
         });
       notExistsAddressFound = Object.values(addressesResult).filter(val => val === false).length ? true : false;
       addressesToCheck = [];
-      nextChunk = nextChunk + 20;
+      nextChunk = nextChunk + addressGap;
     }
     return addressesThatExists;
   }
