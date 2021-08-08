@@ -64,7 +64,7 @@ export class FullNodeFeeSignature extends Signature {
     this.amount = amount;
   }
 
-  getBytes() {
+  public getBytes() {
     return utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.amount));
   }
 }
@@ -78,7 +78,20 @@ export class TransactionTrustScoreSignature extends Signature {
     this.transactionHash = transactionHash;
   }
 
-  getBytes() {
+  public getBytes() {
     return utils.hexToBytes(this.transactionHash);
+  }
+}
+
+export class ClaimReward extends Signature {
+  private creationTime: number;
+
+  constructor(creationTime: number) {
+    super();
+    this.creationTime = creationTime;
+  }
+
+  public getBytes() {
+    return utils.numberToByteArray(this.creationTime, 8);
   }
 }
