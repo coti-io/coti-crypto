@@ -24,7 +24,7 @@ export class WebSocket {
 
   constructor(wallet: BaseWallet) {
     this.wallet = wallet;
-    this.socketUrl = nodeUtils.getSocketUrl(wallet.getNetwork());
+    this.socketUrl = nodeUtils.getSocketUrl(wallet.getNetwork(), wallet.getFullNode());
   }
 
   public connect(successCallback?: () => Promise<void>, reconnectFailedCallback?: () => Promise<void>) {

@@ -20,11 +20,20 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   destinationAddress: string;
   description?: string;
   network?: Network;
+  fullnode?: string;
   feeIncluded?: boolean;
 }) {
-  const { userPrivateKey, wallet, inputMap, feeAddress, destinationAddress, description, network, feeIncluded = false } = parameterObject;
+  const { userPrivateKey, wallet, inputMap, feeAddress, destinationAddress, description, feeIncluded = false } = parameterObject;
+  let { network, fullnode } = parameterObject;
 
-  if (!userPrivateKey && !wallet) throw Error('UserPrivateKey or wallet should be defined');
+  if (!userPrivateKey && !wallet) throw new Error('UserPrivateKey or wallet should be defined');
+
+  if (network && wallet && wallet.getNetwork() !== network) throw new Error('Network parameter should be the same as wallet network');
+  if (wallet) network = wallet.getNetwork();
+
+  if (fullnode && wallet && wallet.getFullNode() !== fullnode) throw new Error('Fullnode parameter should be the same as wallet fullnode');
+  if (wallet) fullnode = wallet.getFullNode();
+
   if (!feeIncluded) {
     if (!feeAddress) throw new Error(`Missing fee address`);
     if (!cryptoUtils.verifyAddressStructure(feeAddress)) throw new Error(`Invalid fee address: ${feeAddress}`);
@@ -46,7 +55,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   });
   if (!feeIncluded && !feeAddressInInputMap) addresses.push(feeAddress!);
 
-  const balanceObject = await nodeUtils.checkBalances(addresses, network);
+  const balanceObject = await nodeUtils.checkBalances(addresses, network, fullnode);
 
   originalAmount = originalAmount.stripTrailingZeros();
 
@@ -60,7 +69,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
     userHash = wallet?.getPublicHash();
   }
 
-  let { fullNodeFee, networkFee } = await getFees(originalAmount, userHash!, keyPair, wallet, feeIncluded, network);
+  let { fullNodeFee, networkFee } = await getFees(originalAmount, userHash!, keyPair, wallet, feeIncluded, network, fullnode);
 
   if (!feeIncluded) {
     const feeAmount = new BigDecimal(fullNodeFee.amount.toString()).add(new BigDecimal(networkFee.amount.toString()));
@@ -99,11 +108,12 @@ async function getFees<T extends IndexedAddress>(
   keyPair?: KeyPair,
   wallet?: IndexedWallet<T>,
   feeIncluded?: boolean,
-  network?: Network
+  network?: Network,
+  fullnode?: string
 ) {
   const originalAmountInNumber = Number(originalAmount.toString());
   const fullNodeFeeSignature = await getFullNodeFeeSignature(originalAmountInNumber, keyPair, wallet);
-  const fullNodeFee = await nodeUtils.getFullNodeFees(originalAmountInNumber, userHash, fullNodeFeeSignature, network, feeIncluded);
+  const fullNodeFee = await nodeUtils.getFullNodeFees(originalAmountInNumber, userHash, fullNodeFeeSignature, network, feeIncluded, fullnode);
   const networkFee = await nodeUtils.getNetworkFees(fullNodeFee, userHash, network, feeIncluded);
   return { fullNodeFee, networkFee };
 }

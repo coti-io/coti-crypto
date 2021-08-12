@@ -36,9 +36,9 @@ export namespace nodeUtils {
     }
   }
 
-  export async function sendAddressToNode(address: BaseAddress, network: Network = 'mainnet') {
+  export async function sendAddressToNode(address: BaseAddress, network: Network = 'mainnet', fullnode?: string) {
     try {
-      const { data } = await axios.put(`${nodeUrl[network].fullNode}/address`, { address: address.getAddressHex() });
+      const { data } = await axios.put(`${fullnode || nodeUrl[network].fullNode}/address`, { address: address.getAddressHex() });
       return data;
     } catch (error) {
       const errorMessage = getErrorMessage(error);
@@ -46,9 +46,9 @@ export namespace nodeUtils {
     }
   }
 
-  export async function checkAddressesExist(addressesToCheck: string[], network: Network = 'mainnet') {
+  export async function checkAddressesExist(addressesToCheck: string[], network: Network = 'mainnet', fullnode?: string) {
     try {
-      const { data } = await axios.post(`${nodeUrl[network].fullNode}/address`, { addresses: addressesToCheck });
+      const { data } = await axios.post(`${fullnode || nodeUrl[network].fullNode}/address`, { addresses: addressesToCheck });
       return data.addresses;
     } catch (error) {
       const errorMessage = getErrorMessage(error);
@@ -56,9 +56,9 @@ export namespace nodeUtils {
     }
   }
 
-  export async function checkBalances(addresses: string[], network: Network = 'mainnet') {
+  export async function checkBalances(addresses: string[], network: Network = 'mainnet', fullnode?: string) {
     try {
-      const { data } = await axios.post(`${nodeUrl[network].fullNode}/balance`, { addresses });
+      const { data } = await axios.post(`${fullnode || nodeUrl[network].fullNode}/balance`, { addresses });
       return data.addressesBalance;
     } catch (error) {
       const errorMessage = getErrorMessage(error);
@@ -66,9 +66,9 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getTransaction(transactionHash: string, network: Network = 'mainnet') {
+  export async function getTransaction(transactionHash: string, network: Network = 'mainnet', fullnode?: string) {
     try {
-      const { data } = await axios.post(`${nodeUrl[network].fullNode}/transaction`, { transactionHash });
+      const { data } = await axios.post(`${fullnode || nodeUrl[network].fullNode}/transaction`, { transactionHash });
       let transaction: TransactionData = data.transactionData;
       transaction = new TransactionData(transaction);
       transaction.setStatus();
@@ -79,9 +79,9 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getTransactionsHistory(addresses: string[], network: Network = 'mainnet') {
+  export async function getTransactionsHistory(addresses: string[], network: Network = 'mainnet', fullnode?: string) {
     const transactionMap = new Map<string, TransactionData>();
-    let response = await axios.post(`${nodeUrl[network].fullNode}/transaction/addressTransactions/batch`, { addresses });
+    let response = await axios.post(`${fullnode || nodeUrl[network].fullNode}/transaction/addressTransactions/batch`, { addresses });
 
     let parsedData = response.data;
     if (typeof parsedData !== 'object') {
@@ -104,10 +104,11 @@ export namespace nodeUtils {
     userHash: string,
     userSignature: SignatureData,
     network: Network = 'mainnet',
-    feeIncluded?: boolean
+    feeIncluded?: boolean,
+    fullnode?: string
   ) {
     try {
-      const response = await axios.put(`${nodeUrl[network].fullNode}/fee`, {
+      const response = await axios.put(`${fullnode || nodeUrl[network].fullNode}/fee`, {
         originalAmount: amountToTransfer,
         userHash,
         userSignature,
@@ -180,9 +181,9 @@ export namespace nodeUtils {
     }
   }
 
-  export async function sendTransaction(transaction: Transaction, network: Network = 'mainnet') {
+  export async function sendTransaction(transaction: Transaction, network: Network = 'mainnet', fullnode?: string) {
     try {
-      const response = await axios.put(`${nodeUrl[network].fullNode}/transaction`, transaction);
+      const response = await axios.put(`${fullnode || nodeUrl[network].fullNode}/transaction`, transaction);
       return response.data;
     } catch (error) {
       const errorMessage = getErrorMessage(error);
@@ -190,8 +191,8 @@ export namespace nodeUtils {
     }
   }
 
-  export function getSocketUrl(network: Network = 'mainnet') {
-    return nodeUrl[network].fullNode + '/websocket';
+  export function getSocketUrl(network: Network = 'mainnet', fullnode?: string) {
+    return (fullnode || nodeUrl[network].fullNode) + '/websocket';
   }
 
   export async function setTrustScore(apiKey: string, userHash: string, network: Network = 'mainnet') {
