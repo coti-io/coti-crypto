@@ -40,13 +40,16 @@ export abstract class WalletEvent extends EventEmitter {
 export class BaseWallet extends WalletEvent {
   protected readonly network: Network;
   protected fullnode?: string;
+  protected trustScoreNode?: string;
   protected readonly addressMap: Map<string, BaseAddress>;
   protected readonly transactionMap: Map<string, ReducedTransaction>;
 
-  constructor(network?: Network, fullnode?: string) {
+  constructor(params: { network?: Network; fullnode?: string; trustScoreNode?: string }) {
     super();
+    const { network, fullnode, trustScoreNode } = params;
     this.network = network || 'mainnet';
     this.fullnode = fullnode;
+    this.trustScoreNode = trustScoreNode;
     this.addressMap = new Map();
     this.transactionMap = new Map();
   }
@@ -64,6 +67,10 @@ export class BaseWallet extends WalletEvent {
 
   public getFullNode() {
     return this.fullnode;
+  }
+
+  public getTrustScoreNode() {
+    return this.trustScoreNode;
   }
 
   public isAddressExists(addressHex: string) {
@@ -197,8 +204,8 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
   protected publicHash!: string;
   protected trustScore!: number;
 
-  constructor(network?: Network, fullnode?: string) {
-    super(network, fullnode);
+  constructor(params: { network?: Network; fullnode?: string; trustScoreNode?: string }) {
+    super(params);
     this.indexToAddressHexMap = new Map();
   }
 
@@ -286,9 +293,9 @@ export class Wallet extends IndexedWallet<Address> {
   private seed!: string;
   private keyPair!: KeyPair;
 
-  constructor(params: { seed?: string; userSecret?: string; serverKey?: BN; network?: Network; fullnode?: string }) {
-    const { seed, userSecret, serverKey, network, fullnode } = params;
-    super(network, fullnode);
+  constructor(params: { seed?: string; userSecret?: string; serverKey?: BN; network?: Network; fullnode?: string; trustScoreNode?: string }) {
+    const { seed, userSecret, serverKey, network, fullnode, trustScoreNode } = params;
+    super({ network, fullnode, trustScoreNode });
     if (seed) {
       if (!this.checkSeedFormat(seed)) throw new Error('Seed is not in correct format');
       this.seed = seed;
@@ -359,9 +366,9 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
   private transportType?: LedgerTransportType;
   private interactive?: boolean;
 
-  constructor(params: { network?: Network; fullnode?: string; interactive?: boolean; transportType?: LedgerTransportType }) {
-    const { network, fullnode, interactive, transportType } = params;
-    super(network, fullnode);
+  constructor(params: { network?: Network; fullnode?: string; trustScoreNode?: string; interactive?: boolean; transportType?: LedgerTransportType }) {
+    const { network, fullnode, trustScoreNode, interactive, transportType } = params;
+    super({ network, fullnode, trustScoreNode });
     this.transportType = transportType;
     this.interactive = interactive;
     this.maxAddress = 20;

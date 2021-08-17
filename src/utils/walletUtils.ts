@@ -7,7 +7,10 @@ import { BaseTransactionData } from '../baseTransaction';
 
 export namespace walletUtils {
   export async function getUserTrustScore<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
-    return await nodeUtils.getUserTrustScore(wallet.getPublicHash(), wallet.getNetwork());
+    const userHash = wallet.getPublicHash();
+    const network = wallet.getNetwork();
+    const trustScoreNode = wallet.getTrustScoreNode();
+    return await nodeUtils.getUserTrustScore(userHash, network, trustScoreNode);
   }
 
   export async function sendAddressToNode(address: BaseAddress, wallet: BaseWallet) {
@@ -66,13 +69,15 @@ export namespace walletUtils {
   export async function getNetworkFees<T extends IndexedAddress>(wallet: IndexedWallet<T>, fullNodeFee: BaseTransactionData, feeIncluded?: boolean) {
     const userHash = wallet.getPublicHash();
     const network = wallet.getNetwork();
-    return await nodeUtils.getNetworkFees(fullNodeFee, userHash, network, feeIncluded);
+    const trustScoreNode = wallet.getTrustScoreNode();
+    return await nodeUtils.getNetworkFees(fullNodeFee, userHash, network, feeIncluded, trustScoreNode);
   }
 
   export async function getTrustScoreForTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>, userHash: string, transaction: Transaction) {
     const transactionHash = transaction.getHash() || transaction.createTransactionHash();
     const userSignature = await new TransactionTrustScoreSignature(transactionHash).sign(wallet, true);
     const network = wallet.getNetwork();
-    return await nodeUtils.getTrustScoreForTransaction(transactionHash, userHash, userSignature, network);
+    const trustScoreNode = wallet.getTrustScoreNode();
+    return await nodeUtils.getTrustScoreForTransaction(transactionHash, userHash, userSignature, network, trustScoreNode);
   }
 }
