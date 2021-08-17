@@ -24,9 +24,9 @@ const nodeUrl = {
 };
 
 export namespace nodeUtils {
-  export async function getUserTrustScore(userHash: string, network: Network = 'mainnet') {
+  export async function getUserTrustScore(userHash: string, network: Network = 'mainnet', trustScoreNode?: string) {
     try {
-      const { data } = await axios.post(`${nodeUrl[network].trustScoreNode}/usertrustscore`, {
+      const { data } = await axios.post(`${trustScoreNode || nodeUrl[network].trustScoreNode}/usertrustscore`, {
         userHash,
       });
       return data;
@@ -121,9 +121,15 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getNetworkFees(fullNodeFeeData: BaseTransactionData, userHash: string, network: Network = 'mainnet', feeIncluded?: boolean) {
+  export async function getNetworkFees(
+    fullNodeFeeData: BaseTransactionData,
+    userHash: string,
+    network: Network = 'mainnet',
+    feeIncluded?: boolean,
+    trustScoreNode?: string
+  ) {
     try {
-      const response = await axios.put(`${nodeUrl[network].trustScoreNode}/networkFee`, {
+      const response = await axios.put(`${trustScoreNode || nodeUrl[network].trustScoreNode}/networkFee`, {
         fullNodeFeeData,
         userHash,
         feeIncluded,
@@ -139,7 +145,8 @@ export namespace nodeUtils {
     userHash: string,
     fullNodeFeeData: BaseTransactionData,
     networkFeeData: BaseTransactionData,
-    network: Network = 'mainnet'
+    network: Network = 'mainnet',
+    trustScoreNode?: string
   ) {
     const iteration = 3;
     let validationNetworkFeeMessage = {
@@ -150,7 +157,7 @@ export namespace nodeUtils {
     let response;
     try {
       for (let i = 1; i < iteration; i++) {
-        response = await axios.post(`${nodeUrl[network].trustScoreNode}/networkFee`, validationNetworkFeeMessage);
+        response = await axios.post(`${trustScoreNode || nodeUrl[network].trustScoreNode}/networkFee`, validationNetworkFeeMessage);
         validationNetworkFeeMessage.networkFeeData = response.data.networkFeeData;
       }
       if (response && response.data) return new BaseTransactionData(response.data.networkFeeData);
@@ -165,7 +172,8 @@ export namespace nodeUtils {
     transactionHash: string,
     userHash: string,
     userSignature: SignatureData,
-    network: Network = 'mainnet'
+    network: Network = 'mainnet',
+    trustScoreNode?: string
   ) {
     const trustScoreMessage = {
       userHash,
@@ -173,7 +181,7 @@ export namespace nodeUtils {
       userSignature,
     };
     try {
-      const response = await axios.post(`${nodeUrl[network].trustScoreNode}/transactiontrustscore`, trustScoreMessage);
+      const response = await axios.post(`${trustScoreNode || nodeUrl[network].trustScoreNode}/transactiontrustscore`, trustScoreMessage);
       return response.data.transactionTrustScoreData;
     } catch (error) {
       const errorMessage = getErrorMessage(error);
@@ -195,7 +203,7 @@ export namespace nodeUtils {
     return (fullnode || nodeUrl[network].fullNode) + '/websocket';
   }
 
-  export async function setTrustScore(apiKey: string, userHash: string, network: Network = 'mainnet') {
+  export async function setTrustScore(apiKey: string, userHash: string, network: Network = 'mainnet', api?: string) {
     if (!apiKey) throw new NodeError('Api key is missing');
     const headers = { 'exchange-api-key': apiKey };
     const setTrustScoreMessage = {
@@ -203,7 +211,7 @@ export namespace nodeUtils {
       network,
     };
     try {
-      const response = await axios.put(`${nodeUrl[network].api}/exchange/trustscore`, setTrustScoreMessage, { headers });
+      const response = await axios.put(`${api || nodeUrl[network].api}/exchange/trustscore`, setTrustScoreMessage, { headers });
       return response.data.trustScore;
     } catch (error) {
       const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
@@ -211,7 +219,7 @@ export namespace nodeUtils {
     }
   }
 
-  export async function updateUserType(apiKey: string, userHash: string, network: Network = 'mainnet', userType: UserType) {
+  export async function updateUserType(apiKey: string, userHash: string, network: Network = 'mainnet', userType: UserType, api?: string) {
     if (!apiKey) throw new NodeError('Api key is missing');
     const headers = { 'exchange-api-key': apiKey };
     const updateUserTypeMessage = {
@@ -220,7 +228,7 @@ export namespace nodeUtils {
       userType,
     };
     try {
-      const response = await axios.put(`${nodeUrl[network].api}/exchange/userType`, updateUserTypeMessage, { headers });
+      const response = await axios.put(`${api || nodeUrl[network].api}/exchange/userType`, updateUserTypeMessage, { headers });
       return response.data.message;
     } catch (error) {
       const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;

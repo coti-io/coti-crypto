@@ -21,10 +21,11 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   description?: string;
   network?: Network;
   fullnode?: string;
+  trustScoreNode?: string;
   feeIncluded?: boolean;
 }) {
   const { userPrivateKey, wallet, inputMap, feeAddress, destinationAddress, description, feeIncluded = false } = parameterObject;
-  let { network, fullnode } = parameterObject;
+  let { network, fullnode, trustScoreNode } = parameterObject;
 
   if (!userPrivateKey && !wallet) throw new Error('UserPrivateKey or wallet should be defined');
 
@@ -33,6 +34,10 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
 
   if (fullnode && wallet && wallet.getFullNode() !== fullnode) throw new Error('Fullnode parameter should be the same as wallet fullnode');
   if (wallet) fullnode = wallet.getFullNode();
+
+  if (trustScoreNode && wallet && wallet.getTrustScoreNode() !== trustScoreNode)
+    throw new Error('TrustScoreNode parameter should be the same as wallet trustScoreNode');
+  if (wallet) trustScoreNode = wallet.getTrustScoreNode();
 
   if (!feeIncluded) {
     if (!feeAddress) throw new Error(`Missing fee address`);
@@ -69,7 +74,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
     userHash = wallet?.getPublicHash();
   }
 
-  let { fullNodeFee, networkFee } = await getFees(originalAmount, userHash!, keyPair, wallet, feeIncluded, network, fullnode);
+  let { fullNodeFee, networkFee } = await getFees(originalAmount, userHash!, keyPair, wallet, feeIncluded, network, fullnode, trustScoreNode);
 
   if (!feeIncluded) {
     const feeAmount = new BigDecimal(fullNodeFee.amount.toString()).add(new BigDecimal(networkFee.amount.toString()));
@@ -86,13 +91,13 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
     addInputBaseTranction(balanceObject, address, amount, baseTransactions);
   });
 
-  networkFee = await nodeUtils.createMiniConsensus(userHash!, fullNodeFee, networkFee, network);
+  networkFee = await nodeUtils.createMiniConsensus(userHash!, fullNodeFee, networkFee, network, trustScoreNode);
 
   addOutputBaseTransactions(originalAmount, fullNodeFee, networkFee, destinationAddress, baseTransactions, feeIncluded);
 
   const transaction = new Transaction(baseTransactions, description, userHash!);
 
-  await addTrustScoreToTransaction(transaction, userHash!, keyPair, wallet, network);
+  await addTrustScoreToTransaction(transaction, userHash!, keyPair, wallet, network, trustScoreNode);
 
   return transaction;
 }
@@ -109,12 +114,13 @@ async function getFees<T extends IndexedAddress>(
   wallet?: IndexedWallet<T>,
   feeIncluded?: boolean,
   network?: Network,
-  fullnode?: string
+  fullnode?: string,
+  trustScoreNode?: string
 ) {
   const originalAmountInNumber = Number(originalAmount.toString());
   const fullNodeFeeSignature = await getFullNodeFeeSignature(originalAmountInNumber, keyPair, wallet);
   const fullNodeFee = await nodeUtils.getFullNodeFees(originalAmountInNumber, userHash, fullNodeFeeSignature, network, feeIncluded, fullnode);
-  const networkFee = await nodeUtils.getNetworkFees(fullNodeFee, userHash, network, feeIncluded);
+  const networkFee = await nodeUtils.getNetworkFees(fullNodeFee, userHash, network, feeIncluded, trustScoreNode);
   return { fullNodeFee, networkFee };
 }
 
@@ -163,10 +169,17 @@ async function addTrustScoreToTransaction<T extends IndexedAddress>(
   userHash: string,
   keyPair?: KeyPair,
   wallet?: IndexedWallet<T>,
-  network?: Network
+  network?: Network,
+  trustScoreNode?: string
 ) {
   const transactionHash = transaction.getHash();
   const transactionTrustScoreSignature = await getTransactionTrustScoreSignature(transactionHash, keyPair, wallet);
-  const transactionTrustScoreData = await nodeUtils.getTrustScoreForTransaction(transactionHash, userHash, transactionTrustScoreSignature, network);
+  const transactionTrustScoreData = await nodeUtils.getTrustScoreForTransaction(
+    transactionHash,
+    userHash,
+    transactionTrustScoreSignature,
+    network,
+    trustScoreNode
+  );
   transaction.addTrustScoreMessageToTransaction(transactionTrustScoreData);
 }
