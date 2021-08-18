@@ -110,7 +110,9 @@ export class WebSocket {
     });
     if (this.wallet instanceof IndexedWallet) {
       const maxAddress = this.wallet.getMaxAddress();
-      for (let i = addresses.length; i < addresses.length + 10 && (!maxAddress || i < maxAddress); i++) {
+      const maxIndex = this.wallet.getMaxIndex();
+      const nextIndex = maxIndex !== undefined ? maxIndex + 1 : 0;
+      for (let i = nextIndex; i < nextIndex + 10 && (!maxAddress || i < maxAddress); i++) {
         const address = await this.wallet.generateAddressByIndex(i);
         this.addressPropagationSubscriber(address);
       }
