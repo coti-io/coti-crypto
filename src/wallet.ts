@@ -366,12 +366,21 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
   private transportType?: LedgerTransportType;
   private interactive?: boolean;
 
-  constructor(params: { network?: Network; fullnode?: string; trustScoreNode?: string; interactive?: boolean; transportType?: LedgerTransportType }) {
-    const { network, fullnode, trustScoreNode, interactive, transportType } = params;
+  constructor(params: {
+    network?: Network;
+    fullnode?: string;
+    trustScoreNode?: string;
+    interactive?: boolean;
+    transportType?: LedgerTransportType;
+    maxAddress?: number;
+  }) {
+    const { network, fullnode, trustScoreNode, interactive, transportType, maxAddress } = params;
+    if (maxAddress !== undefined && (!Number.isInteger(maxAddress) || maxAddress <= 0 || maxAddress > 20))
+      throw new Error('Invalid maxAddress parameter');
     super({ network, fullnode, trustScoreNode });
     this.transportType = transportType;
     this.interactive = interactive;
-    this.maxAddress = 20;
+    this.maxAddress = maxAddress || 20;
   }
 
   public async setPublicHash() {
