@@ -203,6 +203,7 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
   protected readonly indexToAddressHexMap: Map<number, string>;
   protected publicHash!: string;
   protected trustScore!: number;
+  protected maxIndex?: number;
 
   constructor(params: { network?: Network; fullnode?: string; trustScoreNode?: string }) {
     super(params);
@@ -217,6 +218,10 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
 
   public getMaxAddress() {
     return this.maxAddress;
+  }
+
+  public getMaxIndex() {
+    return this.maxIndex;
   }
 
   private checkAddressIndexed(address: BaseAddress) {
@@ -235,6 +240,7 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     super.setAddressToMap(address);
     const index = (<T>address).getIndex();
     this.indexToAddressHexMap.set(index, address.getAddressHex());
+    if (this.maxIndex === undefined || this.maxIndex < index) this.maxIndex = index;
   }
 
   protected setInitialAddressToMap(address: BaseAddress) {
