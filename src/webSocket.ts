@@ -100,19 +100,22 @@ export class WebSocket {
     this.transactionsSubscriptions.forEach(async transactionsSubscription => await transactionsSubscription.unsubscribe());
   }
 
-  private async onConnected(addresses: string[]) {
+  private async onConnected(addressesInHex: string[]) {
     this.reconnectCounter = 0;
-    console.log(`Starting to websocket subscriptions of ${addresses.length} addresses.`);
-    if (!addresses) addresses = [];
+    console.log(`Starting to websocket subscriptions of ${addressesInHex.length} addresses.`);
+    if (!addressesInHex) addressesInHex = [];
 
-    addresses.forEach(address => {
-      this.connectToAddress(address);
+    addressesInHex.forEach(addressHex => {
+      this.connectToAddress(addressHex);
     });
     if (this.wallet instanceof IndexedWallet) {
       const maxAddress = this.wallet.getMaxAddress();
+      const indexGap = this.wallet.getWebSocketIndexGap() || 10;
       const maxIndex = this.wallet.getMaxIndex();
       const nextIndex = maxIndex !== undefined ? maxIndex + 1 : 0;
-      for (let i = nextIndex; i < nextIndex + 10 && (!maxAddress || i < maxAddress); i++) {
+      const maxIndexToSubscribe = maxAddress === undefined ? nextIndex + indexGap : Math.min(nextIndex + indexGap, maxAddress);
+      console.log(`Subscriptions to next indexes from ${nextIndex} to ${maxIndexToSubscribe - 1}`);
+      for (let i = nextIndex; i < maxIndexToSubscribe; i++) {
         const address = await this.wallet.generateAddressByIndex(i);
         this.addressPropagationSubscriber(address);
       }
