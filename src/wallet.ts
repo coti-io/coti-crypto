@@ -204,9 +204,14 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
   protected publicHash!: string;
   protected trustScore!: number;
   protected maxIndex?: number;
+  protected webSocketIndexGap?: number;
 
-  constructor(params: { network?: Network; fullnode?: string; trustScoreNode?: string }) {
-    super(params);
+  constructor(params: { network?: Network; fullnode?: string; trustScoreNode?: string; webSocketIndexGap?: number }) {
+    const { network, fullnode, trustScoreNode, webSocketIndexGap } = params;
+    if (webSocketIndexGap !== undefined && (!Number.isInteger(webSocketIndexGap) || webSocketIndexGap <= 0 || webSocketIndexGap > 10))
+      throw new Error('Invalid webSocketIndexGap parameter');
+    super({ network, fullnode, trustScoreNode });
+    this.webSocketIndexGap = webSocketIndexGap;
     this.indexToAddressHexMap = new Map();
   }
 
@@ -222,6 +227,10 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
 
   public getMaxIndex() {
     return this.maxIndex;
+  }
+
+  public getWebSocketIndexGap() {
+    return this.webSocketIndexGap;
   }
 
   private checkAddressIndexed(address: BaseAddress) {
@@ -299,9 +308,17 @@ export class Wallet extends IndexedWallet<Address> {
   private seed!: string;
   private keyPair!: KeyPair;
 
-  constructor(params: { seed?: string; userSecret?: string; serverKey?: BN; network?: Network; fullnode?: string; trustScoreNode?: string }) {
-    const { seed, userSecret, serverKey, network, fullnode, trustScoreNode } = params;
-    super({ network, fullnode, trustScoreNode });
+  constructor(params: {
+    seed?: string;
+    userSecret?: string;
+    serverKey?: BN;
+    network?: Network;
+    fullnode?: string;
+    trustScoreNode?: string;
+    webSocketIndexGap?: number;
+  }) {
+    const { seed, userSecret, serverKey, network, fullnode, trustScoreNode, webSocketIndexGap } = params;
+    super({ network, fullnode, trustScoreNode, webSocketIndexGap });
     if (seed) {
       if (!this.checkSeedFormat(seed)) throw new Error('Seed is not in correct format');
       this.seed = seed;
@@ -379,11 +396,12 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
     interactive?: boolean;
     transportType?: LedgerTransportType;
     maxAddress?: number;
+    webSocketIndexGap?: number;
   }) {
-    const { network, fullnode, trustScoreNode, interactive, transportType, maxAddress } = params;
+    const { network, fullnode, trustScoreNode, interactive, transportType, maxAddress, webSocketIndexGap } = params;
     if (maxAddress !== undefined && (!Number.isInteger(maxAddress) || maxAddress <= 0 || maxAddress > 20))
       throw new Error('Invalid maxAddress parameter');
-    super({ network, fullnode, trustScoreNode });
+    super({ network, fullnode, trustScoreNode, webSocketIndexGap });
     this.transportType = transportType;
     this.interactive = interactive;
     this.maxAddress = maxAddress || 20;
