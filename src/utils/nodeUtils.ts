@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { BaseAddress } from '../address';
 import { BaseTransactionData } from '../baseTransaction';
 import { SignatureData } from '../signature';
@@ -80,9 +80,12 @@ export namespace nodeUtils {
   }
 
   export async function getTransactionsHistory(addresses: string[], network: Network = 'mainnet', fullnode?: string) {
-    const transactionMap = new Map<string, TransactionData>();
     let response = await axios.post(`${fullnode || nodeUrl[network].fullNode}/transaction/addressTransactions/batch`, { addresses });
+    return getMapFromTransactionHistoryResponse(response);
+  }
 
+  function getMapFromTransactionHistoryResponse(response: AxiosResponse<any>) {
+    const transactionMap = new Map<string, TransactionData>();
     let parsedData = response.data;
     if (typeof parsedData !== 'object') {
       parsedData = JSON.parse(parsedData.substring(0, parsedData.length - 2).concat(']'));
@@ -97,6 +100,22 @@ export namespace nodeUtils {
     });
 
     return transactionMap;
+  }
+
+  export async function getTransactionsHistoryByTimeStamp(
+    addresses: string[],
+    network: Network = 'mainnet',
+    fullnode?: string,
+    startTime?: number,
+    endTime?: number
+  ) {
+    let response = await axios.post(`${fullnode || nodeUrl[network].fullNode}/transaction/addressTransactions/timestamp/batch`, {
+      addresses,
+      startTime,
+      endTime,
+    });
+
+    return getMapFromTransactionHistoryResponse(response);
   }
 
   export async function getFullNodeFees(

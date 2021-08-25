@@ -23,6 +23,10 @@ export class NodeClient {
     return await nodeUtils.getTransactionsHistory(addresses, this.network, this.fullnode);
   }
 
+  async getTransactionHistoryByTimestamp(addresses: string[], startTime?: number, endTime?: number) {
+    return await nodeUtils.getTransactionsHistoryByTimeStamp(addresses, this.network, this.fullnode, startTime, endTime);
+  }
+
   async checkBalances(addresses: string[]) {
     return await nodeUtils.checkBalances(addresses, this.network, this.fullnode);
   }
