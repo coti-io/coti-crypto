@@ -1,5 +1,4 @@
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
-//import TransportNodeHid from '@ledgerhq/hw-transport-node-hid';
 import TransportWebHid from '@ledgerhq/hw-transport-webhid';
 import { HWSDK, SigningType as LedgerSigningType } from '@coti-io/ledger-sdk';
 import { listen as listenLedgerLog, Log } from '@ledgerhq/logs';
@@ -7,30 +6,47 @@ import { SignatureData, SigningType } from '../signature';
 import * as signature from '../signature';
 import { LedgerError } from '../cotiError';
 import { Descriptor, DescriptorEvent, Observer } from '@ledgerhq/hw-transport';
+import Transport from '@ledgerhq/hw-transport';
 
+const NODE_APP = globalThis.process?.release?.name;
 const listenTimeout = 3000;
 const exchangeTimeout = 60000;
 
-export type LedgerTransportType = /*'node' |*/ 'web' | 'webhid';
+export type LedgerTransportType = 'node' | 'web' | 'webhid';
 
 export type LedgerLog = Log;
 
-const ledgerTransport = {
-  //node: TransportNodeHid,
+const ledgerTransport: {
+  node?: typeof Transport;
+  web: typeof TransportWebUSB;
+  webhid: typeof TransportWebHid;
+} = {
   web: TransportWebUSB,
   webhid: TransportWebHid,
 };
+
+if (NODE_APP) {
+  let TransportNodeHid = require('@ledgerhq/hw-transport-node-hid').default;
+  ledgerTransport.node = TransportNodeHid;
+}
+
+function checkTransportType(transportType: LedgerTransportType) {
+  if (NODE_APP && transportType !== 'node') throw new Error('Ledger transport type should be node type');
+  if (!NODE_APP && transportType === 'node') throw new Error('Ledger transaction type can not be node type');
+}
 
 export function listenLog(callback: (ledgerLog: LedgerLog) => void) {
   listenLedgerLog(callback);
 }
 
 export function listen(observer: Observer<DescriptorEvent<Descriptor>>, transportType: LedgerTransportType = 'web') {
-  ledgerTransport[transportType].listen(observer);
+  checkTransportType(transportType);
+  ledgerTransport[transportType]!.listen(observer);
 }
 
 export async function connect(transportType: LedgerTransportType = 'web') {
-  const transport = await ledgerTransport[transportType].create(undefined, listenTimeout);
+  checkTransportType(transportType);
+  const transport = await ledgerTransport[transportType]!.create(undefined, listenTimeout);
   transport.setExchangeTimeout(exchangeTimeout);
 
   return new HWSDK(transport);

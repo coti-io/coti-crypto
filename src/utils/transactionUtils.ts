@@ -64,14 +64,14 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
 
   originalAmount = originalAmount.stripTrailingZeros();
 
-  let keyPair;
-  let userHash;
+  let keyPair: KeyPair | undefined;
+  let userHash: string;
   if (userPrivateKey) {
     const privateKey = new PrivateKey(userPrivateKey);
     keyPair = privateKey.keyPair;
     userHash = privateKey.getPublicKey();
   } else {
-    userHash = wallet?.getPublicHash();
+    userHash = wallet!.getPublicHash();
   }
 
   let { fullNodeFee, networkFee } = await getFees(originalAmount, userHash!, keyPair, wallet, feeIncluded, network, fullnode, trustScoreNode);
