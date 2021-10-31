@@ -37,6 +37,7 @@
     "webstomp-client": "^1.2.6"
   },
   "scripts": {
+    "prebuild": "rimraf dist",
     "build": "tsc",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"

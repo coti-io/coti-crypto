@@ -29,13 +29,13 @@ export namespace walletUtils {
     while (!notExistsAddressFound && !maxAddressReached) {
       const maxAddress = wallet.getMaxAddress();
       for (let i = nextChunk; i < nextChunk + addressGap; i++) {
-        const address = await wallet.generateAddressByIndex(i);
-        generatedAddressMap.set(address.getAddressHex(), address);
-        addressesToCheck.push(address.getAddressHex());
         if (maxAddress && i === maxAddress) {
           maxAddressReached = true;
           break;
         }
+        const address = await wallet.generateAddressByIndex(i);
+        generatedAddressMap.set(address.getAddressHex(), address);
+        addressesToCheck.push(address.getAddressHex());
       }
       let addressesResult = await nodeUtils.checkAddressesExist(addressesToCheck, wallet.getNetwork(), wallet.getFullNode());
       Object.keys(addressesResult)
