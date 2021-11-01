@@ -244,7 +244,8 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
   public abstract checkAddressType(address: BaseAddress): void;
 
   protected setAddressToMap(address: BaseAddress) {
-    if (this.maxAddress && this.addressMap.size >= this.maxAddress) throw new Error(`Address map size can not exceed ${this.maxAddress}`);
+    if (this.maxAddress && this.addressMap.get(address.getAddressHex()) === undefined && this.addressMap.size >= this.maxAddress)
+      throw new Error(`Address map size can not exceed ${this.maxAddress}`);
     this.checkAddressType(address);
     super.setAddressToMap(address);
     const index = (<T>address).getIndex();
