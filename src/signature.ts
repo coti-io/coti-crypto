@@ -7,6 +7,7 @@ import * as cryptoUtils from './utils/cryptoUtils';
 type KeyPair = cryptoUtils.KeyPair;
 
 export enum SigningType {
+  MESSAGE = 'Message',
   FULL_NODE_FEE = 'FullNode Fee',
   TX_TRUST_SCORE = 'Transaction TrustScore',
   BASE_TX = 'BaseTransaction',

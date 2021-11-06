@@ -17,10 +17,12 @@ export interface WalletEvent {
   on(event: 'balanceChange', listener: (address: BaseAddress) => void): this;
   on(event: 'generateAddress', listener: (addressHex: string) => void): this;
   on(event: 'receivedTransaction', listener: (transaction: TransactionData) => void): this;
+  on(event: 'signingMessage', listener: (signingType: SigningType) => void): this;
 
   emit(event: 'balanceChange', address: BaseAddress): boolean;
   emit(event: 'generateAddress', addressHex: string): boolean;
   emit(event: 'receivedTransaction', transaction: TransactionData): boolean;
+  emit(event: 'signingMessage', signingType: SigningType): boolean;
 }
 
 export abstract class WalletEvent extends EventEmitter {
@@ -286,6 +288,10 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
 
   public abstract async signMessage(messageInBytes: Uint8Array, signingType?: SigningType, addressHex?: string): Promise<SignatureData>;
 
+  public onSigningMessage(listener: (signingType: SigningType) => void): this {
+    return this.on('signingMessage', listener);
+  }
+
   public async autoDiscoverAddresses(addressGap?: number) {
     console.log(`Starting to discover addresses`);
     const addresses = await walletUtils.getAddressesOfWallet(this, addressGap);
@@ -373,8 +379,9 @@ export class Wallet extends IndexedWallet<Address> {
     this.addressTypeGuard(address, Address);
   }
 
-  public async signMessage(messageInBytes: Uint8Array, signingType?: SigningType, addressHex?: string) {
+  public async signMessage(messageInBytes: Uint8Array, signingType: SigningType = SigningType.MESSAGE, addressHex?: string) {
     console.log(`Signing message of type ${signingType}`);
+    this.emit('signingMessage', signingType);
 
     let keyPair;
     if (addressHex) {
@@ -435,8 +442,9 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
     return address;
   }
 
-  public async signMessage(messageInBytes: Uint8Array, signingType?: SigningType, addressHex?: string) {
+  public async signMessage(messageInBytes: Uint8Array, signingType: SigningType = SigningType.MESSAGE, addressHex?: string) {
     console.log(`Ledger device signing message of type ${signingType}`);
+    this.emit('signingMessage', signingType);
 
     const messageInHex = utils.byteArrayToHexString(messageInBytes);
     if (addressHex) {
