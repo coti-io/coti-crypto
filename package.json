@@ -9,7 +9,7 @@
     "url": "https://github.com/coti-io/coti-crypto"
   },
   "dependencies": {
-    "@coti-io/ledger-sdk": "1.1.0-beta.2",
+    "@coti-io/ledger-sdk": "1.1.0",
     "@ledgerhq/hw-transport-node-hid": "^5.34.0",
     "@ledgerhq/hw-transport-webhid": "^5.34.0",
     "@ledgerhq/hw-transport-webusb": "^5.34.1",
@@ -44,7 +44,7 @@
   },
   "keywords": [],
   "author": "Eli Hallufgil <eli@coti.io>",
-  "license": "GPLv3",
+  "license": "GPL-3.0",
   "devDependencies": {
     "@types/node": "^14.6.0",
     "@typescript-eslint/eslint-plugin": "^3.9.1",
