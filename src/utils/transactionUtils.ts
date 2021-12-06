@@ -7,8 +7,10 @@ import { BaseTransaction, BaseTransactionName, BaseTransactionData } from '../ba
 import { Transaction } from '../transaction';
 import { IndexedWallet } from '../wallet';
 import { IndexedAddress } from '../address';
+import axios from 'axios';
 
 const amountRegex = /^\d+(\.\d{1,8})?$/;
+const trustNodeAddress = "coti-trust-node.coti.io"
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -182,4 +184,14 @@ async function addTrustScoreToTransaction<T extends IndexedAddress>(
     trustScoreNode
   );
   transaction.addTrustScoreMessageToTransaction(transactionTrustScoreData);
+}
+
+async function getTransactionTrustScore(userHash: string){
+  const payload = {
+    userHash: JSON.stringify(userHash)
+  };
+  const { data } = await axios.post(`http://${trustNodeAddress}/currencies/token/generate`, payload);
+
+  return data;
+    
 }

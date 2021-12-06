@@ -5,10 +5,13 @@ import { SignatureData } from '../signature';
 import * as utils from './utils';
 import { Transaction, TransactionData } from '../transaction';
 import { NodeError } from '../cotiError';
+import { hashAndSign } from './cryptoUtils';
 
 type Network = utils.Network;
 
 type UserType = 'consumer' | 'fullnode';
+
+const nodeAddress = "coti-full-node.coti.io";
 
 const nodeUrl = {
   mainnet: {
@@ -249,6 +252,26 @@ export namespace nodeUtils {
     try {
       const response = await axios.put(`${api || nodeUrl[network].api}/exchange/userType`, updateUserTypeMessage, { headers });
       return response.data.message;
+    } catch (error) {
+      const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
+      throw new NodeError(errorMessage, { debugMessage: `Error update user type at trust score node` });
+    }
+  }
+  
+  export async function getUserTokenCurrencies(userHash: string, privateKey: string,  network: Network = 'testnet', fullnode?: string){
+    const message = `${utils.getArrayFromString(userHash)}`;
+    const signatureData = hashAndSign(utils.hexToBytes(privateKey), message);
+    const payload = {
+      userHash,
+      signature: signatureData
+    }
+    const headers = {
+      'Content-Type': "application/json"
+    };
+
+    try {
+      const { data } = await axios.post(`http://coti-full-node.coti.io/currencies/token/user`,payload, { headers });
+      return data;
     } catch (error) {
       const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
       throw new NodeError(errorMessage, { debugMessage: `Error update user type at trust score node` });

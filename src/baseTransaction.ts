@@ -15,6 +15,7 @@ export enum BaseTransactionName {
   NETWORK_FEE = 'NFBT',
   ROLLING_RESERVE = 'RRBT',
   RECEIVER = 'RBT',
+  GENERATE_TOKEN = 'TGFBT'
 }
 
 export interface Item {
@@ -43,6 +44,7 @@ export interface BaseTransactionData {
   originalAmount?: string;
   networkFeeTrustScoreNodeResult?: TrustScoreNodeResult[];
   rollingReserveTrustScoreNodeResult?: TrustScoreNodeResult[];
+  generateTokenResult?: TrustScoreNodeResult[];
   reducedAmount?: string;
   receiverDescription?: string;
   signatureData: SignatureData;
@@ -74,6 +76,7 @@ export class BaseTransaction {
   private originalAmount?: BigDecimal;
   private networkFeeTrustScoreNodeResult?: TrustScoreNodeResult[];
   private rollingReserveTrustScoreNodeResult?: TrustScoreNodeResult[];
+  private generateTokenResult?: TrustScoreNodeResult[];
   private receiverDescription?: string;
   private reducedAmount?: BigDecimal;
   private signatureData?: SignatureData;
@@ -159,6 +162,8 @@ export class BaseTransaction {
     } else if (feeData.name === BaseTransactionName.RECEIVER) {
       baseTransaction.receiverDescription = feeData.receiverDescription;
       baseTransaction.signatureData = feeData.signatureData;
+    } else if (feeData.name === BaseTransactionName.GENERATE_TOKEN){
+      baseTransaction.generateTokenResult = feeData.generateTokenResult;
     } else {
       baseTransaction.signatureData = feeData.signatureData;
     }
@@ -200,6 +205,7 @@ export class BaseTransaction {
       originalAmount: this.originalAmount ? this.originalAmount.toString() : undefined,
       reducedAmount: this.reducedAmount ? this.reducedAmount.toString() : undefined,
       networkFeeTrustScoreNodeResult: this.networkFeeTrustScoreNodeResult,
+      generateTokenFeeTrustScoreNodeResult: this.generateTokenResult,
       encryptedMerchantName: this.encryptedMerchantName,
       items: this.items,
       rollingReserveTrustScoreNodeResult: this.rollingReserveTrustScoreNodeResult,
