@@ -1,17 +1,17 @@
 import axios, { AxiosResponse } from 'axios';
 import { BaseAddress } from '../address';
-import { BaseTransactionData } from '../baseTransaction';
-import { SignatureData } from '../signature';
+import { BaseTransactionData, BaseTransactionName } from '../baseTransaction';
+import { SignatureData, TokenCurrenciesSignature } from '../signature';
 import * as utils from './utils';
-import { Transaction, TransactionData } from '../transaction';
+import { Transaction, TransactionData, TransactionType } from '../transaction';
 import { NodeError } from '../cotiError';
 import { hashAndSign } from './cryptoUtils';
+import { BaseTransaction, BigDecimal, cryptoUtils, IBTSignature, TransactionSignature, Wallet, walletUtils } from '..';
+import utf8 from 'utf8';
 
 type Network = utils.Network;
 
 type UserType = 'consumer' | 'fullnode';
-
-const nodeAddress = "coti-full-node.coti.io";
 
 const nodeUrl = {
   mainnet: {
@@ -258,9 +258,14 @@ export namespace nodeUtils {
     }
   }
   
-  export async function getUserTokenCurrencies(userHash: string, privateKey: string,  network: Network = 'testnet', fullnode?: string){
-    const message = `${utils.getArrayFromString(userHash)}`;
-    const signatureData = hashAndSign(utils.hexToBytes(privateKey), message);
+  export async function getUserTokenCurrencies(userHash: string, privateKey: string, seed: string){
+    const tokenCurrencies = new TokenCurrenciesSignature(userHash);
+    const params = {
+      seed,
+      userSecret: privateKey
+    };
+    const indexedWallet = new Wallet(params);
+    const signatureData = await tokenCurrencies.sign(indexedWallet, false);
     const payload = {
       userHash,
       signature: signatureData
@@ -270,11 +275,92 @@ export namespace nodeUtils {
     };
 
     try {
-      const { data } = await axios.post(`http://coti-full-node.coti.io/currencies/token/user`,payload, { headers });
-      return data;
+      const { data } = await axios.post(`https://coti-full-node.coti.io/currencies/token/user`,payload, { headers });
+      return data.userTokens;
     } catch (error) {
       const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
       throw new NodeError(errorMessage, { debugMessage: `Error update user type at trust score node` });
+    }
+  }
+  
+  export async function transactionTokenGeneration(token_generation_fee_base_transaction: BaseTransactionData,full_node_fee: BaseTransactionData, trust_score_data: BaseTransactionData, wallet_address_IBT: string, seed: string, privateKey: string, userHash: string){
+    const instant_time = Number(new Date().getTime().toString().substring(0,10));
+    const instant_time1 = instant_time * 1000;
+    const IBT_addressHash = wallet_address_IBT;
+    const tokenGenerationFee = new BigDecimal(token_generation_fee_base_transaction.amount);
+    const fullNodeFeeAmount = new BigDecimal(full_node_fee.amount);
+    const fullAmount = new BigDecimal('0').add(tokenGenerationFee).add(fullNodeFeeAmount);
+    const IBT_amount = parseFloat(fullAmount.toString()) * -1;
+    full_node_fee.currencyHash = full_node_fee.currencyHash? full_node_fee.currencyHash: '';
+
+    const addressHashBytes = utils.hexToBytes(IBT_addressHash);
+    const instantTimeBytes = utils.numberToByteArray(instant_time1, 8);
+    const currencyHashBytes = full_node_fee.currencyHash? utils.hexToBytes(full_node_fee.currencyHash): new Uint8Array();
+    const messageI = `${IBT_amount}`;
+    const messageBytes = utils.getBytesFromString(messageI);
+    const arraysToMerge = utils.concatByteArrays([ addressHashBytes, messageBytes, instantTimeBytes, currencyHashBytes ]);
+    const IBT_Hash = cryptoUtils.hashKeccak256(arraysToMerge);
+
+    const msgT = IBT_Hash + full_node_fee.hash + token_generation_fee_base_transaction.hash;
+    const hT = cryptoUtils.hashKeccak256(utils.hexToBytes(msgT));
+
+    // const transactionSignature = new TransactionSignature(hT, 'TokenGeneration', 'generate token', instant_time1);
+    // const params = {
+    //     seed,
+    //     userSecret: privateKey,
+    // };
+    // const indexedWallet = new Wallet(params);
+    // const transactionSignatureData = await transactionSignature.sign(indexedWallet, false);
+
+    // const ibtSignature = new IBTSignature(hT);
+    // const IBTSignatureData = await ibtSignature.sign(indexedWallet, false);
+    
+    // const IBT = {
+    //   "hash": IBT_Hash,
+    //   "currencyHash": full_node_fee.currencyHash,
+    //   "amount": IBT_amount,
+    //   "createTime": instant_time,
+    //   "addressHash": wallet_address_IBT,
+    //   "name": "IBT",
+    //   "signatureData": IBTSignatureData
+    // };
+    const IBTAmountBD = new BigDecimal(IBT_amount);
+    const IBT_Transaction = new BaseTransaction(wallet_address_IBT, IBTAmountBD, BaseTransactionName.INPUT, undefined, IBT_Hash, fullAmount, full_node_fee.currencyHash)
+    const fullNodeFeeBaseTransaction = BaseTransaction.getBaseTransactionFromFeeData(full_node_fee);
+    const tokenGenerationFeeBaseTransaction = BaseTransaction.getBaseTransactionFromFeeData(token_generation_fee_base_transaction);
+    
+    const baseTransaction = [IBT_Transaction, fullNodeFeeBaseTransaction, tokenGenerationFeeBaseTransaction];
+    const tx = new Transaction(baseTransaction, 'generate token', userHash, TransactionType.TOKENGENERATION, true, instant_time);
+    tx.addTrustScoreMessageToTransaction(trust_score_data)
+    const params = {
+      seed,
+      userSecret: privateKey,
+    };
+    
+    
+    const indexedWallet = new Wallet(params);
+    const address = await indexedWallet.getAddressByIndex(0);
+    IBT_Transaction.signWithKeyPair(IBT_Hash, address.getAddressKeyPair());
+    //const addresses = await walletUtils.getAddressesOfWallet(indexedWallet);
+
+    await tx.signTransaction(indexedWallet);
+    // const payload = {
+    //   "hash": hT,
+    //   "baseTransactions": baseTransaction,
+    //   "transactionDescription": "generate token",
+    //   "createTime": instant_time,
+    //   "senderHash": userHash,
+    //   "senderSignature": TransactionSignatureData,
+    //   "type": "TokenGeneration",
+    //   "trustScoreResults": [trust_score_data]
+    // }
+    const headers = {'Content-Type': "application/json"}
+    try {
+
+      const { data } = await axios.put(`https://coti-full-node.coti.io/transaction`, tx, { headers });
+      return data;
+    } catch (error) {
+      throw error;
     }
   }
 

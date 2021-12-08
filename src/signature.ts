@@ -7,12 +7,19 @@ import { EcSignatureOptions } from './utils/cryptoUtils';
 
 type KeyPair = cryptoUtils.KeyPair;
 
+
+
+
 export enum SigningType {
   MESSAGE = 'Message',
   FULL_NODE_FEE = 'FullNode Fee',
   TX_TRUST_SCORE = 'Transaction TrustScore',
   BASE_TX = 'BaseTransaction',
+  Originator = 'Originator',
   TX = 'Transaction',
+  TokenCurrencies = "TokenCurrencies",
+  CurrencyTypeData = "CurrencyTypeData",
+  TG_TX_TRUST_SCORE = 'TokenGeneration TrustScore',
 }
 
 export type SigningTypeKey = keyof typeof SigningType;
@@ -101,6 +108,72 @@ export class ClaimReward extends Signature {
 
   public getBytes() {
     return utils.numberToByteArray(this.creationTime, 8);
+  }
+}
+
+export class OriginatorSignature extends Signature {
+  private currencyName: string;
+  private currencySymbol: string;
+  private description: string;
+  private totalSupply: number;
+  private scale: number;
+
+  constructor(currencyName: string, currencySymbol: string, description: string, totalSupply: number, scale: number) {
+    super();
+    this.signingType = SigningType.Originator;
+    this.currencyName = currencyName;
+    this.currencySymbol= currencySymbol;
+    this.description = description;
+    this.totalSupply = totalSupply;
+    this.scale = scale;
+  }
+
+  public getBytes() {
+    const message = `${utf8.encode(this.currencyName)}${utf8.encode(this.currencySymbol)}${utf8.encode(this.description)}${utf8.encode(this.totalSupply.toString())}`;
+    const arraysToMerge = [utils.getBytesFromString(message), utils.numberToByteArray(this.scale, 4)]
+
+    return utils.concatByteArrays(arraysToMerge);
+  }
+}
+
+export class CurrencyTypeDataSignature extends Signature {
+  private currencySymbol: string;
+  private currencyType: string;
+  private currencyRateSourceType: string;
+  private rateSource: string;
+  private protectionModel: string;
+  private instantTime: number
+
+  constructor(currencySymbol: string, currencyType: string, currencyRateSourceType: string, rateSource: string, protectionModel: string, instantTime: number) {
+    super();
+    this.signingType = SigningType.CurrencyTypeData;
+    this.currencySymbol = currencySymbol;
+    this.currencyType= currencyType;
+    this.currencyRateSourceType = currencyRateSourceType;
+    this.rateSource = rateSource;
+    this.protectionModel = protectionModel;
+    this.instantTime = instantTime;
+  }
+
+  public getBytes() {
+    const message = `${utf8.encode(this.currencySymbol)}${utf8.encode(this.currencyType)}${utf8.encode(this.currencyRateSourceType)}${utf8.encode(this.rateSource)}${utf8.encode(this.protectionModel)}`;
+    const arraysToMerge = [utils.getBytesFromString(message), utils.numberToByteArray(this.instantTime, 8)];
+
+    return utils.concatByteArrays(arraysToMerge);
+  }
+}
+
+export class TokenCurrenciesSignature extends Signature {
+  private userHash: string;
+
+  constructor(userHash: string) {
+    super();
+    this.userHash = userHash;
+    this.signingType = SigningType.TokenCurrencies;
+  }
+
+  public getBytes() {
+    return utils.hexToBytes(this.userHash);
   }
 }
 

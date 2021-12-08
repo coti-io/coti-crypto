@@ -15,7 +15,7 @@ export enum BaseTransactionName {
   NETWORK_FEE = 'NFBT',
   ROLLING_RESERVE = 'RRBT',
   RECEIVER = 'RBT',
-  GENERATE_TOKEN = 'TGFBT'
+  GENERATE_TOKEN = 'TGBT'
 }
 
 export interface Item {
@@ -36,11 +36,13 @@ type BaseTransactionTime = 'createTime';
 export interface BaseTransactionData {
   hash: string;
   addressHash: string;
+  currencyHash?: string;
   amount: string;
   createTime: number;
   name: BaseTransactionName;
   items?: Item[];
   encryptedMerchantName?: string;
+  serviceData?: any;
   originalAmount?: string;
   networkFeeTrustScoreNodeResult?: TrustScoreNodeResult[];
   rollingReserveTrustScoreNodeResult?: TrustScoreNodeResult[];
@@ -48,6 +50,7 @@ export interface BaseTransactionData {
   reducedAmount?: string;
   receiverDescription?: string;
   signatureData: SignatureData;
+  signerHash: string;
 }
 
 export class BaseTransactionData {
@@ -67,9 +70,11 @@ export class BaseTransactionData {
 
 export class BaseTransaction {
   private hash!: string;
+  private currencyHash?: string;
   private addressHash: string;
   private amount: BigDecimal;
   private createTime: number;
+  private serviceData?: any
   private name: BaseTransactionName;
   private items?: Item[];
   private encryptedMerchantName?: string;
@@ -80,6 +85,7 @@ export class BaseTransaction {
   private receiverDescription?: string;
   private reducedAmount?: BigDecimal;
   private signatureData?: SignatureData;
+  private signerHash?: string;
 
   constructor(
     addressHash: string,
@@ -87,12 +93,19 @@ export class BaseTransaction {
     name: BaseTransactionName,
     items?: Item[],
     encryptedMerchantName?: string,
-    originalAmount?: BigDecimal
+    originalAmount?: BigDecimal,
+    currencyHash?: string,
+    serviceData?: any,
+    signerHash?: string
   ) {
     this.addressHash = addressHash;
+    this.name = name;
+    this.currencyHash = currencyHash;
+    this.serviceData = serviceData;
+    this.signerHash = signerHash;
     this.amount = amount.stripTrailingZeros();
     this.createTime = utils.utcNowToSeconds();
-    this.name = name;
+
     if (name === BaseTransactionName.RECEIVER && originalAmount) {
       this.originalAmount = originalAmount.stripTrailingZeros();
     }
@@ -103,6 +116,14 @@ export class BaseTransaction {
     }
 
     this.createBaseTransactionHash();
+  }
+
+  public getAmount(): BigDecimal{
+    return this.amount;
+  };
+
+  public getCurrencyHash(): string{
+    return this.currencyHash || '';
   }
 
   private createBaseTransactionHash() {
@@ -163,7 +184,10 @@ export class BaseTransaction {
       baseTransaction.receiverDescription = feeData.receiverDescription;
       baseTransaction.signatureData = feeData.signatureData;
     } else if (feeData.name === BaseTransactionName.GENERATE_TOKEN){
-      baseTransaction.generateTokenResult = feeData.generateTokenResult;
+      baseTransaction.serviceData = feeData.serviceData;
+      baseTransaction.signatureData = feeData.signatureData;
+      baseTransaction.signerHash = feeData.signerHash;
+      baseTransaction.currencyHash = feeData.currencyHash;
     } else {
       baseTransaction.signatureData = feeData.signatureData;
     }
@@ -211,6 +235,9 @@ export class BaseTransaction {
       rollingReserveTrustScoreNodeResult: this.rollingReserveTrustScoreNodeResult,
       receiverDescription: this.receiverDescription,
       signatureData: this.signatureData!,
+      currencyHash: this.currencyHash? this.currencyHash: undefined,
+      serviceData: this.serviceData? this.serviceData : undefined,
+      signerHash: this.signerHash? this.signerHash : undefined
     };
 
     return jsonToReturn;

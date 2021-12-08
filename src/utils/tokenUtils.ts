@@ -1,10 +1,9 @@
 import keccak from "keccak";
-import { cryptoUtils, utils } from "..";
-import { generateRequestDTO } from "../generateRequest";
-import { generateKeyPairFromSeed } from "./cryptoUtils";
+import { BaseTransactionData, cryptoUtils, CurrencyTypeDataSignature, IndexedWallet, OriginatorSignature, utils, Wallet } from "..";
+import { generateKeyPairFromSeed, getKeyPairFromPrivate, signByteArrayMessage } from "./cryptoUtils";
 import axios from 'axios';
 import { hashAndSign } from './cryptoUtils';
-import { numberToByteArray } from './utils';
+import { byteArrayToHexString, getArrayFromString, numberToByteArray } from './utils';
 import utf8 from 'utf8';
 
 const financialNodeAddress = 'coti-financial-node.coti.io';
@@ -12,18 +11,21 @@ const financialNodeAddress = 'coti-financial-node.coti.io';
 const rateSource = "something"
 
 export namespace tokenUtils {
-    
     export async function currenciesTokenGenerate(userHash:string, privateKey:string, currencyName:string, currencySymbol:string, currencyType:string, description:string
-      ,totalSupply:number, scale:number, currencyRateSourceType:string, rateSource:string, protectionModel:string) {
+      ,totalSupply:number, scale:number, currencyRateSourceType:string, rateSource:string, protectionModel:string, seed: string) {
       try {
-            const privateKeyBytes = utils.hexToBytes(privateKey);
-            const message = `${encodeURIComponent(currencyName)}${encodeURIComponent(currencySymbol)}${encodeURIComponent(description)}${encodeURIComponent(totalSupply.toString())}${numberToByteArray(scale, 4)}`;
-            const signatureData = hashAndSign(privateKeyBytes, message)
-            const instantTime = new Date().getTime();
+            const instantTime = Number(new Date().getTime().toString().substring(0,10));
+            const tokenGeneration = new OriginatorSignature(currencyName, currencySymbol, description, totalSupply, scale);
+            const params = {
+              seed,
+              userSecret: privateKey
+            };
+            const indexedWallet = new Wallet(params);
+            const signatureData = await tokenGeneration.sign(indexedWallet, false);
 
             const instantTime2 = instantTime * 1000
-            const message2 = `${encodeURIComponent(currencySymbol)}${encodeURIComponent(currencyType)}${encodeURIComponent(currencyRateSourceType)}${encodeURIComponent(rateSource)}${encodeURIComponent(protectionModel)}${numberToByteArray(instantTime2, 8)}`;
-            const signatureData2 = hashAndSign(privateKeyBytes, message2)
+            const tokenGeneration2 = new CurrencyTypeDataSignature(currencySymbol, currencyType, currencyRateSourceType, rateSource, protectionModel, instantTime2);
+            const signatureData2 = await tokenGeneration2.sign(indexedWallet, false);
 
             const payload = {
               "originatorCurrencyData":
@@ -39,7 +41,7 @@ export namespace tokenUtils {
               "currencyTypeData":
               {
                   "currencyType": "REGULAR_CMD_TOKEN",
-                  "createTime": instantTime,
+                  "createTime": Math.round(instantTime),
                   "currencyRateSourceType": currencyRateSourceType,
                   "rateSource": rateSource,
                   "protectionModel": protectionModel,
@@ -50,7 +52,7 @@ export namespace tokenUtils {
 
             const { data } = await axios.post(`https://${financialNodeAddress}/currencies/token/generate`, payload);
 
-            return utf8.decode(data);
+            return new BaseTransactionData(data.tokenGenerationFee);
       } catch (error) {
         throw error;
       }

@@ -16,6 +16,7 @@ export enum TransactionType {
   TRANSFER = 'Transfer',
   ZEROSPEND = 'ZeroSpend',
   CHARGEBACK = 'Chargeback',
+  TOKENGENERATION = 'TokenGeneration'
 }
 
 export type TransactionStatus = 'pending' | 'confirmed';
@@ -91,7 +92,8 @@ export class Transaction {
     transactionDescription = 'No description',
     userHash: string,
     type?: TransactionType,
-    createHash = true
+    createHash = true,
+    createTime?: number
   ) {
     this.baseTransactions = [];
 
@@ -99,7 +101,7 @@ export class Transaction {
       this.baseTransactions.push(listOfBaseTransaction[i]);
     }
 
-    this.createTime = utils.utcNowToSeconds();
+    this.createTime = createTime? createTime: utils.utcNowToSeconds();
     this.transactionDescription = transactionDescription;
     this.trustScoreResults = [];
     this.senderHash = userHash;
@@ -124,7 +126,7 @@ export class Transaction {
     return this.hash;
   }
 
-  public addTrustScoreMessageToTransaction(trustScoreMessage: string) {
+  public addTrustScoreMessageToTransaction(trustScoreMessage: any) {
     this.trustScoreResults.push(trustScoreMessage);
   }
 
