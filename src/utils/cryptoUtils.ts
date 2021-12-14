@@ -227,20 +227,15 @@ export async function generateKeyPairFromMnemonic(mnemonic: string, index?: numb
   return generateKeyPairFromSeed(seed, index);
 }
 
-export function hashAndSign(privateKeyBytes: any, message: any) {
+export function hashAndSign(privateKeyBytes: Uint8Array, message: string) {
   const keccakHash = keccak256.update(message);
   const digest = keccakHash.digest();
-  const sig = privateKeyBytes.sign(digest).toDER();
+  const signinKey = ec.keyFromPrivate(privateKeyBytes);
+  const sig = signinKey.sign(digest).toDER();
   const signHEX = utf8.decode(binascii.hexlify(sig.join()));
   
   return {
     r: signHEX.substring(0, 64),
     s: signHEX.substring(64, 128 )
   }
-}
-
-export function hashKeccak256(message: Uint8Array){
-  const keccakHash = keccak256.update(message).array();
-  
-  return utils.byteArrayToHexString(new Uint8Array(keccakHash));
 }

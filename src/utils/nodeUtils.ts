@@ -13,6 +13,8 @@ type Network = utils.Network;
 
 type UserType = 'consumer' | 'fullnode';
 
+const nodeAddress = "coti-full-node.coti.io";
+
 const nodeUrl = {
   mainnet: {
     fullNode: 'https://mainnet-fullnode1.coti.io',
