@@ -1,26 +1,14 @@
-import keccak from "keccak";
-import { BaseTransactionData, cryptoUtils, CurrencyTypeDataSignature, IndexedWallet, OriginatorSignature, utils, Wallet } from "..";
-import { generateKeyPairFromSeed, getKeyPairFromPrivate, signByteArrayMessage } from "./cryptoUtils";
+import { BaseTransactionData, cryptoUtils, CurrencyTypeDataSignature, MintQuoteDataSignature, MintQuoteFeeSignature, MintQuoteSignature, OriginatorSignature, utils, Wallet } from "..";
 import axios from 'axios';
-import { hashAndSign } from './cryptoUtils';
-import { byteArrayToHexString, getArrayFromString, numberToByteArray } from './utils';
-import utf8 from 'utf8';
-
-const financialNodeAddress = 'coti-financial-node.coti.io';
-//TODO: find what value it should be in
-const rateSource = "something"
 
 export namespace tokenUtils {
-    export async function currenciesTokenGenerate(userHash:string, privateKey:string, currencyName:string, currencySymbol:string, currencyType:string, description:string
-      ,totalSupply:number, scale:number, currencyRateSourceType:string, rateSource:string, protectionModel:string, seed: string) {
+    export async function currenciesTokenGenerate(userHash:string, currencyName:string, currencySymbol:string, currencyType:string, description:string,
+                                                  totalSupply:number, scale:number, currencyRateSourceType:string, rateSource:string, protectionModel:string,
+                                                  seed: string, financeNode: string) {
       try {
             const instantTime = Number(new Date().getTime().toString().substring(0,10));
             const tokenGeneration = new OriginatorSignature(currencyName, currencySymbol, description, totalSupply, scale);
-            const params = {
-              seed,
-              userSecret: privateKey
-            };
-            const indexedWallet = new Wallet(params);
+            const indexedWallet = new Wallet({ seed });
             const signatureData = await tokenGeneration.sign(indexedWallet, false);
 
             const instantTime2 = instantTime * 1000
@@ -50,7 +38,7 @@ export namespace tokenUtils {
               }
             };
 
-            const { data } = await axios.post(`https://${financialNodeAddress}/currencies/token/generate`, payload);
+            const { data } = await axios.post(`${financeNode}/currencies/token/generate`, payload);
 
             return new BaseTransactionData(data.tokenGenerationFee);
       } catch (error) {
@@ -59,111 +47,70 @@ export namespace tokenUtils {
 
 
     }
-    export async function mintQuote(currencyHash: string, userHash: string, privateKey: string, mintingAmount: number){
-      const privateKeyBytes = utils.hexToBytes(privateKey);
-      const instantTime = new Date().getTime();
+    export async function mintQuote(currencyHash: string, userHash: string, seed: string, mintingAmount: number, financeNode: string){
+      const instantTime = Math.floor(new Date().getTime() / 1000);
       const instantTime2 = instantTime * 1000;
-      const message = `${utils.hexToBytes(userHash)}${mintingAmount}${numberToByteArray(instantTime2, 8)}`;
-      const signatureData = hashAndSign(privateKeyBytes, message);
+      const indexedWallet = new Wallet({ seed });
+      const mintingQuote = new MintQuoteSignature(currencyHash, mintingAmount, instantTime2);
+      const signatureData = await mintingQuote.sign(indexedWallet, false);
+      
       const payload = {
         currencyHash,
         mintingAmount,
         createTime: instantTime,
+        userHash,
         signature: signatureData
       };
 
-      const { data } = await axios.post(`https://${financialNodeAddress}/currencies/token/mint/quote`, payload);
-
-      return utf8.decode(data);
+      try{
+        const { data } = await axios.post(`${financeNode}/currencies/token/mint/quote`, payload);
+      
+      return data.mintingFeeQuote;
+      }
+      catch(error){
+        throw error;
+      }
     }
-    export async function mint_fee(currencyHash: string, mintingAmount: number, feeAmount: number, walletAddressRecieveToken: string, userHash: string, privateKey: string){
-      const privateKeyBytes = utils.hexToBytes(privateKey);
-      const createTime = new Date().getTime();
-      const instantTime = createTime * 1000;
-      const message = `${utils.hexToBytes(currencyHash)}${mintingAmount}${feeAmount}${utils.hexToBytes(walletAddressRecieveToken)}${numberToByteArray(instantTime, 8)}`
-      const signatureData = hashAndSign(privateKeyBytes, message);
-      const message2 = `${numberToByteArray(createTime, 8)}${utils.hexToBytes(currencyHash)}${mintingAmount}${utf8.encode(`${feeAmount}`)}`
-      const signatureData2 = hashAndSign(privateKeyBytes, message2);
+    
+    export async function getTokenMintFee(currencyHash: string, mintingAmount: number, feeAmount: number, walletAddressRecieveToken: string, userHash: string, seed: string, financeNode: string){
+      const instantTime = Math.floor(new Date().getTime() / 1000);
+      const instantTime2 = instantTime * 1000;
+      const indexedWallet = new Wallet({ seed });
+
+      const mintingQuote = new MintQuoteDataSignature(currencyHash, mintingAmount, feeAmount, walletAddressRecieveToken, instantTime2);
+      const mintingQuoteSD = await mintingQuote.sign(indexedWallet, false);
+
+      const mintingQuoteFee = new MintQuoteFeeSignature(instantTime2, currencyHash, mintingAmount, feeAmount);
+      const mintingQuoteFeeSD = await mintingQuoteFee.sign(indexedWallet, false);
+
+
       const payload = {
         tokenMintingData: {
           mintingCurrencyHash: currencyHash,
           mintingAmount,
           receiverAddress: walletAddressRecieveToken,
-          createTime,
+          createTime: instantTime,
           feeAmount,
           signerHash: userHash,
-          signature: signatureData
+          signature: mintingQuoteSD
         },
         mintingFeeQuoteData: {
-          createTime,
+          createTime: instantTime,
           mintingAmount,
           currencyHash,
           mintingFee: feeAmount,
           signerHash: userHash,
-          signatureData: signatureData2
+          signatureData: mintingQuoteFeeSD
         }
       }
-
-      const { data } = await axios.post(`https://${financialNodeAddress}/currencies/token/mint/fee`, payload);
-
-      return utf8.decode(data);
-
-    }
-    export async function tokenGeneration(tokenGenrationFeeBaseTransaction: any, fullNodeFeeTransaction: any, trustScoreData: string[],
-                          walletAddressIBT: string, userHash: string, seed: string){
-      const TGFBT = tokenGenrationFeeBaseTransaction.tokenGenerationFee
-      const FFBT = fullNodeFeeTransaction.fullNodeFee;
-      const createTime = new Date().getTime();
-      const instantTime = createTime * 1000;
-      const TSD = trustScoreData;
-      const IBTAddressHash = walletAddressIBT;
-      FFBT.currencyHash = '';
-      FFBT.Name = 'FFBT';
-      const fullAmount = (+parseFloat(TGFBT.amount).toFixed(12)) + (+parseFloat(FFBT.amount).toFixed(12));
-      const IBTAmount = -1 * fullAmount;
-
-      const messageI = `${utils.hexToBytes(IBTAddressHash)}${IBTAmount}${numberToByteArray(createTime, 8)}${encodeURIComponent('generate token')}`;
-      const IBT_Hash = keccak('keccak256').update(messageI).digest('hex');
-
-      const messageT = `${IBT_Hash}${FFBT.hash}${TGFBT.hash}`;
-      const hT = keccak('keccak256').update(messageT).digest('hex');
-
-      const messageST = `${utils.hexToBytes(hT)}${encodeURIComponent('tokenGeneration')}${numberToByteArray(instantTime, 8)}${encodeURIComponent('generate token')}`;
-      const privateKey = cryptoUtils.generateKeyPairFromSeed(seed).getPrivate('hex')
+      try{
+        const { data } = await axios.post(`${financeNode}/currencies/token/mint/fee`, payload);
       
-      const transactionSignature = hashAndSign(utils.hexToBytes(privateKey), messageST);
-      
-      const keyForAddress = generateKeyPairFromSeed(seed).getPrivate("hex");
-      const ibtSignatureData = hashAndSign(utils.hexToBytes(keyForAddress), messageT);
-      const IBT = {
-        hash: IBT_Hash,
-        currencyHash: FFBT.currencyHash,
-        amount: IBTAmount,
-        createTime: createTime,
-        addressHash: walletAddressIBT,
-        name: "IBT",
-        SignatureData: ibtSignatureData
+      return data.tokenServiceFee;
       }
-      const baseTransaction = [IBT, FFBT, TGFBT];
-      const payload = {
-        hash: hT,
-        baseTransaction: baseTransaction,
-        transactionDescription: 'generate token',
-        createTime,
-        senderHash: userHash,
-        senderSignature: transactionSignature,
-        type: "TokenGeneration",
-        trustedScoreResults: [TSD]
+      catch(error){
+        throw error
       }
-      const headers = {
-        'Content-Type': "application/json"
-      };
-  
-      try {
-        const { data } = await axios.put(`https://${financialNodeAddress}/transaction`, payload, { headers });
-        return data;
-      } catch (error) {
-        throw error;
-      }
+
     }
 }

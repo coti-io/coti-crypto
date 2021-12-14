@@ -15,7 +15,8 @@ export enum BaseTransactionName {
   NETWORK_FEE = 'NFBT',
   ROLLING_RESERVE = 'RRBT',
   RECEIVER = 'RBT',
-  GENERATE_TOKEN = 'TGBT'
+  GENERATE_TOKEN = 'TGBT',
+  MINT_TOKEN_FEE = 'TMBT',
 }
 
 export interface Item {
@@ -51,6 +52,7 @@ export interface BaseTransactionData {
   receiverDescription?: string;
   signatureData: SignatureData;
   signerHash: string;
+  originalCurrencyHash?: string;
 }
 
 export class BaseTransactionData {
@@ -86,6 +88,7 @@ export class BaseTransaction {
   private reducedAmount?: BigDecimal;
   private signatureData?: SignatureData;
   private signerHash?: string;
+  private originalCurrencyHash?: string;
 
   constructor(
     addressHash: string,
@@ -95,16 +98,20 @@ export class BaseTransaction {
     encryptedMerchantName?: string,
     originalAmount?: BigDecimal,
     currencyHash?: string,
+    hash?: string,
+    createTime?: number,
+    originalCurrencyHash?: string,
     serviceData?: any,
-    signerHash?: string
+    signerHash?: string,
   ) {
     this.addressHash = addressHash;
     this.name = name;
     this.currencyHash = currencyHash;
+    this.originalCurrencyHash = originalCurrencyHash;
     this.serviceData = serviceData;
     this.signerHash = signerHash;
     this.amount = amount.stripTrailingZeros();
-    this.createTime = utils.utcNowToSeconds();
+    this.createTime = createTime? createTime: utils.utcNowToSeconds();
 
     if (name === BaseTransactionName.RECEIVER && originalAmount) {
       this.originalAmount = originalAmount.stripTrailingZeros();
@@ -114,16 +121,16 @@ export class BaseTransaction {
       this.items = items;
       this.encryptedMerchantName = encryptedMerchantName;
     }
-
-    this.createBaseTransactionHash();
+    
+    if(!hash){
+      this.createBaseTransactionHash();
+    } else {
+      this.hash = hash;
+    }
   }
 
-  public getAmount(): BigDecimal{
-    return this.amount;
-  };
-
-  public getCurrencyHash(): string{
-    return this.currencyHash || '';
+  public getCurrencyHash(): string | undefined{
+    return this.currencyHash;
   }
 
   private createBaseTransactionHash() {
@@ -136,9 +143,15 @@ export class BaseTransaction {
     let amountInBytes = utils.getBytesFromString(this.amount.stripTrailingZeros().toString());
     let utcTime = this.createTime * 1000;
     let utcTimeInByteArray = utils.numberToByteArray(utcTime, 8);
-
     let bytes = utils.hexToBytes(this.addressHash);
-    bytes = utils.concatByteArrays([bytes, amountInBytes, utcTimeInByteArray]);
+    const bytesToMerge = [bytes, amountInBytes, utcTimeInByteArray]
+
+    if(this.currencyHash){
+      const currencyHashBytes = utils.hexToBytes(this.currencyHash);
+      bytesToMerge.push(currencyHashBytes);
+  }
+    
+    bytes = utils.concatByteArrays(bytesToMerge);
     if (this.name === BaseTransactionName.RECEIVER && this.originalAmount !== undefined) {
       let originalAmountInBytes = utils.getBytesFromString(this.originalAmount.stripTrailingZeros().toString());
       bytes = utils.concatByteArrays([bytes, originalAmountInBytes]);
@@ -183,14 +196,16 @@ export class BaseTransaction {
     } else if (feeData.name === BaseTransactionName.RECEIVER) {
       baseTransaction.receiverDescription = feeData.receiverDescription;
       baseTransaction.signatureData = feeData.signatureData;
-    } else if (feeData.name === BaseTransactionName.GENERATE_TOKEN){
+    } else if ([BaseTransactionName.GENERATE_TOKEN, BaseTransactionName.MINT_TOKEN_FEE].includes(feeData.name)){
       baseTransaction.serviceData = feeData.serviceData;
       baseTransaction.signatureData = feeData.signatureData;
       baseTransaction.signerHash = feeData.signerHash;
-      baseTransaction.currencyHash = feeData.currencyHash;
     } else {
       baseTransaction.signatureData = feeData.signatureData;
     }
+
+    baseTransaction.currencyHash = feeData.currencyHash;
+    baseTransaction.originalCurrencyHash = feeData.originalCurrencyHash;
 
     return baseTransaction;
   }

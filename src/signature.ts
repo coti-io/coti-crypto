@@ -20,6 +20,9 @@ export enum SigningType {
   TokenCurrencies = "TokenCurrencies",
   CurrencyTypeData = "CurrencyTypeData",
   TG_TX_TRUST_SCORE = 'TokenGeneration TrustScore',
+  MINTING_QUOTE = "MintingQuote",
+  MINTING_DATA = "MintingData",
+  MINTING_FEE = "MintingFee",
 }
 
 export type SigningTypeKey = keyof typeof SigningType;
@@ -72,15 +75,25 @@ export abstract class Signature {
 
 export class FullNodeFeeSignature extends Signature {
   private amount: number;
+  private originalCurrencyHash?: string;
 
-  constructor(amount: number) {
+  constructor(amount: number, originalCurrencyHash?: string) {
     super();
     this.signingType = SigningType.FULL_NODE_FEE;
     this.amount = amount;
+    this.originalCurrencyHash = originalCurrencyHash;
   }
 
   public getBytes() {
-    return utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.amount));
+    const byteArraysToMerge = [];
+    const amountBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.amount));
+
+    if(this.originalCurrencyHash){
+      byteArraysToMerge.push(utils.hexToBytes(this.originalCurrencyHash));
+    }
+
+    byteArraysToMerge.push(amountBytes);
+    return utils.concatByteArrays(byteArraysToMerge);
   }
 }
 
@@ -177,6 +190,83 @@ export class TokenCurrenciesSignature extends Signature {
   }
 }
 
+export class MintQuoteSignature extends Signature {
+  private currencyHash: string;
+  private mintingAmount: number;
+  private instantTime: number;
+
+  constructor(currencyHash: string, mintingAmount: number, instantTime: number) {
+    super();
+    this.currencyHash = currencyHash;
+    this.mintingAmount = mintingAmount;
+    this.instantTime = instantTime;
+    this.signingType = SigningType.MINTING_QUOTE;
+  }
+
+  public getBytes() {
+    const currencyHashBytes = utils.hexToBytes(this.currencyHash);
+    const mintingAmountBytes = utils.getBytesFromString(this.mintingAmount.toString());
+    const instantTimeBytes = utils.numberToByteArray(this.instantTime, 8)
+    const byteArraysToMerge = [currencyHashBytes, mintingAmountBytes, instantTimeBytes];
+
+    return utils.concatByteArrays(byteArraysToMerge);
+  }
+}
+
+export class MintQuoteDataSignature extends Signature {
+  private currencyHash: string;
+  private mintingAmount: number;
+  private feeAmount: number;
+  private receiverAddress: string;
+  private instantTime: number;
+
+  constructor(currencyHash: string, mintingAmount: number, feeAmount: number, receiverAddress: string, instantTime: number) {
+    super();
+    this.currencyHash = currencyHash;
+    this.mintingAmount = mintingAmount;
+    this.feeAmount = feeAmount;
+    this.receiverAddress = receiverAddress;
+    this.instantTime = instantTime;
+    this.signingType = SigningType.MINTING_DATA;
+  }
+
+  public getBytes() {
+    const currencyHashBytes = utils.hexToBytes(this.currencyHash);
+    const mintingAmountBytes = utils.getBytesFromString(this.mintingAmount.toString());
+    const feeAmountBytes = utils.getBytesFromString(this.feeAmount.toString());
+    const receiverAddressBytes = utils.hexToBytes(this.receiverAddress);
+    const instantTimeBytes = utils.numberToByteArray(this.instantTime, 8)
+    const byteArraysToMerge = [currencyHashBytes, mintingAmountBytes, feeAmountBytes, receiverAddressBytes, instantTimeBytes];
+
+    return utils.concatByteArrays(byteArraysToMerge);
+  }
+}
+
+export class MintQuoteFeeSignature extends Signature {
+  private currencyHash: string;
+  private mintingAmount: number;
+  private feeAmount: number;
+  private instantTime: number;
+
+  constructor(instantTime: number, currencyHash: string, mintingAmount: number, feeAmount: number) {
+    super();
+    this.currencyHash = currencyHash;
+    this.mintingAmount = mintingAmount;
+    this.feeAmount = feeAmount;
+    this.instantTime = instantTime;
+    this.signingType = SigningType.MINTING_FEE;
+  }
+
+  public getBytes() {
+    const currencyHashBytes = utils.hexToBytes(this.currencyHash);
+    const mintingAmountBytes = utils.getBytesFromString(this.mintingAmount.toString());
+    const feeAmountBytes = utils.getBytesFromString(this.feeAmount.toString());
+    const instantTimeBytes = utils.numberToByteArray(this.instantTime, 8)
+    const byteArraysToMerge = [instantTimeBytes, currencyHashBytes, mintingAmountBytes, feeAmountBytes];
+
+    return utils.concatByteArrays(byteArraysToMerge);
+  }
+}
 export class TreasuryCreateDepositSignature extends Signature {
   private readonly leverage: number;
   private readonly locking: number;

@@ -16,7 +16,8 @@ export enum TransactionType {
   TRANSFER = 'Transfer',
   ZEROSPEND = 'ZeroSpend',
   CHARGEBACK = 'Chargeback',
-  TOKENGENERATION = 'TokenGeneration'
+  TOKENGENERATION = 'TokenGeneration',
+  TOKENMINTING = 'TokenMinting'
 }
 
 export type TransactionStatus = 'pending' | 'confirmed';
@@ -126,7 +127,7 @@ export class Transaction {
     return this.hash;
   }
 
-  public addTrustScoreMessageToTransaction(trustScoreMessage: any) {
+  public addTrustScoreMessageToTransaction(trustScoreMessage: string) {
     this.trustScoreResults.push(trustScoreMessage);
   }
 
@@ -156,7 +157,7 @@ export class Transaction {
 
   public async signTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
     for (let i = 0; i < this.baseTransactions.length; i++) {
-      await this.baseTransactions[i].sign(this.hash, wallet);
+        await this.baseTransactions[i].sign(this.hash, wallet);
     }
 
     const messageInBytes = this.getSignatureMessage();

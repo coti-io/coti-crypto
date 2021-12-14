@@ -8,6 +8,7 @@ import { Transaction } from '../transaction';
 import { IndexedWallet } from '../wallet';
 import { IndexedAddress } from '../address';
 import axios from 'axios';
+import { utils } from '..';
 
 const amountRegex = /^\d+(\.\d{1,8})?$/;
 const trustNodeAddress = "coti-trust-node.coti.io"
@@ -25,8 +26,9 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   fullnode?: string;
   trustScoreNode?: string;
   feeIncluded?: boolean;
+  currencyHash?: string;
 }) {
-  const { userPrivateKey, wallet, inputMap, feeAddress, destinationAddress, description, feeIncluded = false } = parameterObject;
+  const { userPrivateKey, wallet, inputMap, feeAddress, destinationAddress, description, feeIncluded = false, currencyHash } = parameterObject;
   let { network, fullnode, trustScoreNode } = parameterObject;
 
   if (!userPrivateKey && !wallet) throw new Error('UserPrivateKey or wallet should be defined');
@@ -63,6 +65,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   if (!feeIncluded && !feeAddressInInputMap) addresses.push(feeAddress!);
 
   const balanceObject = await nodeUtils.checkBalances(addresses, network, fullnode);
+  const tokensBalanceObject = await nodeUtils.getTokenBalances(addresses, network, fullnode)
 
   originalAmount = originalAmount.stripTrailingZeros();
 
@@ -77,6 +80,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   }
 
   let { fullNodeFee, networkFee } = await getFees(originalAmount, userHash!, keyPair, wallet, feeIncluded, network, fullnode, trustScoreNode);
+  let baseTransactions: BaseTransaction[] = [];
 
   if (!feeIncluded) {
     const feeAmount = new BigDecimal(fullNodeFee.amount.toString()).add(new BigDecimal(networkFee.amount.toString()));
@@ -85,17 +89,18 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
       const feeIncludedAmount = feeAmount.add(new BigDecimal(amount.toString())).stripTrailingZeros();
       inputMap.set(feeAddress!, Number(feeIncludedAmount.toString()));
     } else inputMap.set(feeAddress!, Number(feeAmount.stripTrailingZeros().toString()));
+  } else if(currencyHash){
+    const feeCosts = new BigDecimal(fullNodeFee.amount.toString()).add(new BigDecimal(networkFee.amount.toString()));
+    addInputBaseTranction(balanceObject, feeAddress!, Number(feeCosts.stripTrailingZeros().toString()), baseTransactions);
   }
 
-  let baseTransactions: BaseTransaction[] = [];
-
+ 
   inputMap.forEach((amount, address) => {
-    addInputBaseTranction(balanceObject, address, amount, baseTransactions);
+    addInputBaseTranction(balanceObject, address, amount, baseTransactions, currencyHash, tokensBalanceObject);
   });
-
   networkFee = await nodeUtils.createMiniConsensus(userHash!, fullNodeFee, networkFee, network, trustScoreNode);
 
-  addOutputBaseTransactions(originalAmount, fullNodeFee, networkFee, destinationAddress, baseTransactions, feeIncluded);
+  addOutputBaseTransactions(originalAmount, fullNodeFee, networkFee, destinationAddress, baseTransactions, feeIncluded, currencyHash);
 
   const transaction = new Transaction(baseTransactions, description, userHash!);
 
@@ -104,8 +109,8 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   return transaction;
 }
 
-async function getFullNodeFeeSignature<T extends IndexedAddress>(originalAmount: number, keyPair?: KeyPair, wallet?: IndexedWallet<T>) {
-  const fullNodeFeeSignature = new FullNodeFeeSignature(originalAmount);
+async function getFullNodeFeeSignature<T extends IndexedAddress>(originalAmount: number, keyPair?: KeyPair, wallet?: IndexedWallet<T>, currencyHash?: string) {
+  const fullNodeFeeSignature = new FullNodeFeeSignature(originalAmount, currencyHash);
   return keyPair ? fullNodeFeeSignature.signByKeyPair(keyPair) : await fullNodeFeeSignature.sign(wallet!);
 }
 
@@ -126,10 +131,22 @@ async function getFees<T extends IndexedAddress>(
   return { fullNodeFee, networkFee };
 }
 
-function addInputBaseTranction(balanceObject: any, address: string, amount: number, baseTransactions: BaseTransaction[]) {
-  let { addressBalance, addressPreBalance } = balanceObject[address];
-  const balance = new BigDecimal(`${addressBalance}`);
-  const preBalance = new BigDecimal(`${addressPreBalance}`);
+function addInputBaseTranction(balanceObject: any, address: string, amount: number, baseTransactions: BaseTransaction[], currencyHash?: string, tokensBalanceObject?: any) {
+  let balance;
+  let preBalance;
+  let addressBalance;
+  let addressPreBalance;
+
+  if (currencyHash && tokensBalanceObject){
+    const tokenBalance = tokensBalanceObject[currencyHash] ? tokensBalanceObject[currencyHash][address]: {addressBalance: 0, addressPreBalance:0};
+    addressBalance = tokenBalance.addressBalance;
+    addressPreBalance = tokenBalance.addressPreBalance;
+  } else {
+    addressBalance = balanceObject[address].addressBalance;
+    addressPreBalance = balanceObject[address].addressPreBalance;
+  }
+  balance = new BigDecimal(`${addressBalance}`);
+  preBalance = new BigDecimal(`${addressPreBalance}`);
   const addressMaxAmount = preBalance.compareTo(balance) < 0 ? preBalance : balance;
   const decimalAmount = new BigDecimal(amount.toString());
   if (addressMaxAmount.compareTo(decimalAmount) < 0)
@@ -137,7 +154,8 @@ function addInputBaseTranction(balanceObject: any, address: string, amount: numb
       `Error at create transaction - Trying to send ${decimalAmount}, current balance is ${addressMaxAmount}. Not enough balance in address: ${address}`
     );
   const spendFromAddress = decimalAmount.multiply(new BigDecimal('-1'));
-  baseTransactions.push(new BaseTransaction(address, spendFromAddress, BaseTransactionName.INPUT));
+  
+  baseTransactions.push(new BaseTransaction(address, spendFromAddress, BaseTransactionName.INPUT, undefined, undefined, undefined, currencyHash));
 }
 
 function addOutputBaseTransactions(
@@ -146,13 +164,14 @@ function addOutputBaseTransactions(
   networkFee: BaseTransactionData,
   destinationAddress: string,
   baseTransactions: BaseTransaction[],
-  feeIncluded: boolean
+  feeIncluded: boolean,
+  currencyHash?: string,
 ) {
-  const amountRBT = feeIncluded
+  const amountRBT = feeIncluded && !currencyHash
     ? originalAmount.subtract(new BigDecimal(fullNodeFee.amount)).subtract(new BigDecimal(networkFee.amount))
     : originalAmount;
 
-  const RBT = new BaseTransaction(destinationAddress, amountRBT, BaseTransactionName.RECEIVER, undefined, undefined, originalAmount);
+  const RBT = new BaseTransaction(destinationAddress, amountRBT, BaseTransactionName.RECEIVER, undefined, undefined, originalAmount, currencyHash);
   const fullNodeTransactionFee = BaseTransaction.getBaseTransactionFromFeeData(fullNodeFee);
   const transactionNetworkFee = BaseTransaction.getBaseTransactionFromFeeData(networkFee);
 
@@ -184,14 +203,4 @@ async function addTrustScoreToTransaction<T extends IndexedAddress>(
     trustScoreNode
   );
   transaction.addTrustScoreMessageToTransaction(transactionTrustScoreData);
-}
-
-async function getTransactionTrustScore(userHash: string){
-  const payload = {
-    userHash: JSON.stringify(userHash)
-  };
-  const { data } = await axios.post(`http://${trustNodeAddress}/currencies/token/generate`, payload);
-
-  return data;
-    
 }
