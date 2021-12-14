@@ -7,4 +7,3 @@ dist/
 !.vscode/settings.json
 .idea/
 *.iml
-src/private/*

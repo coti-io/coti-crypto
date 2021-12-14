@@ -7,11 +7,13 @@ import { BaseTransaction, BaseTransactionName, BaseTransactionData } from '../ba
 import { Transaction } from '../transaction';
 import { IndexedWallet } from '../wallet';
 import { IndexedAddress } from '../address';
+<<<<<<< HEAD
 import axios from 'axios';
 import { utils } from '..';
+=======
+>>>>>>> parent of dca328e... preparation for multi-dag
 
 const amountRegex = /^\d+(\.\d{1,8})?$/;
-const trustNodeAddress = "coti-trust-node.coti.io"
 
 type KeyPair = cryptoUtils.KeyPair;
 

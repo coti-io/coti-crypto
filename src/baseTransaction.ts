@@ -15,8 +15,11 @@ export enum BaseTransactionName {
   NETWORK_FEE = 'NFBT',
   ROLLING_RESERVE = 'RRBT',
   RECEIVER = 'RBT',
+<<<<<<< HEAD
   GENERATE_TOKEN = 'TGBT',
   MINT_TOKEN_FEE = 'TMBT',
+=======
+>>>>>>> parent of dca328e... preparation for multi-dag
 }
 
 export interface Item {
@@ -47,7 +50,6 @@ export interface BaseTransactionData {
   originalAmount?: string;
   networkFeeTrustScoreNodeResult?: TrustScoreNodeResult[];
   rollingReserveTrustScoreNodeResult?: TrustScoreNodeResult[];
-  generateTokenResult?: TrustScoreNodeResult[];
   reducedAmount?: string;
   receiverDescription?: string;
   signatureData: SignatureData;
@@ -83,7 +85,6 @@ export class BaseTransaction {
   private originalAmount?: BigDecimal;
   private networkFeeTrustScoreNodeResult?: TrustScoreNodeResult[];
   private rollingReserveTrustScoreNodeResult?: TrustScoreNodeResult[];
-  private generateTokenResult?: TrustScoreNodeResult[];
   private receiverDescription?: string;
   private reducedAmount?: BigDecimal;
   private signatureData?: SignatureData;
@@ -196,10 +197,13 @@ export class BaseTransaction {
     } else if (feeData.name === BaseTransactionName.RECEIVER) {
       baseTransaction.receiverDescription = feeData.receiverDescription;
       baseTransaction.signatureData = feeData.signatureData;
+<<<<<<< HEAD
     } else if ([BaseTransactionName.GENERATE_TOKEN, BaseTransactionName.MINT_TOKEN_FEE].includes(feeData.name)){
       baseTransaction.serviceData = feeData.serviceData;
       baseTransaction.signatureData = feeData.signatureData;
       baseTransaction.signerHash = feeData.signerHash;
+=======
+>>>>>>> parent of dca328e... preparation for multi-dag
     } else {
       baseTransaction.signatureData = feeData.signatureData;
     }
@@ -244,7 +248,6 @@ export class BaseTransaction {
       originalAmount: this.originalAmount ? this.originalAmount.toString() : undefined,
       reducedAmount: this.reducedAmount ? this.reducedAmount.toString() : undefined,
       networkFeeTrustScoreNodeResult: this.networkFeeTrustScoreNodeResult,
-      generateTokenFeeTrustScoreNodeResult: this.generateTokenResult,
       encryptedMerchantName: this.encryptedMerchantName,
       items: this.items,
       rollingReserveTrustScoreNodeResult: this.rollingReserveTrustScoreNodeResult,

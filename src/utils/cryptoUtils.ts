@@ -8,9 +8,6 @@ import { sha3_256 as sha3Bit256, keccak256 } from 'js-sha3';
 import { blake } from 'blakejs';
 import { SignatureData } from '../signature';
 import * as bip39 from 'bip39';
-import utf8 from 'utf8';
-
-const binascii = require('binascii');
 
 const ec = new elliptic.ec('secp256k1');
 const regexp = /^[0-9a-fA-F]+$/;
@@ -225,17 +222,4 @@ export async function generateSeedFromMnemonic(mnemonic: string) {
 export async function generateKeyPairFromMnemonic(mnemonic: string, index?: number) {
   const seed = await generateSeedFromMnemonic(mnemonic);
   return generateKeyPairFromSeed(seed, index);
-}
-
-export function hashAndSign(privateKeyBytes: Uint8Array, message: string) {
-  const keccakHash = keccak256.update(message);
-  const digest = keccakHash.digest();
-  const signinKey = ec.keyFromPrivate(privateKeyBytes);
-  const sig = signinKey.sign(digest).toDER();
-  const signHEX = utf8.decode(binascii.hexlify(sig.join()));
-  
-  return {
-    r: signHEX.substring(0, 64),
-    s: signHEX.substring(64, 128 )
-  }
 }
