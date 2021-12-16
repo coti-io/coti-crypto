@@ -4,14 +4,11 @@ import { FullNodeFeeSignature, TransactionTrustScoreSignature } from '../signatu
 import { PrivateKey } from '../ecKeyPair';
 import { nodeUtils } from './nodeUtils';
 import { BaseTransaction, BaseTransactionName, BaseTransactionData } from '../baseTransaction';
-import { Transaction } from '../transaction';
+import { Transaction, TransactionType } from '../transaction';
 import { IndexedWallet } from '../wallet';
 import { IndexedAddress } from '../address';
-<<<<<<< HEAD
 import axios from 'axios';
-import { utils } from '..';
-=======
->>>>>>> parent of dca328e... preparation for multi-dag
+import { utils, Wallet } from '..';
 
 const amountRegex = /^\d+(\.\d{1,8})?$/;
 
@@ -124,12 +121,13 @@ async function getFees<T extends IndexedAddress>(
   feeIncluded?: boolean,
   network?: Network,
   fullnode?: string,
-  trustScoreNode?: string
+  trustScoreNode?: string,
 ) {
   const originalAmountInNumber = Number(originalAmount.toString());
   const fullNodeFeeSignature = await getFullNodeFeeSignature(originalAmountInNumber, keyPair, wallet);
   const fullNodeFee = await nodeUtils.getFullNodeFees(originalAmountInNumber, userHash, fullNodeFeeSignature, network, feeIncluded, fullnode);
   const networkFee = await nodeUtils.getNetworkFees(fullNodeFee, userHash, network, feeIncluded, trustScoreNode);
+  
   return { fullNodeFee, networkFee };
 }
 
@@ -187,7 +185,7 @@ async function getTransactionTrustScoreSignature<T extends IndexedAddress>(trans
   return keyPair ? transactionTrustScoreSignature.signByKeyPair(keyPair, true) : await transactionTrustScoreSignature.sign(wallet!, true);
 }
 
-async function addTrustScoreToTransaction<T extends IndexedAddress>(
+export async function addTrustScoreToTransaction<T extends IndexedAddress>(
   transaction: Transaction,
   userHash: string,
   keyPair?: KeyPair,
@@ -205,4 +203,30 @@ async function addTrustScoreToTransaction<T extends IndexedAddress>(
     trustScoreNode
   );
   transaction.addTrustScoreMessageToTransaction(transactionTrustScoreData);
+}
+
+export async function transactionTokenGeneration(params: {
+  feeBT: BaseTransactionData,
+  fullnodeFee: BaseTransactionData,
+  walletAddressIBT: string,
+  userHash: string,
+  transactionType: TransactionType,
+  transactionDescription: string
+}) {
+  const { feeBT, fullnodeFee, walletAddressIBT, userHash, transactionType, transactionDescription } = params;
+  const instant_time = Math.floor(new Date().getTime() / 1000)
+  const tokenGenerationFee = new BigDecimal(feeBT.amount);
+  const fullNodeFeeAmount = new BigDecimal(fullnodeFee.amount);
+  const fullAmount = tokenGenerationFee.add(fullNodeFeeAmount);
+  const IBT_amount = parseFloat(fullAmount.toString()) * -1;
+
+  const IBTAmountBD = new BigDecimal(IBT_amount);
+  const IBT_Transaction = new BaseTransaction(walletAddressIBT, IBTAmountBD, BaseTransactionName.INPUT, undefined, undefined, fullAmount, fullnodeFee.currencyHash, instant_time)
+  const fullNodeFeeBaseTransaction = BaseTransaction.getBaseTransactionFromFeeData(fullnodeFee);
+  const tokenGenerationFeeBaseTransaction = BaseTransaction.getBaseTransactionFromFeeData(feeBT);
+
+  const baseTransaction = [IBT_Transaction, fullNodeFeeBaseTransaction, tokenGenerationFeeBaseTransaction];
+  const tokenGenerationTransaction = new Transaction(baseTransaction, transactionDescription, userHash, transactionType, true, instant_time);
+
+  return tokenGenerationTransaction;
 }

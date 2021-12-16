@@ -1,11 +1,11 @@
 import axios, { AxiosResponse } from 'axios';
 import { BaseAddress } from '../address';
-import { BaseTransactionData, BaseTransactionName } from '../baseTransaction';
+import { BaseTransactionData } from '../baseTransaction';
 import { SignatureData, TokenCurrenciesSignature } from '../signature';
 import * as utils from './utils';
-import { Transaction, TransactionData, TransactionType } from '../transaction';
+import { Transaction, TransactionData } from '../transaction';
 import { NodeError } from '../cotiError';
-import { BaseTransaction, BigDecimal, cryptoUtils, Wallet } from '..';
+import { Wallet } from '../wallet';
 
 type Network = utils.Network;
 
@@ -220,7 +220,7 @@ export namespace nodeUtils {
       throw new NodeError(errorMessage, { debugMessage: `Error getting trust score from trust score node` });
     }
   }
-  
+
   export async function sendTransaction(transaction: Transaction, network: Network = 'mainnet', fullnode?: string) {
     try {
       const response = await axios.put(`${fullnode || nodeUrl[network].fullNode}/transaction`, transaction);
@@ -267,8 +267,8 @@ export namespace nodeUtils {
       throw new NodeError(errorMessage, { debugMessage: `Error update user type at trust score node` });
     }
   }
-  
-  export async function getUserTokenCurrencies(userHash: string, privateKey: string, seed: string){
+
+  export async function getUserTokenCurrencies(userHash: string, seed: string, api: string, network: Network = 'mainnet') {
     const tokenCurrencies = new TokenCurrenciesSignature(userHash);
     const indexedWallet = new Wallet({ seed });
     const signatureData = await tokenCurrencies.sign(indexedWallet, false);
@@ -281,59 +281,10 @@ export namespace nodeUtils {
     };
 
     try {
-      const { data } = await axios.post(`https://coti-full-node.coti.io/currencies/token/user`,payload, { headers });
+      const { data } = await axios.post(`${api || nodeUrl[network].api}/currencies/token/user`, payload, { headers });
       return data.userTokens;
     } catch (error) {
       const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
-      throw new NodeError(errorMessage, { debugMessage: `Error update user type at trust score node` });
-    }
-  }
-  
-  export async function transactionTokenGeneration(token_generation_fee_base_transaction: BaseTransactionData,full_node_fee: BaseTransactionData, trust_score_data: string, wallet_address_IBT: string, seed: string, userHash: string, transactionType: TransactionType, network: Network = 'mainnet', api: string, transactionDescription: string){
-    const instant_time = Math.floor(new Date().getTime() / 1000)
-    const instant_time1 = instant_time * 1000;
-    const IBT_addressHash = wallet_address_IBT;
-    const tokenGenerationFee = new BigDecimal(token_generation_fee_base_transaction.amount);
-    const fullNodeFeeAmount = new BigDecimal(full_node_fee.amount);
-    const fullAmount = tokenGenerationFee.add(fullNodeFeeAmount);
-    
-    const headers = {
-      'Content-Type': "application/json"
-    };
-
-    //TODO: move out to function
-    const IBT_amount = parseFloat(fullAmount.toString()) * -1;
-    const addressHashBytes = utils.hexToBytes(IBT_addressHash);
-    const instantTimeBytes = utils.numberToByteArray(instant_time1, 8);
-    const currencyHashBytes = full_node_fee.currencyHash? utils.hexToBytes(full_node_fee.currencyHash): new Uint8Array();
-    const messageI = `${IBT_amount}`;
-    const messageBytes = utils.getBytesFromString(messageI);
-    const bytesToMerge = utils.concatByteArrays([ addressHashBytes, messageBytes, instantTimeBytes, currencyHashBytes ]);
-    const IBT_Hash = cryptoUtils.hashKeccak256(bytesToMerge);
-
-    const msgT = IBT_Hash + full_node_fee.hash + token_generation_fee_base_transaction.hash;
-    const hT = cryptoUtils.hashKeccak256(utils.hexToBytes(msgT));
-
-    const IBTAmountBD = new BigDecimal(IBT_amount);
-    const IBT_Transaction = new BaseTransaction(wallet_address_IBT, IBTAmountBD, BaseTransactionName.INPUT, undefined, undefined, fullAmount, full_node_fee.currencyHash, IBT_Hash, instant_time, undefined)
-    const fullNodeFeeBaseTransaction = BaseTransaction.getBaseTransactionFromFeeData(full_node_fee);
-    const tokenGenerationFeeBaseTransaction = BaseTransaction.getBaseTransactionFromFeeData(token_generation_fee_base_transaction);
-    
-    const baseTransaction = [IBT_Transaction, fullNodeFeeBaseTransaction, tokenGenerationFeeBaseTransaction];
-    const tokenGenerationTransaction = new Transaction(baseTransaction, transactionDescription, userHash, transactionType, true, instant_time);
-    tokenGenerationTransaction.addTrustScoreMessageToTransaction(trust_score_data)
-
-    const indexedWallet = new Wallet({ seed });
-    const address = await indexedWallet.getAddressByIndex(0);
-    IBT_Transaction.signWithKeyPair(hT, address.getAddressKeyPair());
-    await tokenGenerationTransaction.signTransaction(indexedWallet);
-    
-    try {
-      const { data } = await axios.put(`${api || nodeUrl[network].api}/transaction`, tokenGenerationTransaction, { headers });
-      return data;
-    } catch (error) {
-      const errorMessage = 
-      error.response && error.response.data ? error.response.data.errorMessage : error.message;
       throw new NodeError(errorMessage, { debugMessage: `Error update user type at trust score node` });
     }
   }

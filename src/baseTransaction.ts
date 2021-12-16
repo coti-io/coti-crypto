@@ -15,11 +15,8 @@ export enum BaseTransactionName {
   NETWORK_FEE = 'NFBT',
   ROLLING_RESERVE = 'RRBT',
   RECEIVER = 'RBT',
-<<<<<<< HEAD
   GENERATE_TOKEN = 'TGBT',
   MINT_TOKEN_FEE = 'TMBT',
-=======
->>>>>>> parent of dca328e... preparation for multi-dag
 }
 
 export interface Item {
@@ -99,7 +96,6 @@ export class BaseTransaction {
     encryptedMerchantName?: string,
     originalAmount?: BigDecimal,
     currencyHash?: string,
-    hash?: string,
     createTime?: number,
     originalCurrencyHash?: string,
     serviceData?: any,
@@ -122,16 +118,8 @@ export class BaseTransaction {
       this.items = items;
       this.encryptedMerchantName = encryptedMerchantName;
     }
-    
-    if(!hash){
-      this.createBaseTransactionHash();
-    } else {
-      this.hash = hash;
-    }
-  }
-
-  public getCurrencyHash(): string | undefined{
-    return this.currencyHash;
+  
+    this.createBaseTransactionHash();
   }
 
   private createBaseTransactionHash() {
@@ -197,13 +185,10 @@ export class BaseTransaction {
     } else if (feeData.name === BaseTransactionName.RECEIVER) {
       baseTransaction.receiverDescription = feeData.receiverDescription;
       baseTransaction.signatureData = feeData.signatureData;
-<<<<<<< HEAD
     } else if ([BaseTransactionName.GENERATE_TOKEN, BaseTransactionName.MINT_TOKEN_FEE].includes(feeData.name)){
       baseTransaction.serviceData = feeData.serviceData;
       baseTransaction.signatureData = feeData.signatureData;
       baseTransaction.signerHash = feeData.signerHash;
-=======
->>>>>>> parent of dca328e... preparation for multi-dag
     } else {
       baseTransaction.signatureData = feeData.signatureData;
     }

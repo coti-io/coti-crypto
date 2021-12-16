@@ -19,7 +19,6 @@ export enum SigningType {
   TX = 'Transaction',
   TokenCurrencies = "TokenCurrencies",
   CurrencyTypeData = "CurrencyTypeData",
-  TG_TX_TRUST_SCORE = 'TokenGeneration TrustScore',
   MINTING_QUOTE = "MintingQuote",
   MINTING_DATA = "MintingData",
   MINTING_FEE = "MintingFee",
