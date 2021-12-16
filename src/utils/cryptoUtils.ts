@@ -107,8 +107,13 @@ export function getKeyPairFromPrivate(privateKeyHex: string) {
   return ec.keyFromPrivate(privateKeyHex, 'hex');
 }
 
-export function getKeyPairFromPublic(publicKeyHex: string) {
+export function getKeyPairFromPublic(publicKeyHex: string | { x: string; y: string }) {
   return ec.keyFromPublic(publicKeyHex, 'hex');
+}
+
+export function getKeyPairFromPublicHash(publicHash: string) {
+  const pub = { x: publicHash.substr(0, 64), y: publicHash.substr(64, 128) };
+  return getKeyPairFromPublic(pub);
 }
 
 export function verifySignature(messageInBytes: Uint8Array, signature: EcSignature, publicKeyHex: string) {
