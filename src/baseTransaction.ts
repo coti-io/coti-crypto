@@ -138,7 +138,7 @@ export class BaseTransaction {
     if(this.currencyHash){
       const currencyHashBytes = utils.hexToBytes(this.currencyHash);
       bytesToMerge.push(currencyHashBytes);
-  }
+    }
     
     bytes = utils.concatByteArrays(bytesToMerge);
     if (this.name === BaseTransactionName.RECEIVER && this.originalAmount !== undefined) {

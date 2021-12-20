@@ -24,13 +24,30 @@ export enum SigningType {
   MINTING_FEE = "MintingFee",
 }
 
+export enum LedgerSigningType {
+  MESSAGE = 'Message',
+  FULL_NODE_FEE = 'FullNode Fee',
+  TX_TRUST_SCORE = 'Transaction TrustScore',
+  BASE_TX = 'BaseTransaction',
+  TX = 'Transaction'
+}
+
 export type SigningTypeKey = keyof typeof SigningType;
+export type LedgerSigningTypeKey = keyof typeof LedgerSigningType;
 
 export const signingTypeKeyMap = new Map<SigningType, SigningTypeKey>(
   Object.entries(SigningType).map(([keyString, value]: [string, SigningType]) => [value, keyString as keyof typeof SigningType])
 );
 
 export type SignatureData = EcSignatureOptions;
+export const ledgerSigningTypeKeyMap = new Map<SigningType, LedgerSigningTypeKey>(
+  Object.entries(SigningType).map(([keyString, value]: [string, SigningType]) => [value, keyString as keyof typeof LedgerSigningType])
+);
+
+export interface SignatureData {
+  r: string;
+  s: string;
+}
 
 export abstract class Signature {
   protected signingType!: SigningType;

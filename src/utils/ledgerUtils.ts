@@ -111,7 +111,7 @@ export async function signUserMessage(
 
 function getLedgerSigningType(signingType?: SigningType) {
   if (signingType) {
-    const signingTypeKey = signature.signingTypeKeyMap.get(signingType);
+    const signingTypeKey = signature.ledgerSigningTypeKeyMap.get(signingType); 
     if (signingTypeKey) return LedgerSigningType[signingTypeKey];
   }
 }
