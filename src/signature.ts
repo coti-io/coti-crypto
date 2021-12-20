@@ -7,9 +7,6 @@ import { EcSignatureOptions } from './utils/cryptoUtils';
 
 type KeyPair = cryptoUtils.KeyPair;
 
-
-
-
 export enum SigningType {
   MESSAGE = 'Message',
   FULL_NODE_FEE = 'FullNode Fee',
@@ -158,7 +155,7 @@ export class OriginatorSignature extends Signature {
   }
 
   public getBytes() {
-    const message = `${utf8.encode(this.currencyName)}${utf8.encode(this.currencySymbol)}${utf8.encode(this.description)}${utf8.encode(this.totalSupply.toString())}`;
+    const message = `${this.currencyName}${this.currencySymbol}${this.description}${this.totalSupply.toString()}`;
     const arraysToMerge = [utils.getBytesFromString(message), utils.numberToByteArray(this.scale, 4)]
 
     return utils.concatByteArrays(arraysToMerge);
@@ -185,7 +182,7 @@ export class CurrencyTypeDataSignature extends Signature {
   }
 
   public getBytes() {
-    const message = `${utf8.encode(this.currencySymbol)}${utf8.encode(this.currencyType)}${utf8.encode(this.currencyRateSourceType)}${utf8.encode(this.rateSource)}${utf8.encode(this.protectionModel)}`;
+    const message = `${this.currencySymbol}${this.currencyType}${this.currencyRateSourceType}${this.rateSource}${this.protectionModel}`;
     const arraysToMerge = [utils.getBytesFromString(message), utils.numberToByteArray(this.instantTime, 8)];
 
     return utils.concatByteArrays(arraysToMerge);
