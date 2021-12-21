@@ -3,6 +3,7 @@ import { keccak256 } from 'js-sha3';
 import { IndexedAddress } from './address';
 import { IndexedWallet } from './wallet';
 import * as cryptoUtils from './utils/cryptoUtils';
+import { EcSignature } from './utils/cryptoUtils';
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -35,6 +36,11 @@ export abstract class Signature {
     const messageInBytes = this.getSignatureMessage(isHash);
     this.signatureData = await wallet.signMessage(messageInBytes, this.signingType);
     return this.signatureData;
+  }
+
+  public async verify(walletHash: string, signature: EcSignature) {
+    const hashedBytesArray = this.createBasicSignatureHash();
+    return cryptoUtils.verifySignature(hashedBytesArray, signature, walletHash);
   }
 
   public createBasicSignatureHash() {
@@ -96,3 +102,160 @@ export class ClaimReward extends Signature {
     return utils.numberToByteArray(this.creationTime, 8);
   }
 }
+
+export class TreasuryCreateDepositSignature extends Signature {
+  private creationTime: number;
+  private leverage: number;
+  private locking: number;
+  private timestamp: number;
+
+  constructor(creationTime: number, leverage: number, locking: number, timestamp: number) {
+    super();
+    this.creationTime = creationTime;
+    this.leverage = leverage;
+    this.locking = locking;
+    this.timestamp = timestamp;
+  }
+
+  public getBytes() {
+    const leverageBytes = utils.getBytesFromString(this.leverage.toString());
+    const lockingBytes = utils.getBytesFromString(this.locking.toString());
+    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    return utils.concatByteArrays([leverageBytes, lockingBytes, timestampBytes]);
+  }
+}
+
+export class TreasuryGetDepositSignature extends Signature {
+  private uuid: number;
+  private timestamp: number;
+
+  constructor(uuid: number, timestamp: number) {
+    super();
+    this.uuid = uuid;
+    this.timestamp = timestamp;
+  }
+
+  public getBytes() {
+    const uuidBytes = utils.getBytesFromString(this.uuid.toString());
+    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    return utils.concatByteArrays([uuidBytes, timestampBytes]);
+  }
+}
+
+export class TreasuryGetAccountBalanceSignature extends Signature {
+  private walletHash: string;
+  private timestamp: number;
+
+  constructor(walletHash: string, timestamp: number) {
+    super();
+    this.walletHash = walletHash;
+    this.timestamp = timestamp;
+  }
+
+  public getBytes() {
+    const walletHashBytes = utils.getBytesFromString(this.walletHash.toString());
+    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    return utils.concatByteArrays([walletHashBytes, timestampBytes]);
+  }
+}
+
+export class TreasuryGetAccountSignature extends Signature {
+  private walletHash: string;
+  private timestamp: number;
+
+  constructor(walletHash: string, timestamp: number) {
+    super();
+    this.walletHash = walletHash;
+    this.timestamp = timestamp;
+  }
+
+  public getBytes() {
+    const walletHashBytes = utils.getBytesFromString(this.walletHash.toString());
+    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    return utils.concatByteArrays([walletHashBytes, timestampBytes]);
+  }
+}
+
+export class TreasuryRenewLockSignature extends Signature {
+  private uuid: number;
+  private lockDays: number;
+  private timestamp: number;
+
+  constructor(uuid: number, timestamp: number, lockDays: number) {
+    super();
+    this.uuid = uuid;
+    this.lockDays = lockDays;
+    this.timestamp = timestamp;
+  }
+
+  public getBytes() {
+    const uuidBytes = utils.getBytesFromString(this.uuid.toString());
+    const lockDaysBytes = utils.getBytesFromString(Number(this.lockDays).toString());
+    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    return utils.concatByteArrays([uuidBytes, lockDaysBytes, timestampBytes]);
+  }
+}
+
+export class TreasuryDeleteLockSignature extends Signature {
+  private uuid: number;
+  private timestamp: number;
+
+  constructor(uuid: number, timestamp: number) {
+    super();
+    this.uuid = uuid;
+    this.timestamp = timestamp;
+  }
+
+  public getBytes() {
+    const uuidBytes = utils.getBytesFromString(this.uuid.toString());
+    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    return utils.concatByteArrays([uuidBytes, timestampBytes]);
+  }
+}
+
+export class TreasuryWithdrawalEstimationSignature extends Signature {
+  private rewardAmount: number;
+  private depositAmount: number;
+  private depositUuid: string;
+  private timestamp: number;
+
+  constructor(rewardAmount: number, depositAmount: number, depositUuid: string, timestamp: number) {
+    super();
+    this.rewardAmount = rewardAmount;
+    this.depositAmount = depositAmount;
+    this.depositUuid = depositUuid;
+    this.timestamp = timestamp;
+  }
+
+  public getBytes() {
+    const rewardAmountBytes = utils.getBytesFromString(Number(this.rewardAmount).toString());
+    const depositAmountBytes = utils.getBytesFromString(Number(this.depositAmount).toString());
+    const uuidHashBytes = utils.getBytesFromString(this.depositUuid.toString());
+    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    return utils.concatByteArrays([rewardAmountBytes, depositAmountBytes, uuidHashBytes, timestampBytes]);
+  }
+}
+
+export class TreasuryWithdrawalSignature extends Signature {
+  private rewardAmount: number;
+  private depositAmount: number;
+  private depositUuid: string;
+  private timestamp: number;
+
+  constructor(rewardAmount: number, depositAmount: number, depositUuid: string, timestamp: number) {
+    super();
+    this.rewardAmount = rewardAmount;
+    this.depositAmount = depositAmount;
+    this.depositUuid = depositUuid;
+    this.timestamp = timestamp;
+  }
+
+  public getBytes() {
+    const rewardAmountBytes = utils.getBytesFromString(Number(this.rewardAmount).toString());
+    const depositAmountBytes = utils.getBytesFromString(Number(this.depositAmount).toString());
+    const uuidHashBytes = utils.getBytesFromString(this.depositUuid.toString());
+    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    return utils.concatByteArrays([rewardAmountBytes, depositAmountBytes, uuidHashBytes, timestampBytes]);
+  }
+}
+
