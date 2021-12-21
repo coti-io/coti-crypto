@@ -3,7 +3,7 @@ import { keccak256 } from 'js-sha3';
 import { IndexedAddress } from './address';
 import { IndexedWallet } from './wallet';
 import * as cryptoUtils from './utils/cryptoUtils';
-import { EcSignature } from './utils/cryptoUtils';
+import { EcSignatureOptions } from './utils/cryptoUtils';
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -21,16 +21,17 @@ export const signingTypeKeyMap = new Map<SigningType, SigningTypeKey>(
   Object.entries(SigningType).map(([keyString, value]: [string, SigningType]) => [value, keyString as keyof typeof SigningType])
 );
 
-export interface SignatureData {
-  r: string;
-  s: string;
-}
+export type SignatureData = EcSignatureOptions;
 
 export abstract class Signature {
   protected signingType!: SigningType;
   protected signatureData!: SignatureData;
 
-  constructor() {}
+  constructor(signatureData?: SignatureData) {
+    if (signatureData) {
+      this.signatureData = signatureData;
+    }
+  }
 
   public async sign<T extends IndexedAddress>(wallet: IndexedWallet<T>, isHash = false) {
     const messageInBytes = this.getSignatureMessage(isHash);
@@ -38,9 +39,9 @@ export abstract class Signature {
     return this.signatureData;
   }
 
-  public async verify(walletHash: string, signature: EcSignature) {
-    const hashedBytesArray = this.createBasicSignatureHash();
-    return cryptoUtils.verifySignature(hashedBytesArray, signature, walletHash);
+  public async verify(walletHash: string, isHash = false) {
+    const messageInBytes = this.getSignatureMessage(isHash);
+    return cryptoUtils.verifySignature(messageInBytes, this.signatureData, walletHash);
   }
 
   public createBasicSignatureHash() {
@@ -258,4 +259,3 @@ export class TreasuryWithdrawalSignature extends Signature {
     return utils.concatByteArrays([rewardAmountBytes, depositAmountBytes, uuidHashBytes, timestampBytes]);
   }
 }
-

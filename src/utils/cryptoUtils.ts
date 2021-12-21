@@ -26,6 +26,7 @@ export interface PublicKey {
 }
 
 export type EcSignature = elliptic.ec.Signature;
+export type EcSignatureOptions = elliptic.ec.SignatureOptions;
 export type KeyPair = elliptic.ec.KeyPair;
 
 export function encryptGCM(data: string, password: string, iv: string): Encryption {
@@ -116,7 +117,7 @@ export function getKeyPairFromPublicHash(publicHash: string) {
   return getKeyPairFromPublic(pub);
 }
 
-export function verifySignature(messageInBytes: Uint8Array, signature: EcSignature, publicKeyHex: string) {
+export function verifySignature(messageInBytes: Uint8Array, signature: EcSignature | EcSignatureOptions, publicKeyHex: string) {
   let keyPair = getKeyPairFromPublic(publicKeyHex);
   return keyPair.verify(messageInBytes, signature);
 }
