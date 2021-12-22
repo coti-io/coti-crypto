@@ -88,14 +88,10 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
       const feeIncludedAmount = feeAmount.add(new BigDecimal(amount.toString())).stripTrailingZeros();
       inputMap.set(feeAddress!, Number(feeIncludedAmount.toString()));
     } else inputMap.set(feeAddress!, Number(feeAmount.stripTrailingZeros().toString()));
-  } else if(currencyHash){
-    const feeCosts = new BigDecimal(fullNodeFee.amount.toString()).add(new BigDecimal(networkFee.amount.toString()));
-    addInputBaseTranction(balanceObject, feeAddress!, Number(feeCosts.stripTrailingZeros().toString()), baseTransactions);
   }
 
- 
   inputMap.forEach((amount, address) => {
-    addInputBaseTranction(balanceObject, address, amount, baseTransactions, currencyHash, tokensBalanceObject);
+    addInputBaseTranction(balanceObject, address, amount, baseTransactions, currencyHash, tokensBalanceObject, feeAddress);
   });
   networkFee = await nodeUtils.createMiniConsensus(userHash!, fullNodeFee, networkFee, network, trustScoreNode);
 
@@ -131,11 +127,15 @@ async function getFees<T extends IndexedAddress>(
   return { fullNodeFee, networkFee };
 }
 
-function addInputBaseTranction(balanceObject: any, address: string, amount: number, baseTransactions: BaseTransaction[], currencyHash?: string, tokensBalanceObject?: any) {
+function addInputBaseTranction(balanceObject: any, address: string, amount: number, baseTransactions: BaseTransaction[], currencyHash?: string, tokensBalanceObject?: any, feeAddress?: string) {
   let balance;
   let preBalance;
   let addressBalance;
   let addressPreBalance;
+
+  if(currencyHash && address === feeAddress){
+    currencyHash = undefined;
+  }
 
   if (currencyHash && tokensBalanceObject){
     const tokenBalance = tokensBalanceObject[currencyHash] ? tokensBalanceObject[currencyHash][address]: {addressBalance: 0, addressPreBalance:0};
@@ -167,7 +167,7 @@ function addOutputBaseTransactions(
   feeIncluded: boolean,
   currencyHash?: string,
 ) {
-  const amountRBT = feeIncluded && !currencyHash
+  const amountRBT = feeIncluded
     ? originalAmount.subtract(new BigDecimal(fullNodeFee.amount)).subtract(new BigDecimal(networkFee.amount))
     : originalAmount;
 
