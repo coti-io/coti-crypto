@@ -1,5 +1,4 @@
-import { BaseTransactionData, CurrencyTypeDataSignature, MintQuoteDataSignature, MintQuoteFeeSignature, MintQuoteSignature, OriginatorSignature, Wallet } from "..";
-import axios from 'axios';
+import { CurrencyTypeDataSignature, MintQuoteDataSignature, MintQuoteFeeSignature, MintQuoteSignature, OriginatorSignature, Wallet } from '..';
 
 export namespace tokenUtils {
   export async function getTokenGenerationFeeRequest(params: {
@@ -20,31 +19,27 @@ export namespace tokenUtils {
     const tokenGeneration = new OriginatorSignature(currencyName, currencySymbol, description, totalSupply, scale);
     const indexedWallet = new Wallet({ seed });
     const signatureData = await tokenGeneration.sign(indexedWallet, false);
-
     const instantTime2 = instantTime * 1000
     const tokenGeneration2 = new CurrencyTypeDataSignature(currencySymbol, currencyType, currencyRateSourceType, rateSource, protectionModel, instantTime2);
     const signatureData2 = await tokenGeneration2.sign(indexedWallet, false);
-
     const tokenGenerationFeeRequest = {
-      "originatorCurrencyData":
-      {
-        "name": currencyName,
-        "symbol": currencySymbol,
-        "description": description,
-        "totalSupply": totalSupply,
-        "scale": scale,
-        "originatorHash": userHash,
-        "originatorSignature": signatureData
+      originatorCurrencyData: {
+        name: currencyName,
+        symbol: currencySymbol,
+        description: description,
+        totalSupply: totalSupply,
+        scale: scale,
+        originatorHash: userHash,
+        originatorSignature: signatureData
       },
-      "currencyTypeData":
-      {
-        "currencyType": currencyType,
-        "createTime": Math.round(instantTime),
-        "currencyRateSourceType": currencyRateSourceType,
-        "rateSource": rateSource,
-        "protectionModel": protectionModel,
-        "signerHash": userHash,
-        "signature": signatureData2
+      currencyTypeData: {
+        currencyType: currencyType,
+        createTime: Math.round(instantTime),
+        currencyRateSourceType: currencyRateSourceType,
+        rateSource: rateSource,
+        protectionModel: protectionModel,
+        signerHash: userHash,
+        signature: signatureData2
       }
     };
 
@@ -57,7 +52,6 @@ export namespace tokenUtils {
     const indexedWallet = new Wallet({ seed });
     const mintingQuote = new MintQuoteSignature(currencyHash, mintingAmount, instantTime2);
     const signatureData = await mintingQuote.sign(indexedWallet, false);
-
     const mintQuoteRequest = {
       currencyHash,
       mintingAmount,
@@ -73,14 +67,10 @@ export namespace tokenUtils {
     const instantTime = Math.floor(new Date().getTime() / 1000);
     const instantTime2 = instantTime * 1000;
     const indexedWallet = new Wallet({ seed });
-
     const mintingQuote = new MintQuoteDataSignature(currencyHash, mintingAmount, feeAmount, walletAddressRecieveToken, instantTime2);
     const mintingQuoteSD = await mintingQuote.sign(indexedWallet, false);
-
     const mintingQuoteFee = new MintQuoteFeeSignature(instantTime2, currencyHash, mintingAmount, feeAmount);
     const mintingQuoteFeeSD = await mintingQuoteFee.sign(indexedWallet, false);
-
-
     const tokenMintFeeRequest = {
       tokenMintingData: {
         mintingCurrencyHash: currencyHash,
@@ -102,7 +92,5 @@ export namespace tokenUtils {
     }
 
     return tokenMintFeeRequest;
-
-
   }
 }

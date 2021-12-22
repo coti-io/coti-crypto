@@ -32,48 +32,47 @@ export namespace nodeUtils {
       });
       return data;
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      throw new NodeError(errorMessage, { debugMessage: `Error getting user trust score` });
+      throw getErrorMessage(error, 'Error getting user trust score');
     }
   }
 
   export async function sendAddressToNode(address: BaseAddress, network: Network = 'mainnet', fullnode?: string) {
     try {
       const { data } = await axios.put(`${fullnode || nodeUrl[network].fullNode}/address`, { address: address.getAddressHex() });
+      
       return data;
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      throw new NodeError(errorMessage, { debugMessage: `Error sending address to fullnode` });
+      throw getErrorMessage(error, 'Error sending address to fullnode');
     }
   }
 
   export async function checkAddressesExist(addressesToCheck: string[], network: Network = 'mainnet', fullnode?: string) {
     try {
       const { data } = await axios.post(`${fullnode || nodeUrl[network].fullNode}/address`, { addresses: addressesToCheck });
+      
       return data.addresses;
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      throw new NodeError(errorMessage, { debugMessage: `Error checking existing addresses from fullnode` });
+      throw getErrorMessage(error, 'Error checking existing addresses from fullnode');
     }
   }
 
   export async function checkBalances(addresses: string[], network: Network = 'mainnet', fullnode?: string) {
     try {
       const { data } = await axios.post(`${fullnode || nodeUrl[network].fullNode}/balance`, { addresses });
+      
       return data.addressesBalance;
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      throw new NodeError(errorMessage, { debugMessage: `Error checking address balances from fullnode` });
+      throw getErrorMessage(error, 'Error checking address balances from fullnode');
     }
   }
 
   export async function getTokenBalances(addresses: string[], network: Network = 'mainnet', fullnode?: string) {
     try {
       const { data } = await axios.post(`${fullnode || nodeUrl[network].fullNode}/balance/tokens`, { addresses });
+      
       return data.tokenBalances;
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      throw new NodeError(errorMessage, { debugMessage: `Error checking address token balances from fullnode` });
+      throw getErrorMessage(error, 'Error checking address token balances from fullnode');      
     }
   }
 
@@ -81,12 +80,13 @@ export namespace nodeUtils {
     try {
       const { data } = await axios.post(`${fullnode || nodeUrl[network].fullNode}/transaction`, { transactionHash });
       let transaction: TransactionData = data.transactionData;
+
       transaction = new TransactionData(transaction);
       transaction.setStatus();
+
       return transaction;
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      throw new NodeError(errorMessage, { debugMessage: `Error getting transaction from fullnode for hash: ${transactionHash}` });
+      throw getErrorMessage(error, `Error getting transaction from fullnode for hash: ${transactionHash}`);
     }
   }
 
@@ -146,10 +146,10 @@ export namespace nodeUtils {
         feeIncluded,
         originalCurrencyHash
       });
+
       return new BaseTransactionData(response.data.fullNodeFee);
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      throw new NodeError(errorMessage, { debugMessage: `Error getting full node fees for amount ${amountToTransfer}` });
+      throw getErrorMessage(error, `Error getting full node fees for amount ${amountToTransfer}`);
     }
   }
 
@@ -166,10 +166,10 @@ export namespace nodeUtils {
         userHash,
         feeIncluded,
       });
+
       return new BaseTransactionData(response.data.networkFeeData);
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      throw new NodeError(errorMessage, { debugMessage: `Error getting network fee` });
+      throw getErrorMessage(error, 'Error getting network fee');
     }
   }
 
@@ -195,8 +195,7 @@ export namespace nodeUtils {
       if (response && response.data) return new BaseTransactionData(response.data.networkFeeData);
       else throw new Error(`Error in createMiniConsensus: No response`);
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      throw new NodeError(errorMessage, { debugMessage: `Error in createMiniConsensus` });
+      throw getErrorMessage(error, 'Error in createMiniConsensus');
     }
   }
 
@@ -214,20 +213,20 @@ export namespace nodeUtils {
     };
     try {
       const response = await axios.post(`${trustScoreNode || nodeUrl[network].trustScoreNode}/transactiontrustscore`, trustScoreMessage);
+      
       return response.data.transactionTrustScoreData;
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      throw new NodeError(errorMessage, { debugMessage: `Error getting trust score from trust score node` });
+      throw getErrorMessage(error, 'Error getting trust score from trust score node');
     }
   }
 
   export async function sendTransaction(transaction: Transaction, network: Network = 'mainnet', fullnode?: string) {
     try {
       const response = await axios.put(`${fullnode || nodeUrl[network].fullNode}/transaction`, transaction);
+      
       return response.data;
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      throw new NodeError(errorMessage, { debugMessage: `Error sending transaction with hash ${transaction.getHash()}` });
+      throw getErrorMessage(error, `Error sending transaction with hash ${transaction.getHash()}`);
     }
   }
 
@@ -237,17 +236,19 @@ export namespace nodeUtils {
 
   export async function setTrustScore(apiKey: string, userHash: string, network: Network = 'mainnet', api?: string) {
     if (!apiKey) throw new NodeError('Api key is missing');
+
     const headers = { 'exchange-api-key': apiKey };
     const setTrustScoreMessage = {
       userHash,
       network,
     };
+    
     try {
       const response = await axios.put(`${api || nodeUrl[network].api}/exchange/trustscore`, setTrustScoreMessage, { headers });
+      
       return response.data.trustScore;
     } catch (error) {
-      const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
-      throw new NodeError(errorMessage, { debugMessage: `Error setting trust score at trust score node` });
+      throw getErrorMessage(error, 'Error setting trust score at trust score node', 'errorMessage');
     }
   }
 
@@ -263,8 +264,7 @@ export namespace nodeUtils {
       const response = await axios.put(`${api || nodeUrl[network].api}/exchange/userType`, updateUserTypeMessage, { headers });
       return response.data.message;
     } catch (error) {
-      const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
-      throw new NodeError(errorMessage, { debugMessage: `Error update user type at trust score node` });
+      throw getErrorMessage(error, 'Error update user type at trust score node', 'errorMessage');
     }
   }
 
@@ -277,15 +277,15 @@ export namespace nodeUtils {
       signature: signatureData
     }
     const headers = {
-      'Content-Type': "application/json"
+      'Content-Type': 'application/json'
     };
 
     try {
       const { data } = await axios.post(`${api || nodeUrl[network].api}/currencies/token/user`, payload, { headers });
+      
       return data.userTokens;
     } catch (error) {
-      const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
-      throw new NodeError(errorMessage, { debugMessage: `Error get user token currencies` });
+      throw getErrorMessage(error, 'Error get user token currencies', 'errorMessage');
     }
   }
 
@@ -299,15 +299,15 @@ export namespace nodeUtils {
       signature: signatureData
     }
     const headers = {
-      'Content-Type': "application/json"
+      'Content-Type': 'application/json'
     };
 
     try {
       const { data } = await axios.post(`${api || nodeUrl[network].api}/currencies/token/details`, payload, { headers });
+      
       return data;
     } catch (error) {
-      const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
-      throw new NodeError(errorMessage, { debugMessage: `Error get user token currencies` });
+      throw getErrorMessage(error, 'Error get user token details', 'errorMessage');
     }
   }
 
@@ -321,20 +321,23 @@ export namespace nodeUtils {
       signature: signatureData
     }
     const headers = {
-      'Content-Type': "application/json"
+      'Content-Type': 'application/json'
     };
 
     try {
       const { data } = await axios.post(`${api || nodeUrl[network].api}/currencies/token/symbol/details`, payload, { headers });
+      
       return data.token;
     } catch (error) {
-      const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
-      throw new NodeError(errorMessage, { debugMessage: `Error get user token currencies` });
+      throw getErrorMessage(error, 'Error get user token details by symbol', 'errorMessage');
     }
   }
 
+  function getErrorMessage(error: any, debugMessage: string, fieldError = 'message') {
+    const errorMessage = error.response && error.response.data 
+    ? error.response.data[fieldError] 
+    : error.message;
 
-  function getErrorMessage(error: any) {
-    return error.response && error.response.data ? error.response.data.message : error.message;
+    return new NodeError(errorMessage, { debugMessage });
   }
 }

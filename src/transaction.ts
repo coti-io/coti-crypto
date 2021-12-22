@@ -103,7 +103,7 @@ export class Transaction {
       this.baseTransactions.push(listOfBaseTransaction[i]);
     }
 
-    this.createTime = createTime? createTime: utils.utcNowToSeconds();
+    this.createTime = createTime || utils.utcNowToSeconds();
     this.transactionDescription = transactionDescription;
     this.trustScoreResults = [];
     this.senderHash = userHash;
@@ -158,7 +158,7 @@ export class Transaction {
 
   public async signTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
     for (let i = 0; i < this.baseTransactions.length; i++) {
-        await this.baseTransactions[i].sign(this.hash, wallet);
+      await this.baseTransactions[i].sign(this.hash, wallet);
     }
 
     const messageInBytes = this.getSignatureMessage();

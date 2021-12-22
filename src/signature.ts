@@ -14,12 +14,12 @@ export enum SigningType {
   BASE_TX = 'BaseTransaction',
   TX = 'Transaction',
   ORIGINATOR = 'Originator',
-  TOKEN_CURRENCIES = "TokenCurrencies",
-  CURRENCY_TYPE_DATA = "CurrencyTypeData",
-  MINTING_QUOTE = "MintingQuote",
-  MINTING_DATA = "MintingData",
-  MINTING_FEE = "MintingFee",
-  TOKEN_DETAILS = "TokenDetails",
+  TOKEN_CURRENCIES = 'TokenCurrencies',
+  CURRENCY_TYPE_DATA = 'CurrencyTypeData',
+  MINTING_QUOTE = 'MintingQuote',
+  MINTING_DATA = 'MintingData',
+  MINTING_FEE = 'MintingFee',
+  TOKEN_DETAILS = 'TokenDetails'
 }
 
 export enum LedgerSigningType {
@@ -102,11 +102,12 @@ export class FullNodeFeeSignature extends Signature {
     const byteArraysToMerge = [];
     const amountBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.amount));
 
-    if(this.originalCurrencyHash){
+    if (this.originalCurrencyHash){
       byteArraysToMerge.push(utils.hexToBytes(this.originalCurrencyHash));
     }
 
     byteArraysToMerge.push(amountBytes);
+
     return utils.concatByteArrays(byteArraysToMerge);
   }
 }
@@ -147,6 +148,7 @@ export class OriginatorSignature extends Signature {
 
   constructor(currencyName: string, currencySymbol: string, description: string, totalSupply: number, scale: number) {
     super();
+
     this.signingType = SigningType.ORIGINATOR;
     this.currencyName = currencyName;
     this.currencySymbol= currencySymbol;
@@ -171,8 +173,10 @@ export class CurrencyTypeDataSignature extends Signature {
   private protectionModel: string;
   private instantTime: number
 
-  constructor(currencySymbol: string, currencyType: string, currencyRateSourceType: string, rateSource: string, protectionModel: string, instantTime: number) {
+  constructor(currencySymbol: string, currencyType: string, currencyRateSourceType: string,
+     rateSource: string, protectionModel: string, instantTime: number) {
     super();
+
     this.signingType = SigningType.CURRENCY_TYPE_DATA;
     this.currencySymbol = currencySymbol;
     this.currencyType= currencyType;
@@ -195,6 +199,7 @@ export class TokenCurrenciesSignature extends Signature {
 
   constructor(userHash: string) {
     super();
+
     this.userHash = userHash;
     this.signingType = SigningType.TOKEN_CURRENCIES;
   }
@@ -211,6 +216,7 @@ export class MintQuoteSignature extends Signature {
 
   constructor(currencyHash: string, mintingAmount: number, instantTime: number) {
     super();
+
     this.currencyHash = currencyHash;
     this.mintingAmount = mintingAmount;
     this.instantTime = instantTime;
@@ -234,8 +240,10 @@ export class MintQuoteDataSignature extends Signature {
   private receiverAddress: string;
   private instantTime: number;
 
-  constructor(currencyHash: string, mintingAmount: number, feeAmount: number, receiverAddress: string, instantTime: number) {
+  constructor(currencyHash: string, mintingAmount: number, feeAmount: number, 
+    receiverAddress: string, instantTime: number) {
     super();
+    
     this.currencyHash = currencyHash;
     this.mintingAmount = mintingAmount;
     this.feeAmount = feeAmount;
@@ -250,7 +258,8 @@ export class MintQuoteDataSignature extends Signature {
     const feeAmountBytes = utils.getBytesFromString(this.feeAmount.toString());
     const receiverAddressBytes = utils.hexToBytes(this.receiverAddress);
     const instantTimeBytes = utils.numberToByteArray(this.instantTime, 8)
-    const byteArraysToMerge = [currencyHashBytes, mintingAmountBytes, feeAmountBytes, receiverAddressBytes, instantTimeBytes];
+    const byteArraysToMerge = [currencyHashBytes, mintingAmountBytes, feeAmountBytes, 
+      receiverAddressBytes, instantTimeBytes];
 
     return utils.concatByteArrays(byteArraysToMerge);
   }
@@ -264,6 +273,7 @@ export class MintQuoteFeeSignature extends Signature {
 
   constructor(instantTime: number, currencyHash: string, mintingAmount: number, feeAmount: number) {
     super();
+
     this.currencyHash = currencyHash;
     this.mintingAmount = mintingAmount;
     this.feeAmount = feeAmount;
@@ -443,6 +453,7 @@ export class TokenDetailsSignature extends Signature {
 
   constructor(userHash: string, currencyHash?: string, currencySymbol?: string) {
     super();
+
     this.userHash = userHash;
     this.currencyHash = currencyHash;
     this.currencySymbol = currencySymbol;
@@ -455,9 +466,11 @@ export class TokenDetailsSignature extends Signature {
 
     if (this.currencyHash) {
       const currencyHashBytes = utils.hexToBytes(this.currencyHash);
+
       bytesToMerge.push(currencyHashBytes)
-    } else if(this.currencySymbol) {
+    } else if (this.currencySymbol) {
       const currencySymbolBytes = utils.getBytesFromString(this.currencySymbol);
+
       bytesToMerge.push(currencySymbolBytes)
     }
     

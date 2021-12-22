@@ -108,7 +108,7 @@ export class BaseTransaction {
     this.serviceData = serviceData;
     this.signerHash = signerHash;
     this.amount = amount.stripTrailingZeros();
-    this.createTime = createTime? createTime: utils.utcNowToSeconds();
+    this.createTime = createTime || utils.utcNowToSeconds();
 
     if (name === BaseTransactionName.RECEIVER && originalAmount) {
       this.originalAmount = originalAmount.stripTrailingZeros();
@@ -185,7 +185,7 @@ export class BaseTransaction {
     } else if (feeData.name === BaseTransactionName.RECEIVER) {
       baseTransaction.receiverDescription = feeData.receiverDescription;
       baseTransaction.signatureData = feeData.signatureData;
-    } else if ([BaseTransactionName.GENERATE_TOKEN, BaseTransactionName.MINT_TOKEN_FEE].includes(feeData.name)){
+    } else if ([BaseTransactionName.GENERATE_TOKEN, BaseTransactionName.MINT_TOKEN_FEE].includes(feeData.name)) {
       baseTransaction.serviceData = feeData.serviceData;
       baseTransaction.signatureData = feeData.signatureData;
       baseTransaction.signerHash = feeData.signerHash;
@@ -238,9 +238,9 @@ export class BaseTransaction {
       rollingReserveTrustScoreNodeResult: this.rollingReserveTrustScoreNodeResult,
       receiverDescription: this.receiverDescription,
       signatureData: this.signatureData!,
-      currencyHash: this.currencyHash? this.currencyHash: undefined,
-      serviceData: this.serviceData? this.serviceData : undefined,
-      signerHash: this.signerHash? this.signerHash : undefined
+      currencyHash: this.currencyHash || undefined,
+      serviceData: this.serviceData || undefined,
+      signerHash: this.signerHash || undefined
     };
 
     return jsonToReturn;

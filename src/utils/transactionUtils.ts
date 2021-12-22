@@ -72,6 +72,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   let userHash: string;
   if (userPrivateKey) {
     const privateKey = new PrivateKey(userPrivateKey);
+
     keyPair = privateKey.keyPair;
     userHash = privateKey.getPublicKey();
   } else {
@@ -79,13 +80,15 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   }
 
   let { fullNodeFee, networkFee } = await getFees(originalAmount, userHash!, keyPair, wallet, feeIncluded, network, fullnode, trustScoreNode);
-  let baseTransactions: BaseTransaction[] = [];
+  const baseTransactions: BaseTransaction[] = [];
 
   if (!feeIncluded) {
     const feeAmount = new BigDecimal(fullNodeFee.amount.toString()).add(new BigDecimal(networkFee.amount.toString()));
+    
     if (feeAddressInInputMap) {
       const amount = inputMap.get(feeAddress!)!;
       const feeIncludedAmount = feeAmount.add(new BigDecimal(amount.toString())).stripTrailingZeros();
+
       inputMap.set(feeAddress!, Number(feeIncludedAmount.toString()));
     } else inputMap.set(feeAddress!, Number(feeAmount.stripTrailingZeros().toString()));
   }
@@ -106,6 +109,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
 
 async function getFullNodeFeeSignature<T extends IndexedAddress>(originalAmount: number, keyPair?: KeyPair, wallet?: IndexedWallet<T>, currencyHash?: string) {
   const fullNodeFeeSignature = new FullNodeFeeSignature(originalAmount, currencyHash);
+  
   return keyPair ? fullNodeFeeSignature.signByKeyPair(keyPair) : await fullNodeFeeSignature.sign(wallet!);
 }
 
@@ -117,7 +121,7 @@ async function getFees<T extends IndexedAddress>(
   feeIncluded?: boolean,
   network?: Network,
   fullnode?: string,
-  trustScoreNode?: string,
+  trustScoreNode?: string
 ) {
   const originalAmountInNumber = Number(originalAmount.toString());
   const fullNodeFeeSignature = await getFullNodeFeeSignature(originalAmountInNumber, keyPair, wallet);
@@ -133,22 +137,28 @@ function addInputBaseTranction(balanceObject: any, address: string, amount: numb
   let addressBalance;
   let addressPreBalance;
 
-  if(currencyHash && address === feeAddress){
+  if (currencyHash && address === feeAddress) {
     currencyHash = undefined;
   }
 
-  if (currencyHash && tokensBalanceObject){
-    const tokenBalance = tokensBalanceObject[currencyHash] ? tokensBalanceObject[currencyHash][address]: {addressBalance: 0, addressPreBalance:0};
+  if (currencyHash && tokensBalanceObject) {
+    const tokenBalance = tokensBalanceObject[currencyHash] 
+    ? tokensBalanceObject[currencyHash][address]
+    : {addressBalance: 0, addressPreBalance:0};
+    
     addressBalance = tokenBalance.addressBalance;
     addressPreBalance = tokenBalance.addressPreBalance;
   } else {
     addressBalance = balanceObject[address].addressBalance;
     addressPreBalance = balanceObject[address].addressPreBalance;
   }
+
   balance = new BigDecimal(`${addressBalance}`);
   preBalance = new BigDecimal(`${addressPreBalance}`);
+  
   const addressMaxAmount = preBalance.compareTo(balance) < 0 ? preBalance : balance;
   const decimalAmount = new BigDecimal(amount.toString());
+  
   if (addressMaxAmount.compareTo(decimalAmount) < 0)
     throw new Error(
       `Error at create transaction - Trying to send ${decimalAmount}, current balance is ${addressMaxAmount}. Not enough balance in address: ${address}`
@@ -165,7 +175,7 @@ function addOutputBaseTransactions(
   destinationAddress: string,
   baseTransactions: BaseTransaction[],
   feeIncluded: boolean,
-  currencyHash?: string,
+  currencyHash?: string
 ) {
   const amountRBT = feeIncluded
     ? originalAmount.subtract(new BigDecimal(fullNodeFee.amount)).subtract(new BigDecimal(networkFee.amount))
@@ -182,7 +192,10 @@ function addOutputBaseTransactions(
 
 async function getTransactionTrustScoreSignature<T extends IndexedAddress>(transactionHash: string, keyPair?: KeyPair, wallet?: IndexedWallet<T>) {
   const transactionTrustScoreSignature = new TransactionTrustScoreSignature(transactionHash);
-  return keyPair ? transactionTrustScoreSignature.signByKeyPair(keyPair, true) : await transactionTrustScoreSignature.sign(wallet!, true);
+  
+  return keyPair 
+  ? transactionTrustScoreSignature.signByKeyPair(keyPair, true) 
+  : await transactionTrustScoreSignature.sign(wallet!, true);
 }
 
 export async function addTrustScoreToTransaction<T extends IndexedAddress>(
@@ -202,6 +215,7 @@ export async function addTrustScoreToTransaction<T extends IndexedAddress>(
     network,
     trustScoreNode
   );
+
   transaction.addTrustScoreMessageToTransaction(transactionTrustScoreData);
 }
 
@@ -219,12 +233,10 @@ export async function transactionTokenGeneration(params: {
   const fullNodeFeeAmount = new BigDecimal(fullnodeFee.amount);
   const fullAmount = tokenGenerationFee.add(fullNodeFeeAmount);
   const IBT_amount = parseFloat(fullAmount.toString()) * -1;
-
   const IBTAmountBD = new BigDecimal(IBT_amount);
   const IBT_Transaction = new BaseTransaction(walletAddressIBT, IBTAmountBD, BaseTransactionName.INPUT, undefined, undefined, fullAmount, fullnodeFee.currencyHash, instant_time)
   const fullNodeFeeBaseTransaction = BaseTransaction.getBaseTransactionFromFeeData(fullnodeFee);
   const tokenGenerationFeeBaseTransaction = BaseTransaction.getBaseTransactionFromFeeData(feeBT);
-
   const baseTransaction = [IBT_Transaction, fullNodeFeeBaseTransaction, tokenGenerationFeeBaseTransaction];
   const tokenGenerationTransaction = new Transaction(baseTransaction, transactionDescription, userHash, transactionType, true, instant_time);
 
