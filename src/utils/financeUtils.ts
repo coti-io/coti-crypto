@@ -40,7 +40,7 @@ export namespace financeUtils {
         }
     }
 
-    export async function getTokensDetails(tokenHashes: string[], financeNodeUrl?: string, network: Network = 'mainnet') {
+    export async function getWalletCurrencies(tokenHashes: string[], financeNodeUrl?: string, network: Network = 'mainnet') {
       const headers = {
         'Content-Type': "application/json"
       };

@@ -12,13 +12,14 @@ export enum SigningType {
   FULL_NODE_FEE = 'FullNode Fee',
   TX_TRUST_SCORE = 'Transaction TrustScore',
   BASE_TX = 'BaseTransaction',
-  Originator = 'Originator',
   TX = 'Transaction',
-  TokenCurrencies = "TokenCurrencies",
-  CurrencyTypeData = "CurrencyTypeData",
+  ORIGINATOR = 'Originator',
+  TOKEN_CURRENCIES = "TokenCurrencies",
+  CURRENCY_TYPE_DATA = "CurrencyTypeData",
   MINTING_QUOTE = "MintingQuote",
   MINTING_DATA = "MintingData",
   MINTING_FEE = "MintingFee",
+  TOKEN_DETAILS = "TokenDetails",
 }
 
 export enum LedgerSigningType {
@@ -146,7 +147,7 @@ export class OriginatorSignature extends Signature {
 
   constructor(currencyName: string, currencySymbol: string, description: string, totalSupply: number, scale: number) {
     super();
-    this.signingType = SigningType.Originator;
+    this.signingType = SigningType.ORIGINATOR;
     this.currencyName = currencyName;
     this.currencySymbol= currencySymbol;
     this.description = description;
@@ -172,7 +173,7 @@ export class CurrencyTypeDataSignature extends Signature {
 
   constructor(currencySymbol: string, currencyType: string, currencyRateSourceType: string, rateSource: string, protectionModel: string, instantTime: number) {
     super();
-    this.signingType = SigningType.CurrencyTypeData;
+    this.signingType = SigningType.CURRENCY_TYPE_DATA;
     this.currencySymbol = currencySymbol;
     this.currencyType= currencyType;
     this.currencyRateSourceType = currencyRateSourceType;
@@ -195,7 +196,7 @@ export class TokenCurrenciesSignature extends Signature {
   constructor(userHash: string) {
     super();
     this.userHash = userHash;
-    this.signingType = SigningType.TokenCurrencies;
+    this.signingType = SigningType.TOKEN_CURRENCIES;
   }
 
   public getBytes() {
@@ -431,5 +432,35 @@ export class TreasuryWithdrawalSignature extends Signature {
     const uuidHashBytes = utils.getBytesFromString(this.depositUuid.toString());
     const timestampBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.timestamp));
     return utils.concatByteArrays([rewardAmountBytes, depositAmountBytes, uuidHashBytes, timestampBytes]);
+  }
+}
+
+
+export class TokenDetailsSignature extends Signature {
+  private userHash: string;
+  private currencyHash?: string;
+  private currencySymbol?: string
+
+  constructor(userHash: string, currencyHash?: string, currencySymbol?: string) {
+    super();
+    this.userHash = userHash;
+    this.currencyHash = currencyHash;
+    this.currencySymbol = currencySymbol;
+    this.signingType = SigningType.TOKEN_DETAILS;
+  }
+
+  public getBytes() {
+    const userHashBytes = utils.hexToBytes(this.userHash);
+    const bytesToMerge = [userHashBytes];
+
+    if (this.currencyHash) {
+      const currencyHashBytes = utils.hexToBytes(this.currencyHash);
+      bytesToMerge.push(currencyHashBytes)
+    } else if(this.currencySymbol) {
+      const currencySymbolBytes = utils.getBytesFromString(this.currencySymbol);
+      bytesToMerge.push(currencySymbolBytes)
+    }
+    
+    return utils.concatByteArrays(bytesToMerge);
   }
 }

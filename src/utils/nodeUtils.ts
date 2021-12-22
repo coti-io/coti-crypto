@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from 'axios';
 import { BaseAddress } from '../address';
 import { BaseTransactionData } from '../baseTransaction';
-import { SignatureData, TokenCurrenciesSignature } from '../signature';
+import { SignatureData, TokenCurrenciesSignature, TokenDetailsSignature } from '../signature';
 import * as utils from './utils';
 import { Transaction, TransactionData } from '../transaction';
 import { NodeError } from '../cotiError';
@@ -288,7 +288,52 @@ export namespace nodeUtils {
       throw new NodeError(errorMessage, { debugMessage: `Error get user token currencies` });
     }
   }
-  
+
+  export async function getTokenDetails(currencyHash: string, userHash: string, seed: string, api?: string, network: Network = 'mainnet') {
+    const tokenCurrencies = new TokenDetailsSignature(userHash, currencyHash);
+    const indexedWallet = new Wallet({ seed });
+    const signatureData = await tokenCurrencies.sign(indexedWallet, false);
+    const payload = {
+      userHash,
+      currencyHash,
+      signature: signatureData
+    }
+    const headers = {
+      'Content-Type': "application/json"
+    };
+
+    try {
+      const { data } = await axios.post(`${api || nodeUrl[network].api}/currencies/token/details`, payload, { headers });
+      return data;
+    } catch (error) {
+      const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
+      throw new NodeError(errorMessage, { debugMessage: `Error get user token currencies` });
+    }
+  }
+
+  export async function getTokenDetailsBySymbol(currencySymbol: string, userHash: string, seed: string, api?: string, network: Network = 'mainnet') {
+    const tokenCurrencies = new TokenDetailsSignature(userHash, undefined, currencySymbol);
+    const indexedWallet = new Wallet({ seed });
+    const signatureData = await tokenCurrencies.sign(indexedWallet, false);
+    const payload = {
+      userHash,
+      symbol: currencySymbol,
+      signature: signatureData
+    }
+    const headers = {
+      'Content-Type': "application/json"
+    };
+
+    try {
+      const { data } = await axios.post(`${api || nodeUrl[network].api}/currencies/token/symbol/details`, payload, { headers });
+      return data.token;
+    } catch (error) {
+      const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
+      throw new NodeError(errorMessage, { debugMessage: `Error get user token currencies` });
+    }
+  }
+
+
   function getErrorMessage(error: any) {
     return error.response && error.response.data ? error.response.data.message : error.message;
   }
