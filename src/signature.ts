@@ -125,10 +125,10 @@ export class TreasuryCreateDepositSignature extends Signature {
 }
 
 export class TreasuryGetDepositSignature extends Signature {
-  private readonly uuid: number;
+  private readonly uuid: string;
   private readonly timestamp: number;
 
-  constructor(uuid: number, timestamp: number, signature?: SignatureData ) {
+  constructor(uuid: string, timestamp: number, signature?: SignatureData ) {
     super(signature);
     this.uuid = uuid;
     this.timestamp = timestamp;
@@ -176,11 +176,11 @@ export class TreasuryGetAccountSignature extends Signature {
 }
 
 export class TreasuryRenewLockSignature extends Signature {
-  private readonly uuid: number;
+  private readonly uuid: string;
   private readonly lockDays: number;
   private readonly timestamp: number;
 
-  constructor(uuid: number, timestamp: number, lockDays: number, signature?: SignatureData ) {
+  constructor(uuid: string, timestamp: number, lockDays: number, signature?: SignatureData ) {
     super(signature);
     this.uuid = uuid;
     this.lockDays = lockDays;
@@ -196,10 +196,10 @@ export class TreasuryRenewLockSignature extends Signature {
 }
 
 export class TreasuryDeleteLockSignature extends Signature {
-  private readonly uuid: number;
+  private readonly uuid: string;
   private readonly timestamp: number;
 
-  constructor(uuid: number, timestamp: number, signature?: SignatureData ) {
+  constructor(uuid: string, timestamp: number, signature?: SignatureData ) {
     super(signature);
     this.uuid = uuid;
     this.timestamp = timestamp;
