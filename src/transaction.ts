@@ -52,6 +52,7 @@ export interface TransactionData {
   senderHash: string;
   status: TransactionStatus;
   isValid: boolean;
+  currencyHash?: string;
 }
 
 export class TransactionData {
