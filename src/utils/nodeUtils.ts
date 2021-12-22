@@ -73,7 +73,7 @@ export namespace nodeUtils {
       return data.tokenBalances;
     } catch (error) {
       const errorMessage = getErrorMessage(error);
-      throw new NodeError(errorMessage, { debugMessage: `Error checking address balances from fullnode` });
+      throw new NodeError(errorMessage, { debugMessage: `Error checking address token balances from fullnode` });
     }
   }
 
@@ -268,7 +268,7 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getUserTokenCurrencies(userHash: string, seed: string, api: string, network: Network = 'mainnet') {
+  export async function getUserTokenCurrencies(userHash: string, seed: string, api?: string, network: Network = 'mainnet') {
     const tokenCurrencies = new TokenCurrenciesSignature(userHash);
     const indexedWallet = new Wallet({ seed });
     const signatureData = await tokenCurrencies.sign(indexedWallet, false);
@@ -285,10 +285,10 @@ export namespace nodeUtils {
       return data.userTokens;
     } catch (error) {
       const errorMessage = error.response && error.response.data ? error.response.data.errorMessage : error.message;
-      throw new NodeError(errorMessage, { debugMessage: `Error update user type at trust score node` });
+      throw new NodeError(errorMessage, { debugMessage: `Error get user token currencies` });
     }
   }
-
+  
   function getErrorMessage(error: any) {
     return error.response && error.response.data ? error.response.data.message : error.message;
   }

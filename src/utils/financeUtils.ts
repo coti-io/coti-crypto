@@ -39,5 +39,19 @@ export namespace financeUtils {
             throw new Error(error.response.data.message);
         }
     }
+
+    export async function getTokensDetails(tokenHashes: string[], financeNodeUrl?: string, network: Network = 'mainnet') {
+      const headers = {
+        'Content-Type': "application/json"
+      };
+      
+      try {
+        const { data } = await axios.post(`${financeNodeUrl}/currencies/wallet`, { tokenHashes }, { headers });
+        return data;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    }
+  
     
 }
