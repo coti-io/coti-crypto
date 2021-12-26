@@ -108,10 +108,10 @@ export namespace tokenUtils {
 
   export async function getTokenMintFeeRequest(currencyHash: string, mintingAmount: number, feeAmount: number, walletAddressRecieveToken: string, userHash: string, indexedWallet: Wallet): Promise<TokenMintFeeRequest> {
     const instantTime = Math.floor(new Date().getTime() / 1000);
-    const instantTime2 = instantTime * 1000;
-    const mintingQuote = new MintQuoteDataSignature(currencyHash, mintingAmount, feeAmount, walletAddressRecieveToken, instantTime2);
+    const instantTimeSeconds = instantTime * 1000;
+    const mintingQuote = new MintQuoteDataSignature(currencyHash, mintingAmount, feeAmount, walletAddressRecieveToken, instantTimeSeconds);
     const mintingQuoteSD = await mintingQuote.sign(indexedWallet, false);
-    const mintingQuoteFee = new MintQuoteFeeSignature(instantTime2, currencyHash, mintingAmount, feeAmount);
+    const mintingQuoteFee = new MintQuoteFeeSignature(instantTimeSeconds, currencyHash, mintingAmount, feeAmount);
     const mintingQuoteFeeSD = await mintingQuoteFee.sign(indexedWallet, false);
     const tokenMintingData: TokenMintData = {
       mintingCurrencyHash: currencyHash,
