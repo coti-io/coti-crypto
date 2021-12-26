@@ -117,9 +117,9 @@ export class TreasuryCreateDepositSignature extends Signature {
   }
 
   public getBytes() {
-    const leverageBytes = utils.getBytesFromString(this.leverage.toString());
-    const lockingBytes = utils.getBytesFromString(this.locking.toString());
-    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    const leverageBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.leverage));
+    const lockingBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.locking));
+    const timestampBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.timestamp));
     return utils.concatByteArrays([leverageBytes, lockingBytes, timestampBytes]);
   }
 }
@@ -136,7 +136,7 @@ export class TreasuryGetDepositSignature extends Signature {
 
   public getBytes() {
     const uuidBytes = utils.getBytesFromString(this.uuid.toString());
-    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    const timestampBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.timestamp));
     return utils.concatByteArrays([uuidBytes, timestampBytes]);
   }
 }
@@ -153,7 +153,7 @@ export class TreasuryGetAccountBalanceSignature extends Signature {
 
   public getBytes() {
     const walletHashBytes = utils.getBytesFromString(this.walletHash.toString());
-    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    const timestampBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.timestamp));
     return utils.concatByteArrays([walletHashBytes, timestampBytes]);
   }
 }
@@ -170,7 +170,7 @@ export class TreasuryGetAccountSignature extends Signature {
 
   public getBytes() {
     const walletHashBytes = utils.getBytesFromString(this.walletHash.toString());
-    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    const timestampBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.timestamp));
     return utils.concatByteArrays([walletHashBytes, timestampBytes]);
   }
 }
@@ -189,8 +189,8 @@ export class TreasuryRenewLockSignature extends Signature {
 
   public getBytes() {
     const uuidBytes = utils.getBytesFromString(this.uuid.toString());
-    const lockDaysBytes = utils.getBytesFromString(Number(this.lockDays).toString());
-    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    const lockDaysBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.lockDays));
+    const timestampBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.timestamp));
     return utils.concatByteArrays([uuidBytes, lockDaysBytes, timestampBytes]);
   }
 }
@@ -207,7 +207,7 @@ export class TreasuryDeleteLockSignature extends Signature {
 
   public getBytes() {
     const uuidBytes = utils.getBytesFromString(this.uuid.toString());
-    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    const timestampBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.timestamp));
     return utils.concatByteArrays([uuidBytes, timestampBytes]);
   }
 }
@@ -227,10 +227,10 @@ export class TreasuryWithdrawalEstimationSignature extends Signature {
   }
 
   public getBytes() {
-    const rewardAmountBytes = utils.getBytesFromString(Number(this.rewardAmount).toString());
-    const depositAmountBytes = utils.getBytesFromString(Number(this.depositAmount).toString());
+    const rewardAmountBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.rewardAmount));
+    const depositAmountBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.depositAmount));
     const uuidHashBytes = utils.getBytesFromString(this.depositUuid.toString());
-    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    const timestampBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.timestamp));
     return utils.concatByteArrays([rewardAmountBytes, depositAmountBytes, uuidHashBytes, timestampBytes]);
   }
 }
@@ -250,10 +250,10 @@ export class TreasuryWithdrawalSignature extends Signature {
   }
 
   public getBytes() {
-    const rewardAmountBytes = utils.getBytesFromString(Number(this.rewardAmount).toString());
-    const depositAmountBytes = utils.getBytesFromString(Number(this.depositAmount).toString());
+    const rewardAmountBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.rewardAmount));
+    const depositAmountBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.depositAmount));
     const uuidHashBytes = utils.getBytesFromString(this.depositUuid.toString());
-    const timestampBytes = utils.numberToByteArray(this.timestamp, 8);
+    const timestampBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.timestamp));
     return utils.concatByteArrays([rewardAmountBytes, depositAmountBytes, uuidHashBytes, timestampBytes]);
   }
 }
