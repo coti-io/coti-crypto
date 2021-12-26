@@ -42,11 +42,6 @@ export const ledgerSigningTypeKeyMap = new Map<SigningType, LedgerSigningTypeKey
   Object.entries(SigningType).map(([keyString, value]: [string, SigningType]) => [value, keyString as keyof typeof LedgerSigningType])
 );
 
-export interface SignatureData {
-  r: string;
-  s: string;
-}
-
 export abstract class Signature {
   protected signingType!: SigningType;
   protected signatureData!: SignatureData;
@@ -196,16 +191,21 @@ export class CurrencyTypeDataSignature extends Signature {
 
 export class TokenCurrenciesSignature extends Signature {
   private userHash: string;
+  private instantTime: number;
 
-  constructor(userHash: string) {
+  constructor(userHash: string, instantTime: number) {
     super();
 
     this.userHash = userHash;
+    this.instantTime = instantTime;
     this.signingType = SigningType.TOKEN_CURRENCIES;
   }
 
   public getBytes() {
-    return utils.hexToBytes(this.userHash);
+    const userHashBytes = utils.hexToBytes(this.userHash);
+    const instantTimeBytes = utils.numberToByteArray(this.instantTime, 8);
+
+    return utils.concatByteArrays([userHashBytes, instantTimeBytes]);
   }
 }
 
@@ -255,7 +255,7 @@ export class MintQuoteDataSignature extends Signature {
   public getBytes() {
     const currencyHashBytes = utils.hexToBytes(this.currencyHash);
     const mintingAmountBytes = utils.getBytesFromString(this.mintingAmount.toString());
-    const feeAmountBytes = utils.getBytesFromString(this.feeAmount.toString());
+    const feeAmountBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.feeAmount).toString());
     const receiverAddressBytes = utils.hexToBytes(this.receiverAddress);
     const instantTimeBytes = utils.numberToByteArray(this.instantTime, 8)
     const byteArraysToMerge = [currencyHashBytes, mintingAmountBytes, feeAmountBytes, 
@@ -284,7 +284,7 @@ export class MintQuoteFeeSignature extends Signature {
   public getBytes() {
     const currencyHashBytes = utils.hexToBytes(this.currencyHash);
     const mintingAmountBytes = utils.getBytesFromString(this.mintingAmount.toString());
-    const feeAmountBytes = utils.getBytesFromString(this.feeAmount.toString());
+    const feeAmountBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.feeAmount).toString());
     const instantTimeBytes = utils.numberToByteArray(this.instantTime, 8)
     const byteArraysToMerge = [instantTimeBytes, currencyHashBytes, mintingAmountBytes, feeAmountBytes];
 
@@ -449,31 +449,34 @@ export class TreasuryWithdrawalSignature extends Signature {
 export class TokenDetailsSignature extends Signature {
   private userHash: string;
   private currencyHash?: string;
-  private currencySymbol?: string
+  private currencySymbol?: string;
+  private instantTime: number;
 
-  constructor(userHash: string, currencyHash?: string, currencySymbol?: string) {
+  constructor(params: { userHash: string, instantTime: number, currencyHash?: string, currencySymbol?: string }) {
     super();
 
-    this.userHash = userHash;
-    this.currencyHash = currencyHash;
-    this.currencySymbol = currencySymbol;
+    this.userHash = params.userHash;
+    this.currencyHash = params.currencyHash;
+    this.currencySymbol = params.currencySymbol;
+    this.instantTime = params.instantTime;
     this.signingType = SigningType.TOKEN_DETAILS;
   }
 
   public getBytes() {
     const userHashBytes = utils.hexToBytes(this.userHash);
+    const instantTimeBytes = utils.numberToByteArray(this.instantTime, 8)
     const bytesToMerge = [userHashBytes];
 
     if (this.currencyHash) {
       const currencyHashBytes = utils.hexToBytes(this.currencyHash);
-
-      bytesToMerge.push(currencyHashBytes)
+      bytesToMerge.push(currencyHashBytes);
     } else if (this.currencySymbol) {
       const currencySymbolBytes = utils.getBytesFromString(this.currencySymbol);
-
-      bytesToMerge.push(currencySymbolBytes)
+      bytesToMerge.push(currencySymbolBytes);
     }
-    
+
+    bytesToMerge.push(instantTimeBytes);
+
     return utils.concatByteArrays(bytesToMerge);
   }
 }

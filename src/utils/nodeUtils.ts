@@ -268,12 +268,14 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getUserTokenCurrencies(userHash: string, seed: string, api?: string, network: Network = 'mainnet') {
-    const tokenCurrencies = new TokenCurrenciesSignature(userHash);
-    const indexedWallet = new Wallet({ seed });
+  export async function getUserTokenCurrencies(userHash: string, indexedWallet: Wallet, api?: string, network: Network = 'mainnet') {
+    const instantTime = Math.floor(new Date().getTime() / 1000);
+    const instantTime1 = instantTime * 1000
+    const tokenCurrencies = new TokenCurrenciesSignature(userHash, instantTime1);
     const signatureData = await tokenCurrencies.sign(indexedWallet, false);
     const payload = {
       userHash,
+      createTime: instantTime,
       signature: signatureData
     }
     const headers = {
@@ -289,13 +291,15 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getTokenDetails(currencyHash: string, userHash: string, seed: string, api?: string, network: Network = 'mainnet') {
-    const tokenCurrencies = new TokenDetailsSignature(userHash, currencyHash);
-    const indexedWallet = new Wallet({ seed });
+  export async function getTokenDetails(currencyHash: string, userHash: string, indexedWallet: Wallet, api?: string, network: Network = 'mainnet') {
+    const instantTime = Math.floor(new Date().getTime() / 1000);
+    const instantTimeSeconds = instantTime * 1000
+    const tokenCurrencies = new TokenDetailsSignature({ userHash, instantTime: instantTimeSeconds, currencyHash });
     const signatureData = await tokenCurrencies.sign(indexedWallet, false);
     const payload = {
       userHash,
       currencyHash,
+      createTime: instantTime,
       signature: signatureData
     }
     const headers = {
@@ -311,13 +315,15 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getTokenDetailsBySymbol(currencySymbol: string, userHash: string, seed: string, api?: string, network: Network = 'mainnet') {
-    const tokenCurrencies = new TokenDetailsSignature(userHash, undefined, currencySymbol);
-    const indexedWallet = new Wallet({ seed });
+  export async function getTokenDetailsBySymbol(currencySymbol: string, userHash: string, indexedWallet: Wallet, api?: string, network: Network = 'mainnet') {
+    const instantTime = Math.floor(new Date().getTime() / 1000);
+    const instantTimeSeconds = instantTime * 1000
+    const tokenCurrencies = new TokenDetailsSignature({ userHash, instantTime: instantTimeSeconds, currencySymbol });
     const signatureData = await tokenCurrencies.sign(indexedWallet, false);
     const payload = {
       userHash,
       symbol: currencySymbol,
+      createTime: instantTime,
       signature: signatureData
     }
     const headers = {

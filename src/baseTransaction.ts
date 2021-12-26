@@ -5,6 +5,7 @@ import { SignatureData, SigningType } from './signature';
 import { IndexedWallet } from './wallet';
 import BigDecimal = utils.BigDecimal;
 import * as cryptoUtils from './utils/cryptoUtils';
+import { serviceData } from './transaction';
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -15,8 +16,8 @@ export enum BaseTransactionName {
   NETWORK_FEE = 'NFBT',
   ROLLING_RESERVE = 'RRBT',
   RECEIVER = 'RBT',
-  GENERATE_TOKEN = 'TGBT',
-  MINT_TOKEN_FEE = 'TMBT',
+  TOKEN_GENERATION_FEE = 'TGBT',
+  TOKEN_MINT = 'TMBT',
 }
 
 export interface Item {
@@ -43,7 +44,7 @@ export interface BaseTransactionData {
   name: BaseTransactionName;
   items?: Item[];
   encryptedMerchantName?: string;
-  serviceData?: any;
+  serviceData?: serviceData;
   originalAmount?: string;
   networkFeeTrustScoreNodeResult?: TrustScoreNodeResult[];
   rollingReserveTrustScoreNodeResult?: TrustScoreNodeResult[];
@@ -75,7 +76,7 @@ export class BaseTransaction {
   private addressHash: string;
   private amount: BigDecimal;
   private createTime: number;
-  private serviceData?: any
+  private serviceData?: serviceData;
   private name: BaseTransactionName;
   private items?: Item[];
   private encryptedMerchantName?: string;
@@ -98,7 +99,7 @@ export class BaseTransaction {
     currencyHash?: string,
     createTime?: number,
     originalCurrencyHash?: string,
-    serviceData?: any,
+    serviceData?: serviceData,
     signerHash?: string,
   ) {
     this.addressHash = addressHash;
@@ -135,8 +136,9 @@ export class BaseTransaction {
     let bytes = utils.hexToBytes(this.addressHash);
     const bytesToMerge = [bytes, amountInBytes, utcTimeInByteArray]
 
-    if(this.currencyHash){
+    if (this.currencyHash) {
       const currencyHashBytes = utils.hexToBytes(this.currencyHash);
+
       bytesToMerge.push(currencyHashBytes);
     }
     
@@ -185,7 +187,7 @@ export class BaseTransaction {
     } else if (feeData.name === BaseTransactionName.RECEIVER) {
       baseTransaction.receiverDescription = feeData.receiverDescription;
       baseTransaction.signatureData = feeData.signatureData;
-    } else if ([BaseTransactionName.GENERATE_TOKEN, BaseTransactionName.MINT_TOKEN_FEE].includes(feeData.name)) {
+    } else if ([BaseTransactionName.TOKEN_GENERATION_FEE, BaseTransactionName.TOKEN_MINT].includes(feeData.name)) {
       baseTransaction.serviceData = feeData.serviceData;
       baseTransaction.signatureData = feeData.signatureData;
       baseTransaction.signerHash = feeData.signerHash;

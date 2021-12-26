@@ -16,11 +16,36 @@ export enum TransactionType {
   TRANSFER = 'Transfer',
   ZEROSPEND = 'ZeroSpend',
   CHARGEBACK = 'Chargeback',
-  TOKENGENERATION = 'TokenGeneration',
-  TOKENMINTING = 'TokenMinting'
+  TOKEN_GENERATION = 'TokenGeneration',
+  TOKEN_MINTING = 'TokenMinting'
 }
 
 export type TransactionStatus = 'pending' | 'confirmed';
+
+export type OriginatorCurrencyData = {
+  name: string,
+  symbol: string,
+  description: string,
+  totalSupply: number,
+  scale: number,
+  originatorHash: string,
+  originatorSignature: SignatureData
+};
+export type CurrencyTypeData = {
+  currencyType: string,
+  createTime: number,
+  currencyRateSourceType: string,
+  rateSource: string,
+  protectionModel: string,
+  signerHash: string,
+  signature: SignatureData
+};
+
+export type serviceData = {
+  originatorCurrencyData: CurrencyTypeData,
+  currencyTypeData: CurrencyTypeData,
+  feeAmount: number
+}
 
 export class ReducedTransaction {
   readonly hash: string;

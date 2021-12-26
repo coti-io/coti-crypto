@@ -11,7 +11,7 @@ import axios from 'axios';
 import { utils, Wallet } from '..';
 
 const amountRegex = /^\d+(\.\d{1,8})?$/;
-
+const nativeCurrencyHash = 'e72d2137d5cfcc672ab743bddbdedb4e059ca9d3db3219f4eb623b01';
 type KeyPair = cryptoUtils.KeyPair;
 
 export async function createTransaction<T extends IndexedAddress>(parameterObject: {
@@ -64,7 +64,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   if (!feeIncluded && !feeAddressInInputMap) addresses.push(feeAddress!);
 
   const balanceObject = await nodeUtils.checkBalances(addresses, network, fullnode);
-  const tokensBalanceObject = await nodeUtils.getTokenBalances(addresses, network, fullnode)
+  const tokensBalanceObject = await nodeUtils.getTokenBalances(addresses, network, fullnode);
 
   originalAmount = originalAmount.stripTrailingZeros();
 
@@ -138,7 +138,7 @@ function addInputBaseTranction(balanceObject: any, address: string, amount: numb
   let addressPreBalance;
 
   if (currencyHash && address === feeAddress) {
-    currencyHash = undefined;
+    currencyHash = nativeCurrencyHash;
   }
 
   if (currencyHash && tokensBalanceObject) {
