@@ -93,7 +93,7 @@ export function removeZerosFromEndOfNumber(num: number) {
   return removeZerosFromEndOfStringOfNumber(num.toString());
 }
 
-function removeZerosFromEndOfStringOfNumber(str: string) {
+export function removeZerosFromEndOfStringOfNumber(str: string) {
   if (str.includes('.')) {
     while (str.charAt(str.length - 1) === '0') {
       str = str.substring(0, str.length - 1);
