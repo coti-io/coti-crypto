@@ -81,20 +81,27 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
 
   let { fullNodeFee, networkFee } = await getFees(originalAmount, userHash!, keyPair, wallet, feeIncluded, network, fullnode, trustScoreNode);
   const baseTransactions: BaseTransaction[] = [];
+  const feeAmount = new BigDecimal(fullNodeFee.amount.toString()).add(new BigDecimal(networkFee.amount.toString()));
 
-  if (!feeIncluded) {
-    const feeAmount = new BigDecimal(fullNodeFee.amount.toString()).add(new BigDecimal(networkFee.amount.toString()));
-    
+  if (!feeIncluded) {  
     if (feeAddressInInputMap) {
-      const amount = inputMap.get(feeAddress!)!;
-      const feeIncludedAmount = feeAmount.add(new BigDecimal(amount.toString())).stripTrailingZeros();
+      if(currencyHash && currencyHash != nativeCurrencyHash){
+        addInputBaseTranction(balanceObject, feeAddress!, Number(feeAmount), baseTransactions);
+      } else {
+        const amount = inputMap.get(feeAddress!)!;
+        const feeIncludedAmount = feeAmount.add(new BigDecimal(amount.toString()));
 
-      inputMap.set(feeAddress!, Number(feeIncludedAmount.toString()));
+        inputMap.set(feeAddress!, Number(feeIncludedAmount.toString()));
+      }
     } else inputMap.set(feeAddress!, Number(feeAmount.stripTrailingZeros().toString()));
   }
 
   inputMap.forEach((amount, address) => {
-    addInputBaseTranction(balanceObject, address, amount, baseTransactions, currencyHash, tokensBalanceObject, feeAddress);
+    let isNativeFeeIBT: boolean = false;
+    if (amount === Number(feeAmount) && address === feeAddress) {
+      isNativeFeeIBT = true;
+    }
+    addInputBaseTranction(balanceObject, address, amount, baseTransactions, currencyHash, tokensBalanceObject, feeAddress, isNativeFeeIBT);
   });
   networkFee = await nodeUtils.createMiniConsensus(userHash!, fullNodeFee, networkFee, network, trustScoreNode);
 
@@ -131,14 +138,14 @@ async function getFees<T extends IndexedAddress>(
   return { fullNodeFee, networkFee };
 }
 
-function addInputBaseTranction(balanceObject: any, address: string, amount: number, baseTransactions: BaseTransaction[], currencyHash?: string, tokensBalanceObject?: any, feeAddress?: string) {
+function addInputBaseTranction(balanceObject: any, address: string, amount: number, baseTransactions: BaseTransaction[], currencyHash?: string, tokensBalanceObject?: any, feeAddress?: string, isNativeFeeIBT: boolean =true) {
   let balance;
   let preBalance;
   let addressBalance;
   let addressPreBalance;
 
-  if (currencyHash && address === feeAddress) {
-    currencyHash = nativeCurrencyHash;
+  if (currencyHash && address === feeAddress && isNativeFeeIBT) {
+    currencyHash = undefined;
   }
 
   if (currencyHash && tokensBalanceObject) {
