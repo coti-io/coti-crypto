@@ -107,21 +107,24 @@ export class ClaimReward extends Signature {
 export class TreasuryCreateDepositSignature extends Signature {
   private readonly leverage: number;
   private readonly locking: number;
+  private readonly nextLock: number;
   private readonly timestamp: number;
 
-  constructor(leverage: number, locking: number, timestamp: number, signature?: SignatureData ) {
+  constructor(leverage: number, locking: number, nextLock: number, timestamp: number, signature?: SignatureData ) {
     super(signature);
     this.leverage = leverage;
     this.locking = locking;
+    this.nextLock = nextLock;
     this.timestamp = timestamp;
   }
 
   public getBytes() {
     const leverageBytes = utils.numberToByteArray(this.leverage, 1);
     const lockingBytes = utils.numberToByteArray(this.locking, 2);
+    const nextLockBytes = utils.numberToByteArray(this.nextLock, 2);
     const timeInSeconds = this.timestamp * 1000;
     const timestampBytes = utils.numberToByteArray(timeInSeconds, 8);
-    return utils.concatByteArrays([leverageBytes, lockingBytes, timestampBytes]);
+    return utils.concatByteArrays([leverageBytes, lockingBytes, nextLockBytes, timestampBytes]);
   }
 }
 
