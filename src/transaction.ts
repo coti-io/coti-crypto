@@ -183,6 +183,18 @@ export class Transaction {
     return this.baseTransactions.filter(baseTransaction => baseTransaction.isInput());
   }
 
+  public getOutputBaseTransactions() {
+    return this.baseTransactions.filter(baseTransaction => baseTransaction.isOutput());
+  }
+
+  public getFullNodeFee() {
+    return this.getOutputBaseTransactions()[0].getAmount();
+  }
+
+  public getNetworkFee() {
+    return this.getOutputBaseTransactions()[1].getAmount();
+  }
+
   private getSignatureMessage() {
     const transactionHashInBytes = utils.hexToBytes(this.hash);
     const transactionTypeInBytes = utils.getBytesFromString(this.type);

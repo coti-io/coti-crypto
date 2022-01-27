@@ -108,6 +108,10 @@ export class BaseTransaction {
     this.hash = utils.byteArrayToHexString(new Uint8Array(baseTxHashedArray));
   }
 
+  public getAmount() {
+    return this.amount;
+  }
+
   public getBytes() {
     let amountInBytes = utils.getBytesFromString(this.amount.stripTrailingZeros().toString());
     let utcTime = this.createTime * 1000;
@@ -184,6 +188,10 @@ export class BaseTransaction {
 
   public isInput() {
     return this.amount.isNegative();
+  }
+
+  public isOutput() {
+    return this.amount.isPositive();
   }
 
   private getSignatureMessage(transactionHash: string) {
