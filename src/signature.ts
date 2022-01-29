@@ -91,8 +91,8 @@ export class TransactionTrustScoreSignature extends Signature {
   }
 }
 
-export class ClaimReward extends Signature {
-  private creationTime: number;
+abstract class CreationTimeSignature extends Signature {
+  protected creationTime: number;
 
   constructor(creationTime: number) {
     super();
@@ -104,13 +104,31 @@ export class ClaimReward extends Signature {
   }
 }
 
+export class ClaimReward extends CreationTimeSignature {
+  constructor(creationTime: number) {
+    super(creationTime);
+  }
+}
+
+export class ClaimStakeReward extends CreationTimeSignature {
+  constructor(creationTime: number) {
+    super(creationTime);
+  }
+}
+
+export class Unstake extends CreationTimeSignature {
+  constructor(creationTime: number) {
+    super(creationTime);
+  }
+}
+
 export class TreasuryCreateDepositSignature extends Signature {
   private readonly leverage: number;
   private readonly locking: number;
   private readonly nextLock: number;
   private readonly timestamp: number;
 
-  constructor(leverage: number, locking: number, nextLock: number, timestamp: number, signature?: SignatureData ) {
+  constructor(leverage: number, locking: number, nextLock: number, timestamp: number, signature?: SignatureData) {
     super(signature);
     this.leverage = leverage;
     this.locking = locking;
@@ -132,7 +150,7 @@ export class TreasuryGetDepositSignature extends Signature {
   private readonly uuid: string;
   private readonly timestamp: number;
 
-  constructor(uuid: string, timestamp: number, signature?: SignatureData ) {
+  constructor(uuid: string, timestamp: number, signature?: SignatureData) {
     super(signature);
     this.uuid = uuid;
     this.timestamp = timestamp;
@@ -150,7 +168,7 @@ export class TreasuryGetAccountBalanceSignature extends Signature {
   private readonly walletHash: string;
   private readonly timestamp: number;
 
-  constructor(walletHash: string, timestamp: number, signature?: SignatureData ) {
+  constructor(walletHash: string, timestamp: number, signature?: SignatureData) {
     super(signature);
     this.walletHash = walletHash;
     this.timestamp = timestamp;
@@ -168,7 +186,7 @@ export class TreasuryGetAccountSignature extends Signature {
   private readonly walletHash: string;
   private readonly timestamp: number;
 
-  constructor(walletHash: string, timestamp: number, signature?: SignatureData ) {
+  constructor(walletHash: string, timestamp: number, signature?: SignatureData) {
     super(signature);
     this.walletHash = walletHash;
     this.timestamp = timestamp;
@@ -187,7 +205,7 @@ export class TreasuryRenewLockSignature extends Signature {
   private readonly lockDays: number;
   private readonly timestamp: number;
 
-  constructor(uuid: string, timestamp: number, lockDays: number, signature?: SignatureData ) {
+  constructor(uuid: string, timestamp: number, lockDays: number, signature?: SignatureData) {
     super(signature);
     this.uuid = uuid;
     this.lockDays = lockDays;
@@ -207,7 +225,7 @@ export class TreasuryDeleteLockSignature extends Signature {
   private readonly uuid: string;
   private readonly timestamp: number;
 
-  constructor(uuid: string, timestamp: number, signature?: SignatureData ) {
+  constructor(uuid: string, timestamp: number, signature?: SignatureData) {
     super(signature);
     this.uuid = uuid;
     this.timestamp = timestamp;
@@ -227,7 +245,7 @@ export class TreasuryWithdrawalEstimationSignature extends Signature {
   private readonly depositUuid: string;
   private readonly timestamp: number;
 
-  constructor(rewardAmount: number, depositAmount: number, depositUuid: string, timestamp: number, signature?: SignatureData ) {
+  constructor(rewardAmount: number, depositAmount: number, depositUuid: string, timestamp: number, signature?: SignatureData) {
     super(signature);
     this.rewardAmount = rewardAmount;
     this.depositAmount = depositAmount;
@@ -252,7 +270,14 @@ export class TreasuryWithdrawalSignature extends Signature {
   private readonly destinationAddress: string;
   private readonly timestamp: number;
 
-  constructor(rewardAmount: number, depositAmount: number, depositUuid: string, destinationAddress: string, timestamp: number, signature?: SignatureData ) {
+  constructor(
+    rewardAmount: number,
+    depositAmount: number,
+    depositUuid: string,
+    destinationAddress: string,
+    timestamp: number,
+    signature?: SignatureData
+  ) {
     super(signature);
     this.rewardAmount = rewardAmount;
     this.depositAmount = depositAmount;
