@@ -94,8 +94,8 @@ export class TransactionTrustScoreSignature extends Signature {
 abstract class CreationTimeSignature extends Signature {
   protected creationTime: number;
 
-  constructor(creationTime: number) {
-    super();
+  constructor(creationTime: number, signature?: SignatureData) {
+    super(signature);
     this.creationTime = creationTime;
   }
 
@@ -104,21 +104,21 @@ abstract class CreationTimeSignature extends Signature {
   }
 }
 
-export class ClaimReward extends CreationTimeSignature {
-  constructor(creationTime: number) {
-    super(creationTime);
+export class ClaimRewardSignature extends CreationTimeSignature {
+  constructor(creationTime: number, signature?: SignatureData) {
+    super(creationTime, signature);
   }
 }
 
-export class ClaimStakeReward extends CreationTimeSignature {
-  constructor(creationTime: number) {
-    super(creationTime);
+export class ClaimStakeRewardSignature extends CreationTimeSignature {
+  constructor(creationTime: number, signature?: SignatureData) {
+    super(creationTime, signature);
   }
 }
 
-export class Unstake extends CreationTimeSignature {
-  constructor(creationTime: number) {
-    super(creationTime);
+export class UnstakeSignature extends CreationTimeSignature {
+  constructor(creationTime: number, signature?: SignatureData) {
+    super(creationTime, signature);
   }
 }
 
