@@ -108,8 +108,8 @@ export function getKeyPairFromPrivate(privateKeyHex: string) {
   return ec.keyFromPrivate(privateKeyHex, 'hex');
 }
 
-export function getKeyPairFromPublic(publicKeyHex: string | { x: string; y: string }) {
-  return ec.keyFromPublic(publicKeyHex, 'hex');
+export function getKeyPairFromPublic(publicKey: string | { x: string; y: string }) {
+  return ec.keyFromPublic(publicKey, 'hex');
 }
 
 export function getKeyPairFromPublicHash(publicHash: string) {
@@ -117,8 +117,8 @@ export function getKeyPairFromPublicHash(publicHash: string) {
   return getKeyPairFromPublic(pub);
 }
 
-export function verifySignature(messageInBytes: Uint8Array, signature: EcSignature | EcSignatureOptions, publicKeyHex: string) {
-  let keyPair = getKeyPairFromPublic(publicKeyHex);
+export function verifySignature(messageInBytes: Uint8Array, signature: EcSignature | EcSignatureOptions, publicHash: string) {
+  let keyPair = getKeyPairFromPublicHash(publicHash);
   return keyPair.verify(messageInBytes, signature);
 }
 
@@ -127,14 +127,14 @@ export function signByteArrayMessage(byteArray: Uint8Array, keyPair: KeyPair): S
   return { r: ecSignature.r.toString(16), s: ecSignature.s.toString(16) };
 }
 
-export function getPublicKeyFromHexString(publicKeyHex: string): PublicKey {
-  if (!validatePublicKey(publicKeyHex)) throw new Error('Invalid public key');
+export function getPublicKeyFromPublicHash(publicHash: string): PublicKey {
+  if (!validatePublicKey(publicHash)) throw new Error('Invalid public key');
 
-  return { x: publicKeyHex.substr(0, 64), y: publicKeyHex.substr(64, 128) };
+  return { x: publicHash.substr(0, 64), y: publicHash.substr(64, 128) };
 }
 
-function validatePublicKey(publicKeyHex: string) {
-  return publicKeyHex !== null && publicKeyHex !== undefined && publicKeyHex.length === publicKeyLength && regexp.test(publicKeyHex);
+function validatePublicKey(publicHash: string) {
+  return publicHash !== null && publicHash !== undefined && publicHash.length === publicKeyLength && regexp.test(publicHash);
 }
 
 export function verifyOrderOfPrivateKey(privateKeyHex: string) {
