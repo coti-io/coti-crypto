@@ -33,6 +33,10 @@ export class BigDecimal extends Decimal {
   public divide(other: BigDecimal) {
     return new BigDecimal(super.div(other));
   }
+
+  public plainString() {
+    return this.toFixed();
+  }
 }
 
 export function utcNowToSeconds() {
