@@ -34,7 +34,7 @@ export class BigDecimal extends Decimal {
     return new BigDecimal(super.div(other));
   }
 
-  public plainString() {
+  public toPlainString() {
     return this.toFixed();
   }
 }

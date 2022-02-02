@@ -51,8 +51,8 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
 
   inputMap.forEach((amount, address) => {
     if (!cryptoUtils.verifyAddressStructure(address)) throw new Error(`Invalid address: ${address}`);
-    if (!amountRegex.test(amount.toString())) throw new Error(`Invalid amount ${amount} for address ${address}`);
     const decimalAmount = new BigDecimal(amount.toString());
+    if (!amountRegex.test(decimalAmount.toPlainString())) throw new Error(`Invalid amount ${amount} for address ${address}`);
     if (decimalAmount.compareTo(new BigDecimal('0')) <= 0) throw new Error(`Error sending transaction - input amount should be positive`);
     originalAmount = originalAmount.add(decimalAmount);
     amount = Number(decimalAmount.stripTrailingZeros().toString());
