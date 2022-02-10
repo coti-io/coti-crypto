@@ -5,6 +5,8 @@ import { SignatureData, SigningType } from './signature';
 import { IndexedWallet } from './wallet';
 import * as cryptoUtils from './utils/cryptoUtils';
 import BigDecimal = utils.BigDecimal;
+import * as cryptoUtils from './utils/cryptoUtils';
+import { ServiceData } from './transaction';
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -15,6 +17,8 @@ export enum BaseTransactionName {
   NETWORK_FEE = 'NFBT',
   ROLLING_RESERVE = 'RRBT',
   RECEIVER = 'RBT',
+  TOKEN_GENERATION_FEE = 'TGBT',
+  TOKEN_MINT = 'TMBT',
 }
 
 export interface Item {
@@ -35,17 +39,21 @@ type BaseTransactionTime = 'createTime';
 export interface BaseTransactionData {
   hash: string;
   addressHash: string;
+  currencyHash?: string;
   amount: string;
   createTime: number;
   name: BaseTransactionName;
   items?: Item[];
   encryptedMerchantName?: string;
+  serviceData?: ServiceData;
   originalAmount?: string;
   networkFeeTrustScoreNodeResult?: TrustScoreNodeResult[];
   rollingReserveTrustScoreNodeResult?: TrustScoreNodeResult[];
   reducedAmount?: string;
   receiverDescription?: string;
   signatureData: SignatureData;
+  signerHash: string;
+  originalCurrencyHash?: string;
 }
 
 export class BaseTransactionData {
@@ -65,18 +73,22 @@ export class BaseTransactionData {
 
 export class BaseTransaction {
   private hash!: string;
-  private readonly addressHash: string;
-  private readonly amount: BigDecimal;
+  private currencyHash?: string;
+  private addressHash: string;
+  private amount: BigDecimal;
   private createTime: number;
-  private readonly name: BaseTransactionName;
-  private readonly items?: Item[];
-  private readonly encryptedMerchantName?: string;
+  private serviceData?: ServiceData;
+  private name: BaseTransactionName;
+  private items?: Item[];
+  private encryptedMerchantName?: string;
   private originalAmount?: BigDecimal;
   private networkFeeTrustScoreNodeResult?: TrustScoreNodeResult[];
   private rollingReserveTrustScoreNodeResult?: TrustScoreNodeResult[];
   private receiverDescription?: string;
   private reducedAmount?: BigDecimal;
   private signatureData?: SignatureData;
+  private signerHash?: string;
+  private originalCurrencyHash?: string;
 
   constructor(
     addressHash: string,
@@ -84,12 +96,22 @@ export class BaseTransaction {
     name: BaseTransactionName,
     items?: Item[],
     encryptedMerchantName?: string,
-    originalAmount?: BigDecimal
+    originalAmount?: BigDecimal,
+    currencyHash?: string,
+    createTime?: number,
+    originalCurrencyHash?: string,
+    serviceData?: ServiceData,
+    signerHash?: string
   ) {
     this.addressHash = addressHash;
-    this.amount = amount;
-    this.createTime = utils.utcNowToSeconds();
     this.name = name;
+    this.currencyHash = currencyHash;
+    this.originalCurrencyHash = originalCurrencyHash;
+    this.serviceData = serviceData;
+    this.signerHash = signerHash;
+    this.amount = amount.stripTrailingZeros();
+    this.createTime = createTime || utils.utcNowToSeconds();
+
     if (name === BaseTransactionName.RECEIVER && originalAmount) {
       this.originalAmount = originalAmount;
     }
@@ -116,12 +138,23 @@ export class BaseTransaction {
     let amountInBytes = utils.getBytesFromString(this.amount.toPlainString());
     let utcTime = this.createTime * 1000;
     let utcTimeInByteArray = utils.numberToByteArray(utcTime, 8);
-
     let bytes = utils.hexToBytes(this.addressHash);
-    bytes = utils.concatByteArrays([bytes, amountInBytes, utcTimeInByteArray]);
+    const bytesToMerge = [bytes, amountInBytes, utcTimeInByteArray];
+
+    if (this.currencyHash) {
+      const currencyHashBytes = utils.hexToBytes(this.currencyHash);
+      bytesToMerge.push(currencyHashBytes);
+    }
+
+    bytes = utils.concatByteArrays(bytesToMerge);
     if (this.name === BaseTransactionName.RECEIVER && this.originalAmount !== undefined) {
       let originalAmountInBytes = utils.getBytesFromString(this.originalAmount.toPlainString());
       bytes = utils.concatByteArrays([bytes, originalAmountInBytes]);
+
+      if (this.originalCurrencyHash) {
+        const originalCurrencyHashByes = utils.hexToBytes(this.originalCurrencyHash);
+        bytes = utils.concatByteArrays([bytes, originalCurrencyHashByes]);
+      }
     }
     if (this.name === BaseTransactionName.PAYMENT_INPUT) {
       if (this.items !== undefined) {
@@ -163,9 +196,16 @@ export class BaseTransaction {
     } else if (feeData.name === BaseTransactionName.RECEIVER) {
       baseTransaction.receiverDescription = feeData.receiverDescription;
       baseTransaction.signatureData = feeData.signatureData;
+    } else if ([BaseTransactionName.TOKEN_GENERATION_FEE, BaseTransactionName.TOKEN_MINT].includes(feeData.name)) {
+      baseTransaction.serviceData = feeData.serviceData;
+      baseTransaction.signatureData = feeData.signatureData;
+      baseTransaction.signerHash = feeData.signerHash;
     } else {
       baseTransaction.signatureData = feeData.signatureData;
     }
+
+    baseTransaction.currencyHash = feeData.currencyHash;
+    baseTransaction.originalCurrencyHash = feeData.originalCurrencyHash;
 
     return baseTransaction;
   }
@@ -216,6 +256,10 @@ export class BaseTransaction {
       rollingReserveTrustScoreNodeResult: this.rollingReserveTrustScoreNodeResult,
       receiverDescription: this.receiverDescription,
       signatureData: this.signatureData!,
+      currencyHash: this.currencyHash || undefined,
+      serviceData: this.serviceData || undefined,
+      signerHash: this.signerHash || undefined,
+      originalCurrencyHash: this.originalCurrencyHash || undefined,
     };
   }
 }
