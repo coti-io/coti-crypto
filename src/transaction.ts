@@ -16,9 +16,36 @@ export enum TransactionType {
   TRANSFER = 'Transfer',
   ZEROSPEND = 'ZeroSpend',
   CHARGEBACK = 'Chargeback',
+  TOKEN_GENERATION = 'TokenGeneration',
+  TOKEN_MINTING = 'TokenMinting'
 }
 
 export type TransactionStatus = 'pending' | 'confirmed';
+
+export type OriginatorCurrencyData = {
+  name: string,
+  symbol: string,
+  description: string,
+  totalSupply: number,
+  scale: number,
+  originatorHash: string,
+  originatorSignature: SignatureData
+};
+export type CurrencyTypeData = {
+  currencyType: string,
+  createTime: number,
+  currencyRateSourceType: string,
+  rateSource: string,
+  protectionModel: string,
+  signerHash: string,
+  signature: SignatureData
+};
+
+export type ServiceData = {
+  originatorCurrencyData: CurrencyTypeData,
+  currencyTypeData: CurrencyTypeData,
+  feeAmount: number
+};
 
 export class ReducedTransaction {
   readonly hash: string;
@@ -50,6 +77,7 @@ export interface TransactionData {
   senderHash: string;
   status: TransactionStatus;
   isValid: boolean;
+  currencyHash?: string;
 }
 
 export class TransactionData {
@@ -91,7 +119,8 @@ export class Transaction {
     transactionDescription = 'No description',
     userHash: string,
     type?: TransactionType,
-    createHash = true
+    createHash = true,
+    createTime?: number
   ) {
     this.baseTransactions = [];
 
@@ -99,7 +128,7 @@ export class Transaction {
       this.baseTransactions.push(listOfBaseTransaction[i]);
     }
 
-    this.createTime = utils.utcNowToSeconds();
+    this.createTime = createTime || utils.utcNowToSeconds();
     this.transactionDescription = transactionDescription;
     this.trustScoreResults = [];
     this.senderHash = userHash;
