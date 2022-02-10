@@ -220,7 +220,7 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     await this.setPublicHash();
   }
 
-  public abstract async setPublicHash(): Promise<void>;
+  public abstract setPublicHash(): Promise<void>;
 
   public getMaxAddress() {
     return this.maxAddress;
