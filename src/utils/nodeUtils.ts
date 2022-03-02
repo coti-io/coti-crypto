@@ -1,12 +1,12 @@
 import axios, { AxiosResponse } from 'axios';
 import { BaseAddress } from '../address';
 import { BaseTransactionData } from '../baseTransaction';
-import { SignatureData, TokenCurrenciesSignature, TokenDetailsSignature } from '../signature';
-import * as utils from './utils';
-import { Transaction, TransactionData } from '../transaction';
 import { NodeError } from '../cotiError';
+import { SignatureData, TokenCurrenciesSignature, TokenDetailsSignature } from '../signature';
+import { Transaction, TransactionData } from '../transaction';
 import { Wallet } from '../wallet';
 import { HardForks } from './transactionUtils';
+import * as utils from './utils';
 
 type Network = utils.Network;
 

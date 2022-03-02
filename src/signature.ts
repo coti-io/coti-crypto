@@ -1,10 +1,9 @@
-import * as utils from './utils/utils';
-import { BigDecimal } from './utils/utils';
 import { keccak256 } from 'js-sha3';
 import { IndexedAddress } from './address';
-import { IndexedWallet } from './wallet';
 import * as cryptoUtils from './utils/cryptoUtils';
 import { EcSignatureOptions } from './utils/cryptoUtils';
+import * as utils from './utils/utils';
+import { IndexedWallet } from './wallet';
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -77,7 +76,8 @@ export class FullNodeFeeSignature extends Signature {
 
   public getBytes() {
     const byteArraysToMerge = [];
-    const amountBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.amount));
+    const amountPlainString = new utils.BigDecimal(this.amount).toPlainString();
+    const amountBytes = utils.getBytesFromString(amountPlainString);
 
     if (this.originalCurrencyHash) {
       byteArraysToMerge.push(utils.hexToBytes(this.originalCurrencyHash));
