@@ -128,7 +128,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
 
   inputMap.forEach((amount, address) => {
     let tokenHash = currencyHash;
-    if (amount === Number(feeAmount) && address === feeAddress) {
+    if (hardFork !== HardForks.SINGLE_CURRENCY && amount === Number(feeAmount) && address === feeAddress) {
       tokenHash = nativeCurrencyHash;
     }
     addInputBaseTranction(balanceObject, address, amount, baseTransactions, tokenHash, tokensBalanceObject);
