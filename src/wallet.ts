@@ -5,7 +5,6 @@ import { walletUtils } from './utils/walletUtils';
 import { SignatureData, SigningType } from './signature';
 import * as cryptoUtils from './utils/cryptoUtils';
 import { BigDecimal, Network } from './utils/utils';
-import * as utils from './utils/utils';
 import * as ledgerUtils from './utils/ledgerUtils';
 import BN from 'bn.js';
 import moment from 'moment';
@@ -446,14 +445,13 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
     console.log(`Ledger device signing message of type ${signingType}`);
     this.emit('signingMessage', signingType);
 
-    const messageInHex = utils.byteArrayToHexString(messageInBytes);
     if (addressHex) {
       const address = this.getAddressByAddressHex(addressHex);
       if (!address) throw new Error(`Wallet doesn't contain the address`);
       const index = (<LedgerAddress>address).getIndex();
-      return await ledgerUtils.signMessage(index, messageInHex, signingType, true, this.transportType);
+      return await ledgerUtils.signMessage(index, messageInBytes, signingType, true, this.transportType);
     } else {
-      return await ledgerUtils.signUserMessage(messageInHex, signingType, true, this.transportType);
+      return await ledgerUtils.signUserMessage(messageInBytes, signingType, true, this.transportType);
     }
   }
 }
