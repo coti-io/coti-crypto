@@ -205,7 +205,10 @@ function addInputBaseTranction(
   let addressPreBalance;
 
   if (currencyHash && tokensBalanceObject && currencyHash !== nativeCurrencyHash) {
-    const tokenBalance = tokensBalanceObject[currencyHash] ? tokensBalanceObject[currencyHash][address] : { addressBalance: 0, addressPreBalance: 0 };
+    let tokenBalance = tokensBalanceObject[address][currencyHash];
+    if(!tokenBalance) {
+      tokenBalance = { addressBalance: 0, addressPreBalance: 0 }
+    }
 
     addressBalance = tokenBalance.addressBalance;
     addressPreBalance = tokenBalance.addressPreBalance;
