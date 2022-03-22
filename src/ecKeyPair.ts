@@ -1,5 +1,5 @@
-import { KeyPair } from './utils/cryptoUtils';
 import * as cryptoUtils from './utils/cryptoUtils';
+import { KeyPair } from './utils/cryptoUtils';
 
 export class EcKeyPair {
   readonly keyPair: KeyPair;

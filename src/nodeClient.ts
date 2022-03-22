@@ -4,7 +4,7 @@ import { nodeUtils } from './utils/nodeUtils';
 
 export class NodeClient {
   private readonly network: Network;
-  private fullnode?: string;
+  private readonly fullnode?: string;
 
   constructor(network: Network = 'mainnet', fullnode?: string) {
     this.network = network;
@@ -12,22 +12,22 @@ export class NodeClient {
   }
 
   async sendTransaction(transaction: Transaction) {
-    return await nodeUtils.sendTransaction(transaction, this.network, this.fullnode);
+    return nodeUtils.sendTransaction(transaction, this.network, this.fullnode);
   }
 
   async getTransaction(transactionHash: string) {
-    return await nodeUtils.getTransaction(transactionHash, this.network, this.fullnode);
+    return nodeUtils.getTransaction(transactionHash, this.network, this.fullnode);
   }
 
   async getTransactionsHistory(addresses: string[]) {
-    return await nodeUtils.getTransactionsHistory(addresses, this.network, this.fullnode);
+    return nodeUtils.getTransactionsHistory(addresses, this.network, this.fullnode);
   }
 
   async getTransactionHistoryByTimestamp(addresses: string[], startTime?: number, endTime?: number) {
-    return await nodeUtils.getTransactionsHistoryByTimeStamp(addresses, this.network, this.fullnode, startTime, endTime);
+    return nodeUtils.getTransactionsHistoryByTimeStamp(addresses, this.network, this.fullnode, startTime, endTime);
   }
 
   async checkBalances(addresses: string[]) {
-    return await nodeUtils.checkBalances(addresses, this.network, this.fullnode);
+    return nodeUtils.checkBalances(addresses, this.network, this.fullnode);
   }
 }

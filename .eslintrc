@@ -42,13 +42,31 @@
         "varsIgnorePattern": "^unused($|[A-Z].*$)"
       }
     ],
-    "no-use-before-define": ["error", { "functions": false }],
+    "no-use-before-define": [
+      "error", {
+        "functions": false
+      }
+    ],
     "one-var": ["warn", "never"],
-    "prefer-arrow-callback": ["warn", { "allowNamedFunctions": true }],
+    "prefer-arrow-callback": [
+      "warn", {
+        "allowNamedFunctions": true
+      }
+    ],
     "arrow-parens": ["error", "as-needed"],
-    "quotes": ["warn", "single", { "avoidEscape": false, "allowTemplateLiterals": true }],
+    "quotes": [
+      "warn", "single", {
+        "avoidEscape": false,
+        "allowTemplateLiterals": true
+      }
+    ],
     "semi": ["error", "always"],
-    "semi-spacing": ["warn", { "before": false, "after": true }],
+    "semi-spacing": [
+      "warn", {
+        "before": false,
+        "after": true
+      }
+    ],
     "semi-style": ["warn", "last"]
   }
 }

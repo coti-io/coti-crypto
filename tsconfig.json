@@ -8,14 +8,14 @@
     "sourceMap": true,
     "declaration": true,
     "declarationDir": "./dist",
-    "rootDir":"./src",
-    "outDir":"./dist",
+    "rootDir": "./src",
+    "outDir": "./dist",
     "esModuleInterop": true,
     "experimentalDecorators": true,
-    "watch":false,
+    "watch": false,
     "typeRoots": ["node_modules/@types"]
   },
-  "include":[
+  "include": [
     "./src/**/*"
   ],
   "exclude": ["node_modules", "dist"]

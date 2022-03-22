@@ -27,7 +27,7 @@ export abstract class Signature {
   protected signingType!: SigningType;
   protected signatureData!: SignatureData;
 
-  constructor(signatureData?: SignatureData) {
+  protected constructor(signatureData?: SignatureData) {
     if (signatureData) {
       this.signatureData = signatureData;
     }
@@ -64,7 +64,7 @@ export abstract class Signature {
 }
 
 export class FullNodeFeeSignature extends Signature {
-  private amount: number;
+  private readonly amount: number;
 
   constructor(amount: number) {
     super();
@@ -78,7 +78,7 @@ export class FullNodeFeeSignature extends Signature {
 }
 
 export class TransactionTrustScoreSignature extends Signature {
-  private transactionHash: string;
+  private readonly transactionHash: string;
 
   constructor(transactionHash: string) {
     super();
@@ -94,7 +94,7 @@ export class TransactionTrustScoreSignature extends Signature {
 abstract class CreationTimeSignature extends Signature {
   protected creationTime: number;
 
-  constructor(creationTime: number, signature?: SignatureData) {
+  protected constructor(creationTime: number, signature?: SignatureData) {
     super(signature);
     this.creationTime = creationTime;
   }

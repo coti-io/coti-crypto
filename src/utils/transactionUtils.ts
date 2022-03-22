@@ -3,7 +3,7 @@ import * as cryptoUtils from './cryptoUtils';
 import { FullNodeFeeSignature, TransactionTrustScoreSignature } from '../signature';
 import { PrivateKey } from '../ecKeyPair';
 import { nodeUtils } from './nodeUtils';
-import { BaseTransaction, BaseTransactionName, BaseTransactionData } from '../baseTransaction';
+import { BaseTransaction, BaseTransactionData, BaseTransactionName } from '../baseTransaction';
 import { Transaction } from '../transaction';
 import { IndexedWallet } from '../wallet';
 import { IndexedAddress } from '../address';
@@ -104,7 +104,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
 
 async function getFullNodeFeeSignature<T extends IndexedAddress>(originalAmount: number, keyPair?: KeyPair, wallet?: IndexedWallet<T>) {
   const fullNodeFeeSignature = new FullNodeFeeSignature(originalAmount);
-  return keyPair ? fullNodeFeeSignature.signByKeyPair(keyPair) : await fullNodeFeeSignature.sign(wallet!);
+  return keyPair ? fullNodeFeeSignature.signByKeyPair(keyPair) : fullNodeFeeSignature.sign(wallet!);
 }
 
 async function getFees<T extends IndexedAddress>(
@@ -161,7 +161,7 @@ function addOutputBaseTransactions(
 
 async function getTransactionTrustScoreSignature<T extends IndexedAddress>(transactionHash: string, keyPair?: KeyPair, wallet?: IndexedWallet<T>) {
   const transactionTrustScoreSignature = new TransactionTrustScoreSignature(transactionHash);
-  return keyPair ? transactionTrustScoreSignature.signByKeyPair(keyPair, true) : await transactionTrustScoreSignature.sign(wallet!, true);
+  return keyPair ? transactionTrustScoreSignature.signByKeyPair(keyPair, true) : transactionTrustScoreSignature.sign(wallet!, true);
 }
 
 async function addTrustScoreToTransaction<T extends IndexedAddress>(

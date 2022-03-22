@@ -52,7 +52,7 @@ export class IndexedAddress extends BaseAddress {
 }
 
 export class Address extends IndexedAddress {
-  private keyPair: KeyPair;
+  private readonly keyPair: KeyPair;
 
   constructor(keyPair: KeyPair, index: number, addressHex?: string) {
     if (!addressHex) {

@@ -70,14 +70,14 @@ export function hexToArray(hex: string) {
   return array;
 }
 
-export function byteArrayToHexString(uint8arr: Uint8Array) {
-  if (!uint8arr) {
+export function byteArrayToHexString(byteArray: Uint8Array) {
+  if (!byteArray) {
     return '';
   }
 
-  var hexStr = '';
-  for (var i = 0; i < uint8arr.length; i++) {
-    var hex = (uint8arr[i] & 0xff).toString(16);
+  let hexStr = '';
+  for (let byte of byteArray) {
+    let hex = (byte & 0xff).toString(16);
     hex = hex.length === 1 ? '0' + hex : hex;
     hexStr += hex;
   }

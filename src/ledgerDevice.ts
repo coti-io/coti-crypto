@@ -7,11 +7,15 @@ type LedgerLog = ledgerUtils.LedgerLog;
 
 export interface LedgerEvent {
   on(event: 'add' | 'remove', listener: (ledgerEvent: DescriptorEvent<Descriptor>) => void): this;
+
   on(event: 'error', listener: (error: Error) => void): this;
+
   on(event: 'log', listener: (ledgerLog: LedgerLog) => void): this;
 
   emit(event: 'add' | 'remove', ledgerEvent: DescriptorEvent<Descriptor>): boolean;
+
   emit(event: 'error', error: Error): boolean;
+
   emit(event: 'log', ledgerLog: LedgerLog): boolean;
 }
 
@@ -30,7 +34,7 @@ export abstract class LedgerEvent extends EventEmitter {
 }
 
 export class LedgerDevice extends LedgerEvent {
-  private transportType?: LedgerTransportType;
+  private readonly transportType?: LedgerTransportType;
 
   constructor(transportType?: LedgerTransportType) {
     super();

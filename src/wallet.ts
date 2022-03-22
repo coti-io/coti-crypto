@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { BaseAddress, IndexedAddress, Address, LedgerAddress } from './address';
+import { Address, BaseAddress, IndexedAddress, LedgerAddress } from './address';
 import { ReducedTransaction, TransactionData } from './transaction';
 import { walletUtils } from './utils/walletUtils';
 import { SignatureData, SigningType } from './signature';
@@ -14,13 +14,19 @@ type LedgerTransportType = ledgerUtils.LedgerTransportType;
 
 export interface WalletEvent {
   on(event: 'balanceChange', listener: (address: BaseAddress) => void): this;
+
   on(event: 'generateAddress', listener: (addressHex: string) => void): this;
+
   on(event: 'receivedTransaction', listener: (transaction: TransactionData) => void): this;
+
   on(event: 'signingMessage', listener: (signingType: SigningType) => void): this;
 
   emit(event: 'balanceChange', address: BaseAddress): boolean;
+
   emit(event: 'generateAddress', addressHex: string): boolean;
+
   emit(event: 'receivedTransaction', transaction: TransactionData): boolean;
+
   emit(event: 'signingMessage', signingType: SigningType): boolean;
 }
 
@@ -207,7 +213,7 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
   protected maxIndex?: number;
   protected webSocketIndexGap?: number;
 
-  constructor(params: { network?: Network; fullnode?: string; trustScoreNode?: string; webSocketIndexGap?: number }) {
+  protected constructor(params: { network?: Network; fullnode?: string; trustScoreNode?: string; webSocketIndexGap?: number }) {
     const { network, fullnode, trustScoreNode, webSocketIndexGap } = params;
     if (webSocketIndexGap !== undefined && (!Number.isInteger(webSocketIndexGap) || webSocketIndexGap <= 0 || webSocketIndexGap > 10))
       throw new Error('Invalid webSocketIndexGap parameter');
@@ -269,9 +275,9 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
 
   public async getAddressByIndex(index: number) {
     const addressHex = this.indexToAddressHexMap.get(index);
-    if (!addressHex) return await this.generateAndSetAddressByIndex(index);
+    if (!addressHex) return this.generateAndSetAddressByIndex(index);
     const address = this.addressMap.get(addressHex);
-    return address ? <T>address : await this.generateAndSetAddressByIndex(index);
+    return address ? <T>address : this.generateAndSetAddressByIndex(index);
   }
 
   public async generateAndSetAddressByIndex(index: number, sendToNode = true) {
@@ -393,8 +399,8 @@ export class Wallet extends IndexedWallet<Address> {
 }
 
 export class LedgerWallet extends IndexedWallet<LedgerAddress> {
-  private transportType?: LedgerTransportType;
-  private interactive?: boolean;
+  private readonly transportType?: LedgerTransportType;
+  private readonly interactive?: boolean;
 
   constructor(params: {
     network?: Network;
@@ -449,9 +455,9 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
       const address = this.getAddressByAddressHex(addressHex);
       if (!address) throw new Error(`Wallet doesn't contain the address`);
       const index = (<LedgerAddress>address).getIndex();
-      return await ledgerUtils.signMessage(index, messageInBytes, signingType, true, this.transportType);
+      return ledgerUtils.signMessage(index, messageInBytes, signingType, true, this.transportType);
     } else {
-      return await ledgerUtils.signUserMessage(messageInBytes, signingType, true, this.transportType);
+      return ledgerUtils.signUserMessage(messageInBytes, signingType, true, this.transportType);
     }
   }
 }

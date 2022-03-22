@@ -53,7 +53,7 @@ export class WebSocket {
           console.error(`Web socket connection error:`);
           console.error(error instanceof stomp.Frame ? error.body : error.reason);
           clearTimeout(timeout);
-          this.addressesUnsubscribe();
+          await this.addressesUnsubscribe();
           if (this.connected === undefined || this.connected) {
             this.connected = false;
             await this.reconnect().catch(e => {
@@ -89,15 +89,15 @@ export class WebSocket {
     this.client = stomp.over(ws, { debug: false });
   }
 
-  private closeSocketConnection() {
-    this.addressesUnsubscribe();
+  private async closeSocketConnection() {
+    await this.addressesUnsubscribe();
     this.client.disconnect();
   }
 
   private async addressesUnsubscribe() {
-    this.propagationSubscriptions.forEach(async propagationSubscription => await propagationSubscription.unsubscribe());
-    this.balanceSubscriptions.forEach(async balanceSubscription => await balanceSubscription.unsubscribe());
-    this.transactionsSubscriptions.forEach(async transactionsSubscription => await transactionsSubscription.unsubscribe());
+    this.propagationSubscriptions.forEach(propagationSubscription => propagationSubscription.unsubscribe());
+    this.balanceSubscriptions.forEach(balanceSubscription => balanceSubscription.unsubscribe());
+    this.transactionsSubscriptions.forEach(transactionsSubscription => transactionsSubscription.unsubscribe());
   }
 
   private async onConnected(addressesInHex: string[]) {
@@ -122,7 +122,7 @@ export class WebSocket {
     }
     console.log(`Finished to websocket subscriptions.`);
 
-    if (this.successCallback) return await this.successCallback();
+    if (this.successCallback) return this.successCallback();
   }
 
   public connectToAddress(addressHex: string) {

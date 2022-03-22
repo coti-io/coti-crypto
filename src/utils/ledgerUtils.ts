@@ -2,11 +2,10 @@ import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import TransportWebHid from '@ledgerhq/hw-transport-webhid';
 import { HWSDK, SigningType as LedgerSigningType } from '@coti-io/ledger-sdk';
 import { listen as listenLedgerLog, Log } from '@ledgerhq/logs';
-import { SignatureData, SigningType } from '../signature';
 import * as signature from '../signature';
+import { SignatureData, SigningType } from '../signature';
 import { LedgerError } from '../cotiError';
-import { Descriptor, DescriptorEvent, Observer } from '@ledgerhq/hw-transport';
-import Transport from '@ledgerhq/hw-transport';
+import Transport, { Descriptor, DescriptorEvent, Observer } from '@ledgerhq/hw-transport';
 
 const NODE_APP = globalThis.process?.release?.name;
 const listenTimeout = 3000;
@@ -26,8 +25,7 @@ const ledgerTransport: {
 };
 
 if (NODE_APP) {
-  let TransportNodeHid = require('@ledgerhq/hw-transport-node-hid').default;
-  ledgerTransport.node = TransportNodeHid;
+  ledgerTransport.node = require('@ledgerhq/hw-transport-node-hid').default;
 }
 
 function checkTransportType(transportType: LedgerTransportType) {

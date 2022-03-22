@@ -1,12 +1,12 @@
 import { keccak256 } from 'js-sha3';
-import { BaseTransaction, BaseTransactionName, BaseTransactionData } from './baseTransaction';
+import { BaseTransaction, BaseTransactionData, BaseTransactionName } from './baseTransaction';
 import * as utils from './utils/utils';
 import { BaseAddress, IndexedAddress } from './address';
 import { SignatureData, SigningType } from './signature';
 import { IndexedWallet } from './wallet';
-import BigDecimal = utils.BigDecimal;
 import * as cryptoUtils from './utils/cryptoUtils';
 import { PrivateKey } from './ecKeyPair';
+import BigDecimal = utils.BigDecimal;
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -77,17 +77,17 @@ export class TransactionData {
 
 export class Transaction {
   private hash!: string;
-  private baseTransactions: BaseTransaction[];
+  private readonly baseTransactions: BaseTransaction[];
   private createTime: number;
   private transactionConsensusUpdateTime?: number;
-  private transactionDescription: string;
+  private readonly transactionDescription: string;
   private trustScoreResults: string[];
-  private senderHash: string;
+  private readonly senderHash: string;
   private senderSignature!: SignatureData;
-  private type: TransactionType;
+  private readonly type: TransactionType;
 
   constructor(
-    listOfBaseTransaction: BaseTransaction[],
+    baseTransactions: BaseTransaction[],
     transactionDescription = 'No description',
     userHash: string,
     type?: TransactionType,
@@ -95,8 +95,8 @@ export class Transaction {
   ) {
     this.baseTransactions = [];
 
-    for (let i = 0; i < listOfBaseTransaction.length; i++) {
-      this.baseTransactions.push(listOfBaseTransaction[i]);
+    for (let baseTransaction of baseTransactions) {
+      this.baseTransactions.push(baseTransaction);
     }
 
     this.createTime = utils.utcNowToSeconds();
@@ -153,8 +153,8 @@ export class Transaction {
   }
 
   public async signTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
-    for (let i = 0; i < this.baseTransactions.length; i++) {
-      await this.baseTransactions[i].sign(this.hash, wallet);
+    for (let baseTransaction of this.baseTransactions) {
+      await baseTransaction.sign(this.hash, wallet);
     }
 
     const messageInBytes = this.getSignatureMessage();

@@ -3,8 +3,8 @@ import { keccak256 } from 'js-sha3';
 import { IndexedAddress } from './address';
 import { SignatureData, SigningType } from './signature';
 import { IndexedWallet } from './wallet';
-import BigDecimal = utils.BigDecimal;
 import * as cryptoUtils from './utils/cryptoUtils';
+import BigDecimal = utils.BigDecimal;
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -199,7 +199,7 @@ export class BaseTransaction {
   }
 
   public toJSON() {
-    let jsonToReturn = {
+    return {
       hash: this.hash,
       addressHash: this.addressHash,
       amount: this.amount.toString(),
@@ -214,7 +214,5 @@ export class BaseTransaction {
       receiverDescription: this.receiverDescription,
       signatureData: this.signatureData!,
     };
-
-    return jsonToReturn;
   }
 }

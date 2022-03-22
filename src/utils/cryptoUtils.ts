@@ -4,7 +4,7 @@ import * as CRC32 from 'crc-32';
 import * as elliptic from 'elliptic';
 import * as utils from './utils';
 import { sha256 } from 'js-sha256';
-import { sha3_256 as sha3Bit256, keccak256 } from 'js-sha3';
+import { keccak256, sha3_256 as sha3Bit256 } from 'js-sha3';
 import { blake } from 'blakejs';
 import { SignatureData } from '../signature';
 import * as bip39 from 'bip39';
@@ -49,14 +49,14 @@ export function decryptGCM(encrypted: Encryption, password: string, iv: string) 
 }
 
 export function encryptCTR(text: string, password: string) {
-  let cipher = crypto.createCipher('aes-256-ctr', password);
-  let crypted = cipher.update(text, 'utf8', 'hex');
-  crypted += cipher.final('hex');
-  return crypted;
+  let cipher = crypto.createCipheriv('aes-256-ctr', password, null);
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return encrypted;
 }
 
 export function decryptCTR(text: string, password: string) {
-  let decipher = crypto.createDecipher('aes-256-ctr', password);
+  let decipher = crypto.createDecipheriv('aes-256-ctr', password, null);
   let dec = decipher.update(text, 'hex', 'utf8');
   dec += decipher.final('utf8');
   return dec;
@@ -65,8 +65,7 @@ export function decryptCTR(text: string, password: string) {
 export function getCrc32(arr: Uint8Array) {
   let checkSum = CRC32.buf(arr);
   let checkSumInBytes = new Uint8Array(toBytesInt32(checkSum));
-  let checkSumHex = utils.byteArrayToHexString(checkSumInBytes);
-  return checkSumHex;
+  return utils.byteArrayToHexString(checkSumInBytes);
 }
 
 export function toBytesInt32(num: number) {
@@ -216,7 +215,7 @@ export function generateMnemonic() {
 }
 
 export async function generateSeedFromMnemonic(mnemonic: string) {
-  return await bip39.mnemonicToSeed(mnemonic).then(bytes => utils.byteArrayToHexString(bytes));
+  return bip39.mnemonicToSeed(mnemonic).then(bytes => utils.byteArrayToHexString(bytes));
 }
 
 export async function generateKeyPairFromMnemonic(mnemonic: string, index?: number) {
