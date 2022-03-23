@@ -55,7 +55,6 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
     if (!amountRegex.test(decimalAmount.toPlainString())) throw new Error(`Invalid amount ${amount} for address ${address}`);
     if (decimalAmount.compareTo(new BigDecimal('0')) <= 0) throw new Error(`Error sending transaction - input amount should be positive`);
     originalAmount = originalAmount.add(decimalAmount);
-    amount = Number(decimalAmount.stripTrailingZeros().toString());
     addresses.push(address);
   });
   if (!feeIncluded && !feeAddressInInputMap) addresses.push(feeAddress!);
@@ -88,7 +87,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   let baseTransactions: BaseTransaction[] = [];
 
   inputMap.forEach((amount, address) => {
-    addInputBaseTranction(balanceObject, address, amount, baseTransactions);
+    addInputBaseTransaction(balanceObject, address, amount, baseTransactions);
   });
 
   networkFee = await nodeUtils.createMiniConsensus(userHash!, fullNodeFee, networkFee, network, trustScoreNode);
@@ -117,14 +116,14 @@ async function getFees<T extends IndexedAddress>(
   fullnode?: string,
   trustScoreNode?: string
 ) {
-  const originalAmountInNumber = Number(originalAmount.toString());
+  const originalAmountInNumber = Number(originalAmount.toPlainString());
   const fullNodeFeeSignature = await getFullNodeFeeSignature(originalAmountInNumber, keyPair, wallet);
   const fullNodeFee = await nodeUtils.getFullNodeFees(originalAmountInNumber, userHash, fullNodeFeeSignature, network, feeIncluded, fullnode);
   const networkFee = await nodeUtils.getNetworkFees(fullNodeFee, userHash, network, feeIncluded, trustScoreNode);
   return { fullNodeFee, networkFee };
 }
 
-function addInputBaseTranction(balanceObject: any, address: string, amount: number, baseTransactions: BaseTransaction[]) {
+function addInputBaseTransaction(balanceObject: any, address: string, amount: number, baseTransactions: BaseTransaction[]) {
   let { addressBalance, addressPreBalance } = balanceObject[address];
   const balance = new BigDecimal(`${addressBalance}`);
   const preBalance = new BigDecimal(`${addressPreBalance}`);

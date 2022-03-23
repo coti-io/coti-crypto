@@ -126,28 +126,12 @@ export class WebSocket {
   }
 
   public connectToAddress(addressHex: string) {
-    if (!this.balanceSubscriptions.get(addressHex)) {
-      let balanceSubscription = this.client.subscribe(`/topic/${addressHex}`, async ({ body }) => {
-        try {
-          const data = JSON.parse(body);
-          if (data.message === 'Balance Updated!') {
-            const address = this.wallet.getAddressMap().get(data.addressHash);
-            if (address === undefined) {
-              const errorMsg = `Error - Address not found for addressHex: ${data.addressHash}`;
-              console.log(errorMsg);
-              throw new Error(errorMsg);
-            }
-            const { balance, preBalance } = data;
-            this.setAddressWithBalance(address, balance === null ? 0 : balance, preBalance === null ? 0 : preBalance);
-          }
-        } catch (e) {
-          console.error(`Address balance subscription callback error for address ${addressHex}: `, e);
-        }
-      });
+    this.subscribeToAddressBalance(addressHex);
 
-      this.balanceSubscriptions.set(addressHex, balanceSubscription);
-    }
+    this.subscribeToAddressTransactions(addressHex);
+  }
 
+  private subscribeToAddressTransactions(addressHex: string) {
     if (!this.transactionsSubscriptions.get(addressHex)) {
       let transactionSubscription = this.client.subscribe(`/topic/addressTransactions/${addressHex}`, async ({ body }) => {
         try {
@@ -162,6 +146,34 @@ export class WebSocket {
       });
 
       this.transactionsSubscriptions.set(addressHex, transactionSubscription);
+    }
+  }
+
+  private subscribeToAddressBalance(addressHex: string) {
+    if (!this.balanceSubscriptions.get(addressHex)) {
+      let balanceSubscription = this.client.subscribe(`/topic/${addressHex}`, async ({ body }) => {
+        try {
+          this.updateBalance(body);
+        } catch (e) {
+          console.error(`Address balance subscription callback error for address ${addressHex}: `, e);
+        }
+      });
+
+      this.balanceSubscriptions.set(addressHex, balanceSubscription);
+    }
+  }
+
+  private updateBalance(body: string) {
+    const data = JSON.parse(body);
+    if (data.message === 'Balance Updated!') {
+      const address = this.wallet.getAddressMap().get(data.addressHash);
+      if (address === undefined) {
+        const errorMsg = `Error - Address not found for addressHex: ${data.addressHash}`;
+        console.log(errorMsg);
+        throw new Error(errorMsg);
+      }
+      const { balance, preBalance } = data;
+      this.setAddressWithBalance(address, balance === null ? 0 : balance, preBalance === null ? 0 : preBalance);
     }
   }
 

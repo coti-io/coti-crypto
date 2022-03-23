@@ -65,12 +65,12 @@ export class BaseTransactionData {
 
 export class BaseTransaction {
   private hash!: string;
-  private addressHash: string;
-  private amount: BigDecimal;
+  private readonly addressHash: string;
+  private readonly amount: BigDecimal;
   private createTime: number;
-  private name: BaseTransactionName;
-  private items?: Item[];
-  private encryptedMerchantName?: string;
+  private readonly name: BaseTransactionName;
+  private readonly items?: Item[];
+  private readonly encryptedMerchantName?: string;
   private originalAmount?: BigDecimal;
   private networkFeeTrustScoreNodeResult?: TrustScoreNodeResult[];
   private rollingReserveTrustScoreNodeResult?: TrustScoreNodeResult[];
@@ -202,11 +202,11 @@ export class BaseTransaction {
     return {
       hash: this.hash,
       addressHash: this.addressHash,
-      amount: this.amount.toString(),
+      amount: this.amount.toPlainString(),
       createTime: this.createTime,
       name: this.name,
-      originalAmount: this.originalAmount ? this.originalAmount.toString() : undefined,
-      reducedAmount: this.reducedAmount ? this.reducedAmount.toString() : undefined,
+      originalAmount: this.originalAmount ? this.originalAmount.toPlainString() : undefined,
+      reducedAmount: this.reducedAmount ? this.reducedAmount.toPlainString() : undefined,
       networkFeeTrustScoreNodeResult: this.networkFeeTrustScoreNodeResult,
       encryptedMerchantName: this.encryptedMerchantName,
       items: this.items,
