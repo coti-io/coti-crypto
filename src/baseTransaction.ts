@@ -173,7 +173,10 @@ export class BaseTransaction {
   public async sign<T extends IndexedAddress>(transactionHash: string, wallet: IndexedWallet<T>) {
     if (this.isInput()) {
       const messageInBytes = this.getSignatureMessage(transactionHash);
-      this.signatureData = await wallet.signMessage(messageInBytes, SigningType.BASE_TX, this.addressHash);
+      this.signatureData = await wallet.signMessage(messageInBytes, SigningType.BASE_TX, this.addressHash, {
+        amount: this.amount.toPlainString(),
+        address: this.addressHash,
+      });
     }
   }
 

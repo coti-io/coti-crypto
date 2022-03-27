@@ -1,11 +1,13 @@
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import TransportWebHid from '@ledgerhq/hw-transport-webhid';
-import { HWSDK, SigningType as LedgerSigningType } from '@coti-io/ledger-sdk';
+import { HWSDK, SigningData, SigningType as LedgerSigningType } from '@coti-io/ledger-sdk';
 import { listen as listenLedgerLog, Log } from '@ledgerhq/logs';
 import * as signature from '../signature';
 import { SignatureData, SigningType } from '../signature';
 import { LedgerError } from '../cotiError';
 import Transport, { Descriptor, DescriptorEvent, Observer } from '@ledgerhq/hw-transport';
+
+export { SigningData, BaseTransactionSigningData, TransactionSigningData } from '@coti-io/ledger-sdk';
 
 const NODE_APP = globalThis.process?.release?.name;
 const listenTimeout = 3000;
@@ -77,13 +79,14 @@ export async function signMessage(
   messageInBytes: Uint8Array,
   signingType?: SigningType,
   hashed?: boolean,
-  transportType?: LedgerTransportType
+  transportType?: LedgerTransportType,
+  signingData?: SigningData
 ): Promise<SignatureData> {
   try {
     const hw = await connect(transportType);
 
     const ledgerSigningType = getLedgerSigningType(signingType);
-    const res = await hw.signMessage(index, messageInBytes, ledgerSigningType, hashed);
+    const res = await hw.signMessage(index, messageInBytes, ledgerSigningType, hashed, signingData);
     return { r: res.r, s: res.s };
   } catch (error) {
     throw new LedgerError(error.message, { debugMessage: `Error signing message at ledger wallet`, cause: error });
@@ -94,13 +97,14 @@ export async function signUserMessage(
   messageInBytes: Uint8Array,
   signingType?: SigningType,
   hashed?: boolean,
-  transportType?: LedgerTransportType
+  transportType?: LedgerTransportType,
+  signingData?: SigningData
 ): Promise<SignatureData> {
   try {
     const hw = await connect(transportType);
 
     const ledgerSigningType = getLedgerSigningType(signingType);
-    const res = await hw.signUserMessage(messageInBytes, ledgerSigningType, hashed);
+    const res = await hw.signUserMessage(messageInBytes, ledgerSigningType, hashed, signingData);
     return { r: res.r, s: res.s };
   } catch (error) {
     throw new LedgerError(error.message, { debugMessage: `Error signing user message at ledger wallet`, cause: error });

@@ -11,6 +11,7 @@ import moment from 'moment';
 
 type KeyPair = cryptoUtils.KeyPair;
 type LedgerTransportType = ledgerUtils.LedgerTransportType;
+type SigningData = ledgerUtils.SigningData;
 
 export interface WalletEvent {
   on(event: 'balanceChange', listener: (address: BaseAddress) => void): this;
@@ -291,7 +292,12 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     return this.publicHash;
   }
 
-  public abstract async signMessage(messageInBytes: Uint8Array, signingType?: SigningType, addressHex?: string): Promise<SignatureData>;
+  public abstract async signMessage(
+    messageInBytes: Uint8Array,
+    signingType?: SigningType,
+    addressHex?: string,
+    signingData?: SigningData
+  ): Promise<SignatureData>;
 
   public onSigningMessage(listener: (signingType: SigningType) => void): this {
     return this.on('signingMessage', listener);
@@ -384,7 +390,12 @@ export class Wallet extends IndexedWallet<Address> {
     this.addressTypeGuard(address, Address);
   }
 
-  public async signMessage(messageInBytes: Uint8Array, signingType: SigningType = SigningType.MESSAGE, addressHex?: string) {
+  public async signMessage(
+    messageInBytes: Uint8Array,
+    signingType: SigningType = SigningType.MESSAGE,
+    addressHex?: string,
+    signingData?: SigningData
+  ) {
     console.log(`Signing message of type ${signingType}`);
     this.emit('signingMessage', signingType);
 
@@ -447,7 +458,12 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
     return address;
   }
 
-  public async signMessage(messageInBytes: Uint8Array, signingType: SigningType = SigningType.MESSAGE, addressHex?: string) {
+  public async signMessage(
+    messageInBytes: Uint8Array,
+    signingType: SigningType = SigningType.MESSAGE,
+    addressHex?: string,
+    signingData?: SigningData
+  ) {
     console.log(`Ledger device signing message of type ${signingType}`);
     this.emit('signingMessage', signingType);
 
@@ -455,9 +471,9 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
       const address = this.getAddressByAddressHex(addressHex);
       if (!address) throw new Error(`Wallet doesn't contain the address`);
       const index = (<LedgerAddress>address).getIndex();
-      return ledgerUtils.signMessage(index, messageInBytes, signingType, true, this.transportType);
+      return ledgerUtils.signMessage(index, messageInBytes, signingType, true, this.transportType, signingData);
     } else {
-      return ledgerUtils.signUserMessage(messageInBytes, signingType, true, this.transportType);
+      return ledgerUtils.signUserMessage(messageInBytes, signingType, true, this.transportType, signingData);
     }
   }
 }

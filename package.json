@@ -9,7 +9,7 @@
     "url": "https://github.com/coti-io/coti-crypto"
   },
   "dependencies": {
-    "@coti-io/ledger-sdk": "1.2.0-beta.0",
+    "@coti-io/ledger-sdk": "1.2.0-beta.1",
     "@ledgerhq/hw-transport-node-hid": "^5.34.0",
     "@ledgerhq/hw-transport-webhid": "^5.34.0",
     "@ledgerhq/hw-transport-webusb": "^5.34.1",
