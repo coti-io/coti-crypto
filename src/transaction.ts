@@ -155,14 +155,16 @@ export class Transaction {
   public async signTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
     let totalAmount = new BigDecimal(0);
     for (let baseTransaction of this.baseTransactions) {
-      if (baseTransaction.isOutput()) {
+      if (baseTransaction.isInput()) {
         totalAmount = totalAmount.add(baseTransaction.getAmount());
       }
       await baseTransaction.sign(this.hash, wallet);
     }
 
     const messageInBytes = this.getSignatureMessage();
-    this.senderSignature = await wallet.signMessage(messageInBytes, SigningType.TX, undefined, { amount: totalAmount.toPlainString() });
+    this.senderSignature = await wallet.signMessage(messageInBytes, SigningType.TX, undefined, {
+      amount: totalAmount.multiply(new BigDecimal('-1')).toPlainString(),
+    });
   }
 
   public signWithPrivateKeys(userPrivateKey: string, inputPrivateKeys: string[]) {

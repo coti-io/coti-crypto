@@ -174,7 +174,7 @@ export class BaseTransaction {
     if (this.isInput()) {
       const messageInBytes = this.getSignatureMessage(transactionHash);
       this.signatureData = await wallet.signMessage(messageInBytes, SigningType.BASE_TX, this.addressHash, {
-        amount: this.amount.toPlainString(),
+        amount: this.amount.multiply(new BigDecimal('-1')).toPlainString(),
         address: this.addressHash,
       });
     }
