@@ -1,4 +1,5 @@
 import * as utils from './utils/utils';
+import { BigDecimal } from './utils/utils';
 import { keccak256 } from 'js-sha3';
 import { IndexedAddress } from './address';
 import { IndexedWallet } from './wallet';
@@ -73,7 +74,7 @@ export class FullNodeFeeSignature extends Signature {
   }
 
   public getBytes() {
-    return utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.amount));
+    return utils.getBytesFromString(new BigDecimal(this.amount).toPlainString());
   }
 }
 

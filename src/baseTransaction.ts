@@ -113,14 +113,14 @@ export class BaseTransaction {
   }
 
   public getBytes() {
-    let amountInBytes = utils.getBytesFromString(this.amount.stripTrailingZeros().toString());
+    let amountInBytes = utils.getBytesFromString(this.amount.toPlainString());
     let utcTime = this.createTime * 1000;
     let utcTimeInByteArray = utils.numberToByteArray(utcTime, 8);
 
     let bytes = utils.hexToBytes(this.addressHash);
     bytes = utils.concatByteArrays([bytes, amountInBytes, utcTimeInByteArray]);
     if (this.name === BaseTransactionName.RECEIVER && this.originalAmount !== undefined) {
-      let originalAmountInBytes = utils.getBytesFromString(this.originalAmount.stripTrailingZeros().toString());
+      let originalAmountInBytes = utils.getBytesFromString(this.originalAmount.toPlainString());
       bytes = utils.concatByteArrays([bytes, originalAmountInBytes]);
     }
     if (this.name === BaseTransactionName.PAYMENT_INPUT) {
