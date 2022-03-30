@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@coti-io/ledger-sdk": "1.2.0-beta.1",
-    "@ledgerhq/hw-transport-node-hid": "^5.34.0",
+    "@ledgerhq/hw-transport-node-hid": "^5.51.1",
     "@ledgerhq/hw-transport-webhid": "^5.34.0",
-    "@ledgerhq/hw-transport-webusb": "^5.34.1",
+    "@ledgerhq/hw-transport-webusb": "^5.53.1",
     "@types/bn.js": "^4.11.6",
     "@types/elliptic": "^6.4.12",
     "@types/ledgerhq__hw-transport-node-hid": "^4.22.2",
