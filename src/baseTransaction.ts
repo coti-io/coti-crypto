@@ -87,11 +87,11 @@ export class BaseTransaction {
     originalAmount?: BigDecimal
   ) {
     this.addressHash = addressHash;
-    this.amount = amount.stripTrailingZeros();
+    this.amount = amount;
     this.createTime = utils.utcNowToSeconds();
     this.name = name;
     if (name === BaseTransactionName.RECEIVER && originalAmount) {
-      this.originalAmount = originalAmount.stripTrailingZeros();
+      this.originalAmount = originalAmount;
     }
 
     if (name === BaseTransactionName.PAYMENT_INPUT) {

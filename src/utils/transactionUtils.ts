@@ -61,8 +61,6 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
 
   const balanceObject = await nodeUtils.checkBalances(addresses, network, fullnode);
 
-  originalAmount = originalAmount.stripTrailingZeros();
-
   let keyPair: KeyPair | undefined;
   let userHash: string;
   if (userPrivateKey) {
@@ -73,15 +71,15 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
     userHash = wallet!.getPublicHash();
   }
 
-  let { fullNodeFee, networkFee } = await getFees(originalAmount, userHash!, keyPair, wallet, feeIncluded, network, fullnode, trustScoreNode);
+  let { fullNodeFee, networkFee } = await getFees({ originalAmount, userHash, keyPair, wallet, feeIncluded, network, fullnode, trustScoreNode });
 
   if (!feeIncluded) {
     const feeAmount = new BigDecimal(fullNodeFee.amount.toString()).add(new BigDecimal(networkFee.amount.toString()));
     if (feeAddressInInputMap) {
       const amount = inputMap.get(feeAddress!)!;
-      const feeIncludedAmount = feeAmount.add(new BigDecimal(amount.toString())).stripTrailingZeros();
+      const feeIncludedAmount = feeAmount.add(new BigDecimal(amount.toString()));
       inputMap.set(feeAddress!, Number(feeIncludedAmount.toString()));
-    } else inputMap.set(feeAddress!, Number(feeAmount.stripTrailingZeros().toString()));
+    } else inputMap.set(feeAddress!, Number(feeAmount.toString()));
   }
 
   let baseTransactions: BaseTransaction[] = [];
@@ -106,16 +104,17 @@ async function getFullNodeFeeSignature<T extends IndexedAddress>(originalAmount:
   return keyPair ? fullNodeFeeSignature.signByKeyPair(keyPair) : fullNodeFeeSignature.sign(wallet!);
 }
 
-async function getFees<T extends IndexedAddress>(
-  originalAmount: BigDecimal,
-  userHash: string,
-  keyPair?: KeyPair,
-  wallet?: IndexedWallet<T>,
-  feeIncluded?: boolean,
-  network?: Network,
-  fullnode?: string,
-  trustScoreNode?: string
-) {
+async function getFees<T extends IndexedAddress>(parameterObject: {
+  originalAmount: BigDecimal;
+  userHash: string;
+  keyPair?: KeyPair;
+  wallet?: IndexedWallet<T>;
+  feeIncluded?: boolean;
+  network?: Network;
+  fullnode?: string;
+  trustScoreNode?: string;
+}) {
+  const { originalAmount, userHash, keyPair, wallet, feeIncluded, network, fullnode, trustScoreNode } = parameterObject;
   const originalAmountInNumber = Number(originalAmount.toPlainString());
   const fullNodeFeeSignature = await getFullNodeFeeSignature(originalAmountInNumber, keyPair, wallet);
   const fullNodeFee = await nodeUtils.getFullNodeFees(originalAmountInNumber, userHash, fullNodeFeeSignature, network, feeIncluded, fullnode);
