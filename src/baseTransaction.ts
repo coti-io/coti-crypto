@@ -5,7 +5,6 @@ import { SignatureData, SigningType } from './signature';
 import { IndexedWallet } from './wallet';
 import * as cryptoUtils from './utils/cryptoUtils';
 import BigDecimal = utils.BigDecimal;
-import * as cryptoUtils from './utils/cryptoUtils';
 import { ServiceData } from './transaction';
 
 type KeyPair = cryptoUtils.KeyPair;

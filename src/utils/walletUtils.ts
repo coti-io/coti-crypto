@@ -4,6 +4,7 @@ import { Transaction } from '../transaction';
 import { BaseWallet, IndexedWallet } from '../wallet';
 import { nodeUtils } from './nodeUtils';
 import { BaseTransactionData } from '../baseTransaction';
+import { BalanceDto } from '../dtos/balance.dto';
 
 export namespace walletUtils {
   export async function getUserTrustScore<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
@@ -51,8 +52,8 @@ export namespace walletUtils {
     return addressesThatExists;
   }
 
-  export async function checkBalances(addresses: string[], wallet: BaseWallet) {
-    return nodeUtils.checkBalances(addresses, wallet.getNetwork(), wallet.getFullNode());
+  export async function checkBalances(addresses: string[], wallet: BaseWallet): Promise<BalanceDto> {
+    return await nodeUtils.checkBalances(addresses, wallet.getNetwork(), wallet.getFullNode());
   }
 
   export async function getTransactionsHistory(addresses: string[], wallet: BaseWallet) {

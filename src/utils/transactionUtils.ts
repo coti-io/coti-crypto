@@ -13,8 +13,8 @@ const nativeCurrencyHash = 'e72d2137d5cfcc672ab743bddbdedb4e059ca9d3db3219f4eb62
 type KeyPair = cryptoUtils.KeyPair;
 
 export enum HardForks {
-  MULTI_CURRENCY,
   SINGLE_CURRENCY,
+  MULTI_CURRENCY,
 }
 
 export async function createTransaction<T extends IndexedAddress>(parameterObject: {
