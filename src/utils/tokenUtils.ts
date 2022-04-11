@@ -43,7 +43,7 @@ export type TokenMintingFeeQuoteData = {
 };
 
 export type TokenMintFeeRequest = {
-  tokenMintingData: TokenMintData;
+  tokenMintingServiceData: TokenMintData;
   mintingFeeQuoteData: TokenMintingFeeQuoteData;
 };
 
@@ -150,7 +150,7 @@ export namespace tokenUtils {
     const mintingQuoteSD = await mintingQuote.sign(indexedWallet, false);
     const mintingQuoteFee = new MintQuoteFeeSignature(instantTimeSeconds, currencyHash, mintingAmount, feeAmount);
     const mintingQuoteFeeSD = await mintingQuoteFee.sign(indexedWallet, false);
-    const tokenMintingData: TokenMintData = {
+    const tokenMintingServiceData: TokenMintData = {
       mintingCurrencyHash: currencyHash,
       mintingAmount,
       receiverAddress: walletAddressRecieveToken,
@@ -169,7 +169,7 @@ export namespace tokenUtils {
     };
 
     return {
-      tokenMintingData,
+      tokenMintingServiceData,
       mintingFeeQuoteData,
     };
   }
