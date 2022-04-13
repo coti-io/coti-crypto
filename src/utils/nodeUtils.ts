@@ -282,7 +282,7 @@ export namespace nodeUtils {
   }
 
   export async function getUserTokenCurrencies(userHash: string, indexedWallet: Wallet, api?: string, network: Network = 'mainnet'): Promise<TokenCurrency[]> {
-    const instantTime = Math.floor(new Date().getTime() / 1000);
+    const instantTime = utils.utcNowToSeconds();
     const instantTimeSeconds = instantTime * 1000;
     const tokenCurrencies = new TokenCurrenciesSignature(userHash, instantTimeSeconds);
     const signatureData = await tokenCurrencies.sign(indexedWallet, false);
@@ -305,7 +305,7 @@ export namespace nodeUtils {
   }
 
   export async function getTokenDetails(currencyHash: string, userHash: string, indexedWallet: Wallet, api?: string, network: Network = 'mainnet') {
-    const instantTime = Math.floor(new Date().getTime() / 1000);
+    const instantTime = utils.utcNowToSeconds();
     const instantTimeSeconds = instantTime * 1000;
     const tokenCurrencies = new TokenDetailsSignature({ userHash, instantTime: instantTimeSeconds, currencyHash });
     const signatureData = await tokenCurrencies.sign(indexedWallet, false);
@@ -335,7 +335,7 @@ export namespace nodeUtils {
     api?: string,
     network: Network = 'mainnet'
   ) {
-    const instantTime = Math.floor(new Date().getTime() / 1000);
+    const instantTime = utils.utcNowToSeconds();
     const instantTimeSeconds = instantTime * 1000;
     const tokenCurrencies = new TokenDetailsSignature({ userHash, instantTime: instantTimeSeconds, currencySymbol });
     const signatureData = await tokenCurrencies.sign(indexedWallet, false);

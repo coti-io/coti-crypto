@@ -7,6 +7,7 @@ import { BaseTransaction, BaseTransactionName, BaseTransactionData } from '../ba
 import { Transaction, TransactionType } from '../transaction';
 import { IndexedWallet } from '../wallet';
 import { IndexedAddress } from '../address';
+import { utils } from '..';
 
 const amountRegex = /^\d+(\.\d{1,8})?$/;
 const nativeCurrencyHash = 'e72d2137d5cfcc672ab743bddbdedb4e059ca9d3db3219f4eb623b01';
@@ -301,7 +302,7 @@ export async function transactionTokenGeneration(params: {
   transactionDescription: string;
 }) {
   const { feeBT, fullnodeFee, walletAddressIBT, userHash, transactionType, transactionDescription } = params;
-  const instantTime = Math.floor(new Date().getTime() / 1000);
+  const instantTime = utils.utcNowToSeconds()
   const tokenGenerationFee = new BigDecimal(feeBT.amount);
   const fullNodeFeeAmount = new BigDecimal(fullnodeFee.amount);
   const fullAmount = tokenGenerationFee.add(fullNodeFeeAmount);
