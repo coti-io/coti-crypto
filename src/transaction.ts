@@ -42,7 +42,7 @@ export type CurrencyTypeData = {
 };
 
 export type ServiceData = {
-  originatorCurrencyData: CurrencyTypeData,
+  originatorCurrencyData: OriginatorCurrencyData,
   currencyTypeData: CurrencyTypeData,
   feeAmount: number
 };

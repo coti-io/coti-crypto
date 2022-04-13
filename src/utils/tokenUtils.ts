@@ -1,4 +1,4 @@
-import { BigDecimal } from '..';
+import { BigDecimal, utils } from '..';
 import {
   CurrencyTypeDataSignature,
   MintQuoteDataSignature,
@@ -74,8 +74,7 @@ export namespace tokenUtils {
       protectionModel,
       indexedWallet,
     } = params;
-    const instantTime = Math.floor(new Date().getTime() / 1000);
-
+    const instantTime = utils.utcNowToSeconds()
     const originatorSignature = new OriginatorSignature(currencyName, currencySymbol, description, totalSupply, scale);
     const originatorSignatureData = await originatorSignature.sign(indexedWallet, false);
     const instantTimeSeconds = instantTime * 1000;
@@ -121,7 +120,7 @@ export namespace tokenUtils {
     indexedWallet: Wallet,
     mintingAmount: number
   ): Promise<TokenMintQuoteFeeRequest> {
-    const instantTime = Math.floor(new Date().getTime() / 1000);
+    const instantTime = utils.utcNowToSeconds();
     const instantTime2 = instantTime * 1000;
     const mintingQuote = new MintQuoteSignature(currencyHash, mintingAmount, instantTime2);
     const signatureData = await mintingQuote.sign(indexedWallet, false);
@@ -144,7 +143,7 @@ export namespace tokenUtils {
     userHash: string,
     indexedWallet: Wallet
   ): Promise<TokenMintFeeRequest> {
-    const instantTime = Math.floor(new Date().getTime() / 1000);
+    const instantTime = utils.utcNowToSeconds();
     const instantTimeSeconds = instantTime * 1000;
     const mintingQuote = new MintQuoteDataSignature(currencyHash, mintingAmount, feeAmount, walletAddressRecieveToken, instantTimeSeconds);
     const mintingQuoteSD = await mintingQuote.sign(indexedWallet, false);
