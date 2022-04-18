@@ -352,7 +352,7 @@ export namespace nodeUtils {
     try {
       const { data } = await axios.post(`${api || nodeUrl[network].api}/currencies/token/symbol/details`, payload, { headers });
 
-      return data.token;
+      return data.tokens;
     } catch (error) {
       throw getErrorMessage(error, 'Error get user token details by symbol', 'message');
     }
