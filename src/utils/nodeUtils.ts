@@ -78,7 +78,7 @@ export namespace nodeUtils {
       throw getErrorMessage(error, 'Error checking address token balances from fullnode');
     }
   }
-  
+
   export async function getTransaction(transactionHash: string, network: Network = 'mainnet', fullnode?: string) {
     try {
       const { data } = await axios.post(`${fullnode || nodeUrl[network].fullNode}/transaction`, { transactionHash });
@@ -95,8 +95,8 @@ export namespace nodeUtils {
 
   export async function getNoneIndexTransactions(network: Network = 'mainnet', fullnode?: string) {
     try {
-      const { data } = await axios.get(`${fullnode || nodeUrl[network].fullNode}/transaction/none-indexed`,);
-      
+      const { data } = await axios.get(`${fullnode || nodeUrl[network].fullNode}/transaction/none-indexed`);
+
       return data.transactionsData;
     } catch (error) {
       throw getErrorMessage(error, `Error getting none indexed transactions from fullnode.`);
@@ -281,7 +281,12 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getUserTokenCurrencies(userHash: string, indexedWallet: Wallet, api?: string, network: Network = 'mainnet'): Promise<TokenCurrency[]> {
+  export async function getUserTokenCurrencies(
+    userHash: string,
+    indexedWallet: Wallet,
+    api?: string,
+    network: Network = 'mainnet'
+  ): Promise<TokenCurrency[]> {
     const instantTime = utils.utcNowToSeconds();
     const instantTimeSeconds = instantTime * 1000;
     const tokenCurrencies = new TokenCurrenciesSignature(userHash, instantTimeSeconds);
@@ -352,30 +357,13 @@ export namespace nodeUtils {
     try {
       const { data } = await axios.post(`${api || nodeUrl[network].api}/currencies/token/symbol/details`, payload, { headers });
 
-      return data.tokens;
+      return data.token;
     } catch (error) {
       throw getErrorMessage(error, 'Error get user token details by symbol', 'message');
     }
   }
 
-  export async function getTokensDetails(tokenHashes: string[], api?: string, network: Network = 'mainnet') {
-    const payload = {
-      tokenHashes,
-    };
-    const headers = {
-      'Content-Type': 'application/json',
-    };
-
-    try {
-      const { data } = await axios.post(`${api || nodeUrl[network].api}/currencies/wallet`, payload, { headers });
-
-      return data.token;
-    } catch (error) {
-      throw getErrorMessage(error, 'Error get tokens details by hashe/s', 'message');
-    }
-  }
-
-  export async function isNodeSupportMultiCurrencyApis(network: Network = 'mainnet', api?: string): Promise<HardForks>{
+  export async function isNodeSupportMultiCurrencyApis(network: Network = 'mainnet', api?: string): Promise<HardForks> {
     try {
       const { data } = await axios.get(`${api || nodeUrl[network].api}/event/multi-dag/confirmed`);
       const hardFork = data?.transactionData;
