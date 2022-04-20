@@ -7,7 +7,7 @@ import { BaseTransaction, BaseTransactionName, BaseTransactionData } from '../ba
 import { Transaction, TransactionType } from '../transaction';
 import { IndexedWallet } from '../wallet';
 import { IndexedAddress } from '../address';
-import { utils } from '..';
+import moment from 'moment';
 
 const amountRegex = /^\d+(\.\d{1,8})?$/;
 const nativeCurrencyHash = 'e72d2137d5cfcc672ab743bddbdedb4e059ca9d3db3219f4eb623b01';
@@ -198,7 +198,7 @@ function addInputBaseTranction(
   amount: number,
   baseTransactions: BaseTransaction[],
   currencyHash?: string,
-  tokensBalanceObject?: any,
+  tokensBalanceObject?: any
 ) {
   let balance;
   let preBalance;
@@ -206,9 +206,10 @@ function addInputBaseTranction(
   let addressPreBalance;
 
   if (currencyHash && tokensBalanceObject && currencyHash !== nativeCurrencyHash) {
-    let tokenBalance = tokensBalanceObject[address][currencyHash];
-    if(!tokenBalance) {
-      tokenBalance = { addressBalance: 0, addressPreBalance: 0 }
+    let tokenBalance = tokensBalanceObject[address]? tokensBalanceObject[address][currencyHash] : undefined;
+  
+    if (!tokenBalance) {
+      tokenBalance = { addressBalance: 0, addressPreBalance: 0 };
     }
 
     addressBalance = tokenBalance.addressBalance;
@@ -302,7 +303,7 @@ export async function transactionTokenGeneration(params: {
   transactionDescription: string;
 }) {
   const { feeBT, fullnodeFee, walletAddressIBT, userHash, transactionType, transactionDescription } = params;
-  const instantTime = utils.utcNowToSeconds()
+  const instantTimeUnix = moment.utc().unix();
   const tokenGenerationFee = new BigDecimal(feeBT.amount);
   const fullNodeFeeAmount = new BigDecimal(fullnodeFee.amount);
   const fullAmount = tokenGenerationFee.add(fullNodeFeeAmount);
@@ -316,12 +317,12 @@ export async function transactionTokenGeneration(params: {
     undefined,
     fullAmount,
     fullnodeFee.currencyHash,
-    instantTime
+    instantTimeUnix
   );
   const fullNodeFeeBaseTransaction = BaseTransaction.getBaseTransactionFromFeeData(fullnodeFee);
   const tokenGenerationFeeBaseTransaction = BaseTransaction.getBaseTransactionFromFeeData(feeBT);
   const baseTransaction = [IBT_Transaction, fullNodeFeeBaseTransaction, tokenGenerationFeeBaseTransaction];
-  const tokenGenerationTransaction = new Transaction(baseTransaction, transactionDescription, userHash, transactionType, true, instantTime);
+  const tokenGenerationTransaction = new Transaction(baseTransaction, transactionDescription, userHash, transactionType, true, instantTimeUnix);
 
   return tokenGenerationTransaction;
 }

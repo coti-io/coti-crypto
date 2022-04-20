@@ -8,6 +8,7 @@ export { walletUtils } from './utils/walletUtils';
 export { nodeUtils } from './utils/nodeUtils';
 export { tokenUtils } from './utils/tokenUtils';
 export { financeUtils } from './utils/financeUtils';
+export * from './utils/avatar';
 export * from './nodeClient';
 export * from './ecKeyPair';
 export * from './ledgerDevice';

@@ -1,3 +1,4 @@
+import moment from 'moment';
 import { BigDecimal, utils } from '..';
 import {
   CurrencyTypeDataSignature,
@@ -74,17 +75,17 @@ export namespace tokenUtils {
       protectionModel,
       indexedWallet,
     } = params;
-    const instantTime = utils.utcNowToSeconds()
+    const instantTimeSeconds = moment.utc().unix();
+    const instantTimeMs = instantTimeSeconds * 1000;
     const originatorSignature = new OriginatorSignature(currencyName, currencySymbol, description, totalSupply, scale);
     const originatorSignatureData = await originatorSignature.sign(indexedWallet, false);
-    const instantTimeSeconds = instantTime * 1000;
     const currencyTypeDataSignature = new CurrencyTypeDataSignature(
       currencySymbol,
       currencyType,
       currencyRateSourceType,
       rateSource,
       protectionModel,
-      instantTimeSeconds
+      instantTimeMs
     );
     const currencyTypeDataSignatureData = await currencyTypeDataSignature.sign(indexedWallet, false);
     const originatorCurrencyData: OriginatorCurrencyData = {
@@ -98,7 +99,7 @@ export namespace tokenUtils {
     };
     const currencyTypeData: CurrencyTypeData = {
       currencyType: currencyType,
-      createTime: instantTime,
+      createTime: instantTimeSeconds,
       currencyRateSourceType: currencyRateSourceType,
       rateSource: rateSource,
       protectionModel: protectionModel,
@@ -120,14 +121,14 @@ export namespace tokenUtils {
     indexedWallet: Wallet,
     mintingAmount: number
   ): Promise<TokenMintQuoteFeeRequest> {
-    const instantTime = utils.utcNowToSeconds();
-    const instantTime2 = instantTime * 1000;
-    const mintingQuote = new MintQuoteSignature(currencyHash, mintingAmount, instantTime2);
+    const instantTimeSeconds = moment.utc().unix();
+    const instantTimeMs = instantTimeSeconds * 1000;
+    const mintingQuote = new MintQuoteSignature(currencyHash, mintingAmount, instantTimeMs);
     const signatureData = await mintingQuote.sign(indexedWallet, false);
     const mintQuoteFeeRequest: TokenMintQuoteFeeRequest = {
       currencyHash,
       mintingAmount,
-      createTime: instantTime,
+      createTime: instantTimeSeconds,
       userHash,
       signature: signatureData,
     };
@@ -143,23 +144,23 @@ export namespace tokenUtils {
     userHash: string,
     indexedWallet: Wallet
   ): Promise<TokenMintFeeRequest> {
-    const instantTime = utils.utcNowToSeconds();
-    const instantTimeSeconds = instantTime * 1000;
-    const mintingQuote = new MintQuoteDataSignature(currencyHash, mintingAmount, feeAmount, walletAddressRecieveToken, instantTimeSeconds);
+    const instantTimeSeconds = moment.utc().unix();
+    const instantTimeMs = instantTimeSeconds * 1000;
+    const mintingQuote = new MintQuoteDataSignature(currencyHash, mintingAmount, feeAmount, walletAddressRecieveToken, instantTimeMs);
     const mintingQuoteSD = await mintingQuote.sign(indexedWallet, false);
-    const mintingQuoteFee = new MintQuoteFeeSignature(instantTimeSeconds, currencyHash, mintingAmount, feeAmount);
+    const mintingQuoteFee = new MintQuoteFeeSignature(instantTimeMs, currencyHash, mintingAmount, feeAmount);
     const mintingQuoteFeeSD = await mintingQuoteFee.sign(indexedWallet, false);
     const tokenMintingServiceData: TokenMintData = {
       mintingCurrencyHash: currencyHash,
       mintingAmount,
       receiverAddress: walletAddressRecieveToken,
-      createTime: instantTime,
+      createTime: instantTimeSeconds,
       feeAmount,
       signerHash: userHash,
       signature: mintingQuoteSD,
     };
     const mintingFeeQuoteData: TokenMintingFeeQuoteData = {
-      createTime: instantTime,
+      createTime: instantTimeSeconds,
       mintingAmount,
       currencyHash,
       mintingFee: feeAmount,
