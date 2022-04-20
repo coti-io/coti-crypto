@@ -1,10 +1,11 @@
 import axios, { AxiosResponse } from 'axios';
+import moment from 'moment';
 import { BaseAddress } from '../address';
 import { BaseTransactionData } from '../baseTransaction';
 import { NodeError } from '../cotiError';
 import { BalanceDto, TokensBalanceDto } from '../dtos/balance.dto';
 import { TokenCurrenciesDto, TokenCurrency } from '../dtos/currencies.dto';
-import { SignatureData, TokenCurrenciesSignature, TokenDetailsSignature } from '../signature';
+import { SignatureData, TokenCurrenciesSignature, TokenDetailsSignature, TokenHistorySignature } from '../signature';
 import { Transaction, TransactionData } from '../transaction';
 import { Wallet } from '../wallet';
 import { HardForks } from './transactionUtils';
@@ -281,19 +282,49 @@ export namespace nodeUtils {
     }
   }
 
+  export async function getTokenHistory(
+    currencyHash: string,
+    userHash: string,
+    indexedWallet: Wallet,
+    api?: string,
+    network: Network = 'mainnet'
+  ): Promise<{ status: string; transactions: TransactionData[] }> {
+    const instantTimeSeconds = moment.utc().unix();
+    const instantTimeMs = instantTimeSeconds * 1000;
+    const tokenCurrencies = new TokenHistorySignature({ instantTime: instantTimeMs, currencyHash });
+    const signatureData = await tokenCurrencies.sign(indexedWallet, false);
+    const payload = {
+      userHash,
+      currencyHash,
+      createTime: instantTimeSeconds,
+      signature: signatureData,
+    };
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      const { data } = await axios.post(`${api || nodeUrl[network].api}/currencies/token/history`, payload, { headers });
+
+      return data;
+    } catch (error) {
+      throw getErrorMessage(error, 'Error get token history.', 'message');
+    }
+  }
+
   export async function getUserTokenCurrencies(
     userHash: string,
     indexedWallet: Wallet,
     api?: string,
     network: Network = 'mainnet'
   ): Promise<TokenCurrency[]> {
-    const instantTime = utils.utcNowToSeconds();
-    const instantTimeSeconds = instantTime * 1000;
-    const tokenCurrencies = new TokenCurrenciesSignature(userHash, instantTimeSeconds);
+    const instantTimeSeconds = moment.utc().unix();
+    const instantTimeMs = instantTimeSeconds * 1000;
+    const tokenCurrencies = new TokenCurrenciesSignature(userHash, instantTimeMs);
     const signatureData = await tokenCurrencies.sign(indexedWallet, false);
     const payload = {
       userHash,
-      createTime: instantTime,
+      createTime: instantTimeSeconds,
       signature: signatureData,
     };
     const headers = {
@@ -310,14 +341,14 @@ export namespace nodeUtils {
   }
 
   export async function getTokenDetails(currencyHash: string, userHash: string, indexedWallet: Wallet, api?: string, network: Network = 'mainnet') {
-    const instantTime = utils.utcNowToSeconds();
-    const instantTimeSeconds = instantTime * 1000;
-    const tokenCurrencies = new TokenDetailsSignature({ userHash, instantTime: instantTimeSeconds, currencyHash });
+    const instantTimeSeconds = moment.utc().unix();
+    const instantTimeMs = instantTimeSeconds * 1000;
+    const tokenCurrencies = new TokenDetailsSignature({ userHash, instantTime: instantTimeMs, currencyHash });
     const signatureData = await tokenCurrencies.sign(indexedWallet, false);
     const payload = {
       userHash,
       currencyHash,
-      createTime: instantTime,
+      createTime: instantTimeSeconds,
       signature: signatureData,
     };
     const headers = {
@@ -340,14 +371,14 @@ export namespace nodeUtils {
     api?: string,
     network: Network = 'mainnet'
   ) {
-    const instantTime = utils.utcNowToSeconds();
-    const instantTimeSeconds = instantTime * 1000;
-    const tokenCurrencies = new TokenDetailsSignature({ userHash, instantTime: instantTimeSeconds, currencySymbol });
+    const instantTimeSeconds = moment.utc().unix();
+    const instantTimeMs = instantTimeSeconds * 1000;
+    const tokenCurrencies = new TokenDetailsSignature({ userHash, instantTime: instantTimeMs, currencySymbol });
     const signatureData = await tokenCurrencies.sign(indexedWallet, false);
     const payload = {
       userHash,
       symbol: currencySymbol,
-      createTime: instantTime,
+      createTime: instantTimeSeconds,
       signature: signatureData,
     };
     const headers = {

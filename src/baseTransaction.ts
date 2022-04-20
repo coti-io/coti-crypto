@@ -133,7 +133,7 @@ export class BaseTransaction {
     return this.amount;
   }
 
-  public getBytes() {
+  public getBytes(): Uint8Array {
     let amountInBytes = utils.getBytesFromString(this.amount.toPlainString());
     let utcTime = this.createTime * 1000;
     let utcTimeInByteArray = utils.numberToByteArray(utcTime, 8);
