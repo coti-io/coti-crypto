@@ -297,3 +297,20 @@ export class TreasuryWithdrawalSignature extends Signature {
     return utils.concatByteArrays([rewardAmountBytes, depositAmountBytes, uuidHashBytes, destinationAddressHashBytes, timestampBytes]);
   }
 }
+
+export class BridgeCreateRefundRequestSignature extends Signature {
+  private readonly walletHash: string;
+  private readonly swapUuid: string;
+
+  constructor(swapUuid: string, walletHash: string, signature?: SignatureData) {
+    super(signature);
+    this.walletHash = walletHash;
+    this.swapUuid = swapUuid;
+  }
+
+  public getBytes() {
+    const walletHashInBytes = utils.hexToBytes(this.walletHash);
+    const swapUuidInBytes = utils.getBytesFromString(this.swapUuid);
+    return utils.concatByteArrays([walletHashInBytes, swapUuidInBytes]);
+  }
+}
