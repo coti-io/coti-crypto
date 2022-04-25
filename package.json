@@ -1,6 +1,6 @@
 {
   "name": "@coti-io/crypto",
-  "version": "1.11.0-beta.5",
+  "version": "1.11.0-beta.6",
   "description": "Coti crypto library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
