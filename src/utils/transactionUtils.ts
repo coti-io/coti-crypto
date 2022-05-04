@@ -155,7 +155,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
 }
 
 async function getFullNodeFeeSignature<T extends IndexedAddress>(
-  originalAmount: number,
+  originalAmount: string,
   keyPair?: KeyPair,
   wallet?: IndexedWallet<T>,
   originalCurrencyHash?: string
@@ -176,10 +176,10 @@ async function getFees<T extends IndexedAddress>(
   trustScoreNode?: string,
   originalCurrencyHash?: string
 ) {
-  const originalAmountInNumber = Number(originalAmount.toString());
-  const fullNodeFeeSignature = await getFullNodeFeeSignature(originalAmountInNumber, keyPair, wallet, originalCurrencyHash);
+  const originalAmountString = originalAmount.toString();
+  const fullNodeFeeSignature = await getFullNodeFeeSignature(originalAmountString, keyPair, wallet, originalCurrencyHash);
   const fullNodeFee = await nodeUtils.getFullNodeFees(
-    originalAmountInNumber,
+    originalAmountString,
     userHash,
     fullNodeFeeSignature,
     network,
@@ -207,7 +207,7 @@ function addInputBaseTranction(
 
   if (currencyHash && tokensBalanceObject && currencyHash !== nativeCurrencyHash) {
     let tokenBalance = tokensBalanceObject[address]? tokensBalanceObject[address][currencyHash] : undefined;
-  
+
     if (!tokenBalance) {
       tokenBalance = { addressBalance: 0, addressPreBalance: 0 };
     }

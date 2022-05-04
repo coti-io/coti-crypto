@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { BaseTransactionData, SignatureData } from '..';
 import { CotiError } from '../cotiError';
-import { Network } from './utils';
+import { replaceNumberToStringByKeyJsonParser, Network } from './utils';
 import { TokenGenerationRequest, TokenMintFeeRequest, TokenMintQuoteFeeRequest } from './tokenUtils';
 
 export type TokenMintingFeeQuoteResponse = {
@@ -49,7 +49,12 @@ export namespace financeUtils {
     network: Network = 'mainnet'
   ): Promise<TokenMintingFeeQuoteResponse> {
     try {
-      const { data } = await axios.post(`${financeServerUrl || financeServer[network].api}/admin/token/mint/quote`, tokenMintQuoteFeeRequest);
+      const { data } = await axios.post(`${financeServerUrl || financeServer[network].api}/admin/token/mint/quote`, tokenMintQuoteFeeRequest, {
+        transformResponse: function (response: string) {
+          const parsedResponse = replaceNumberToStringByKeyJsonParser(response, ['mintingAmount']);
+          return JSON.parse(parsedResponse);
+        },
+      });
 
       return data.mintingFeeQuote;
     } catch (error) {
@@ -63,7 +68,12 @@ export namespace financeUtils {
     network: Network = 'mainnet'
   ): Promise<BaseTransactionData> {
     try {
-      const { data } = await axios.post(`${financeServerUrl || financeServer[network].api}/admin/token/mint/fee`, tokenMintFeeRequest);
+      const { data } = await axios.post(`${financeServerUrl || financeServer[network].api}/admin/token/mint/fee`, tokenMintFeeRequest, {
+        transformResponse: function (response: string) {
+          const parsedResponse = replaceNumberToStringByKeyJsonParser(response, ['mintingAmount']);
+          return JSON.parse(parsedResponse);
+        },
+      });
 
       return data.tokenServiceFee;
     } catch (error) {

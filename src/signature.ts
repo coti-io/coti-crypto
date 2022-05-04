@@ -64,10 +64,10 @@ export abstract class Signature {
 }
 
 export class FullNodeFeeSignature extends Signature {
-  private amount: number;
+  private amount: string;
   private originalCurrencyHash?: string;
 
-  constructor(amount: number, originalCurrencyHash?: string) {
+  constructor(amount: string, originalCurrencyHash?: string) {
     super();
     this.signingType = SigningType.FULL_NODE_FEE;
     this.amount = amount;
@@ -138,10 +138,10 @@ export class OriginatorSignature extends Signature {
   private currencyName: string;
   private currencySymbol: string;
   private description: string;
-  private totalSupply: number;
+  private totalSupply: string;
   private scale: number;
 
-  constructor(currencyName: string, currencySymbol: string, description: string, totalSupply: number, scale: number) {
+  constructor(currencyName: string, currencySymbol: string, description: string, totalSupply: string, scale: number) {
     super();
 
     this.signingType = SigningType.MESSAGE;
@@ -153,7 +153,7 @@ export class OriginatorSignature extends Signature {
   }
 
   public getBytes(): Uint8Array {
-    const message = `${this.currencyName}${this.currencySymbol}${this.description}${this.totalSupply.toString()}`;
+    const message = `${this.currencyName}${this.currencySymbol}${this.description}${this.totalSupply}`;
     const arraysToMerge = [utils.getBytesFromString(message), utils.numberToByteArray(this.scale, 4)];
 
     return utils.concatByteArrays(arraysToMerge);
@@ -217,10 +217,10 @@ export class TokenCurrenciesSignature extends Signature {
 
 export class MintQuoteSignature extends Signature {
   private currencyHash: string;
-  private mintingAmount: number;
+  private mintingAmount: string;
   private instantTime: number;
 
-  constructor(currencyHash: string, mintingAmount: number, instantTime: number) {
+  constructor(currencyHash: string, mintingAmount: string, instantTime: number) {
     super();
 
     this.currencyHash = currencyHash;
@@ -231,7 +231,7 @@ export class MintQuoteSignature extends Signature {
 
   public getBytes(): Uint8Array {
     const currencyHashBytes = utils.hexToBytes(this.currencyHash);
-    const mintingAmountBytes = utils.getBytesFromString(this.mintingAmount.toString());
+    const mintingAmountBytes = utils.getBytesFromString(this.mintingAmount);
     const instantTimeBytes = utils.numberToByteArray(this.instantTime, 8);
     const byteArraysToMerge = [currencyHashBytes, mintingAmountBytes, instantTimeBytes];
 

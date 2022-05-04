@@ -19,7 +19,7 @@ export type TokenGenerationRequest = {
 export type TokenMintQuoteFeeRequest = {
   currencyHash: string;
   createTime: number;
-  mintingAmount: number;
+  mintingAmount: string;
   userHash: string;
   signature: SignatureData;
 };
@@ -55,7 +55,7 @@ export namespace tokenUtils {
     currencySymbol: string;
     currencyType: string;
     description: string;
-    totalSupply: number;
+    totalSupply: string;
     scale: number;
     currencyRateSourceType: string;
     rateSource: string;
@@ -92,7 +92,7 @@ export namespace tokenUtils {
       name: currencyName,
       symbol: currencySymbol,
       description: description,
-      totalSupply: totalSupply,
+      totalSupply,
       scale: scale,
       originatorHash: userHash,
       originatorSignature: originatorSignatureData,
@@ -119,7 +119,7 @@ export namespace tokenUtils {
     currencyHash: string,
     userHash: string,
     indexedWallet: Wallet,
-    mintingAmount: number
+    mintingAmount: string
   ): Promise<TokenMintQuoteFeeRequest> {
     const instantTimeSeconds = moment.utc().unix();
     const instantTimeMs = instantTimeSeconds * 1000;

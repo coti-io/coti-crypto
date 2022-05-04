@@ -26,7 +26,7 @@ export type OriginatorCurrencyData = {
   name: string,
   symbol: string,
   description: string,
-  totalSupply: number,
+  totalSupply: string,
   scale: number,
   originatorHash: string,
   originatorSignature: SignatureData

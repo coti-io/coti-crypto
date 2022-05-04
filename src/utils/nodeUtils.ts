@@ -144,7 +144,7 @@ export namespace nodeUtils {
   }
 
   export async function getFullNodeFees(
-    amountToTransfer: number,
+    amountToTransfer: string,
     userHash: string,
     userSignature: SignatureData,
     network: Network = 'mainnet',
