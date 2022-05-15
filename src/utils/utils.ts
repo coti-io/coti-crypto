@@ -51,8 +51,9 @@ export function replaceNumberToStringByKeyJsonParser(input: string, fieldList: s
   for (const field of fieldList) {
     let originalValue: any;
     const temp = input.split(`"${field}":`);
-    temp.forEach( ((value, index) => {
-      if(index > 0){
+
+    temp.forEach((value, index) => {
+      if (index > 0) {
         if (!value.split('}')[0].includes(':')) {
           originalValue = value.split('}')[0];
         } else if (!value.split(',')[0].includes(':')) {
@@ -60,8 +61,7 @@ export function replaceNumberToStringByKeyJsonParser(input: string, fieldList: s
         }
         if (originalValue) input = input.replace(`"${field}":${originalValue}`, `"${field}":"${originalValue}"`);
       }
-    }));
-
+    });
   }
   return input;
 }

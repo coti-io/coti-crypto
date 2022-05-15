@@ -10,6 +10,7 @@ import { Transaction, TransactionData } from '../transaction';
 import { Wallet } from '../wallet';
 import { HardForks } from './transactionUtils';
 import * as utils from './utils';
+import { replaceNumberToStringByKeyJsonParser } from './utils';
 
 type Network = utils.Network;
 
@@ -304,7 +305,13 @@ export namespace nodeUtils {
     };
 
     try {
-      const { data } = await axios.post(`${api || nodeUrl[network].api}/currencies/token/history`, payload, { headers });
+      const { data } = await axios.post(`${api || nodeUrl[network].api}/currencies/token/history`, payload,  {
+        headers,
+        transformResponse: function (response: string) {
+          const parsedResponse = replaceNumberToStringByKeyJsonParser(response, ['mintingAmount']);
+          return JSON.parse(parsedResponse);
+        }
+      });
 
       return data;
     } catch (error) {
