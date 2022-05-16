@@ -305,12 +305,8 @@ export namespace nodeUtils {
     };
 
     try {
-      const { data } = await axios.post(`${api || nodeUrl[network].api}/currencies/token/history`, payload,  {
+      const { data } = await axios.post(`${api || nodeUrl[network].api}/currencies/token/history`, payload, {
         headers,
-        transformResponse: function (response: string) {
-          const parsedResponse = replaceNumberToStringByKeyJsonParser(response, ['mintingAmount']);
-          return JSON.parse(parsedResponse);
-        }
       });
 
       return data;

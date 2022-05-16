@@ -49,12 +49,7 @@ export namespace financeUtils {
     network: Network = 'mainnet'
   ): Promise<TokenMintingFeeQuoteResponse> {
     try {
-      const { data } = await axios.post(`${financeServerUrl || financeServer[network].api}/admin/token/mint/quote`, tokenMintQuoteFeeRequest, {
-        transformResponse: function (response: string) {
-          const parsedResponse = replaceNumberToStringByKeyJsonParser(response, ['mintingAmount']);
-          return JSON.parse(parsedResponse);
-        },
-      });
+      const { data } = await axios.post(`${financeServerUrl || financeServer[network].api}/admin/token/mint/quote`, tokenMintQuoteFeeRequest);
 
       return data.mintingFeeQuote;
     } catch (error) {
@@ -68,12 +63,7 @@ export namespace financeUtils {
     network: Network = 'mainnet'
   ): Promise<BaseTransactionData> {
     try {
-      const { data } = await axios.post(`${financeServerUrl || financeServer[network].api}/admin/token/mint/fee`, tokenMintFeeRequest, {
-        transformResponse: function (response: string) {
-          const parsedResponse = replaceNumberToStringByKeyJsonParser(response, ['mintingAmount']);
-          return JSON.parse(parsedResponse);
-        },
-      });
+      const { data } = await axios.post(`${financeServerUrl || financeServer[network].api}/admin/token/mint/fee`, tokenMintFeeRequest);
 
       return data.tokenServiceFee;
     } catch (error) {

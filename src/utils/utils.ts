@@ -47,23 +47,141 @@ export function utcStringToSeconds(utcString: string) {
   return moment.utc(utcString).valueOf() / 1000;
 }
 
-export function replaceNumberToStringByKeyJsonParser(input: string, fieldList: string[]) {
-  for (const field of fieldList) {
-    let originalValue: any;
-    const temp = input.split(`"${field}":`);
+export function replaceNumberToStringByKeyJsonParser(input: string, fieldList: Map<string, boolean>) {
+  let currentIndex = 0;
+  let currentKeyChars = [];
+  let currentValueChars = [];
+  let currentKey;
+  const result = [];
 
-    temp.forEach((value, index) => {
-      if (index > 0) {
-        if (!value.split('}')[0].includes(':')) {
-          originalValue = value.split('}')[0];
-        } else if (!value.split(',')[0].includes(':')) {
-          originalValue = value.split(',')[0];
+    while (true) {
+      const currentChar = input.charAt(currentIndex);
+      currentIndex = currentIndex + 1;
+      if (currentKey) {
+        if ('[' === currentChar) {
+          result.push(currentChar);
+          currentIndex = handleArrayParse(input, currentIndex, fieldList, result);
+          continue;
+        } else if (['{'].includes(currentChar)) {
+          result.push(currentChar);
+          currentIndex = handleObjectParse(input, currentIndex, fieldList, result);
+          continue;
         }
-        if (originalValue) input = input.replace(`"${field}":${originalValue}`, `"${field}":"${originalValue}"`);
+
+        if ([',', '}'].includes(currentChar)) {
+          const value = currentValueChars.join('');
+          if (fieldList.get(currentKey) === undefined || isNaN(Number(value))) {
+            result.push(value);
+          } else {
+            result.push(`"${value}"`);
+          }
+
+          currentKeyChars = [];
+          currentValueChars = [];
+          currentKey = '';
+          result.push(currentChar);
+          if (currentChar === '}') {
+            break;
+          }
+        } else {
+          currentValueChars.push(currentChar);
+        }
+      } else {
+        if (['{', '[', '"', ' '].includes(currentChar)) {
+          result.push(currentChar);
+        } else if (currentChar === ':') {
+          result.push(currentChar);
+          currentKey = currentKeyChars.join('');
+          if (fieldList.get(currentKey) !== undefined) {
+            fieldList.set(currentKey, true);
+          }
+        } else {
+          currentKeyChars.push(currentChar);
+          result.push(currentChar);
+        }
       }
-    });
+    }
+    return result.join('');
   }
-  return input;
+
+
+function handleArrayParse(input: string, index: number, fieldList: Map<string, boolean>, result: string[]) {
+  while (true) {
+    const currentChar = input.charAt(index);
+
+    if ('[' === currentChar) {
+      result.push(currentChar);
+      index = handleArrayParse(input, index + 1, fieldList, result);
+      continue;
+    } else if ('{' === currentChar) {
+      result.push(currentChar);
+      index = handleObjectParse(input, index + 1, fieldList, result);
+      continue;
+    }
+    result.push(currentChar);
+    if (']' === currentChar) {
+      index++;
+      break;
+    }
+    index++;
+  }
+
+  return index;
+}
+
+function handleObjectParse(input: string, index: number, fieldList: Map<string, boolean>, result: string[]) {
+  let currentKeyChars = [];
+  let currentValueChars = [];
+  let currentKey: string = '';
+  while (true) {
+    const currentChar = input.charAt(index);
+    if (currentKey) {
+      if ('[' === currentChar) {
+        result.push(currentChar);
+        index = handleArrayParse(input, index + 1, fieldList, result);
+        continue;
+      } else if ('{' === currentChar) {
+        result.push(currentChar);
+        index = handleObjectParse(input, index + 1, fieldList, result);
+        continue;
+      }
+
+      if ([',', '}'].includes(currentChar)) {
+        const value = currentValueChars.join('');
+        if (fieldList.get(currentKey) === undefined || isNaN(Number(value))) {
+          result.push(value);
+        } else {
+          result.push(`"${value}"`);
+        }
+        currentKeyChars = [];
+        currentValueChars = [];
+        currentKey = '';
+        result.push(currentChar);
+        if (currentChar === '}') {
+          index++;
+          break;
+        }
+      } else {
+        currentValueChars.push(currentChar);
+      }
+    } else {
+      if (['{', '[', '"', ' '].includes(currentChar)) {
+        result.push(currentChar);
+      } else if (currentChar === ':') {
+        result.push(currentChar);
+        currentKey = currentKeyChars.join('');
+        if (fieldList.get(currentKey) !== undefined) {
+          fieldList.set(currentKey, true);
+        }
+      } else {
+        currentKeyChars.push(currentChar);
+        result.push(currentChar);
+      }
+    }
+
+    index++;
+  }
+  return index;
 }
 
 export function getBytesFromString(str: string) {
