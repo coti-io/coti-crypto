@@ -4,8 +4,8 @@ import { IndexedAddress } from './address';
 import { SignatureData, SigningType } from './signature';
 import { IndexedWallet } from './wallet';
 import * as cryptoUtils from './utils/cryptoUtils';
-import BigDecimal = utils.BigDecimal;
 import { ServiceData } from './transaction';
+import BigDecimal = utils.BigDecimal;
 
 type KeyPair = cryptoUtils.KeyPair;
 

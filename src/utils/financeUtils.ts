@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { BaseTransactionData, SignatureData } from '..';
 import { CotiError } from '../cotiError';
-import { replaceNumberToStringByKeyJsonParser, Network } from './utils';
+import { Network } from './utils';
 import { TokenGenerationRequest, TokenMintFeeRequest, TokenMintQuoteFeeRequest } from './tokenUtils';
 
 export type TokenMintingFeeQuoteResponse = {

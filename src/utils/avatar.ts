@@ -1,66 +1,69 @@
 import { sha256 } from 'js-sha256';
 
 export default class TokenAvatar {
-    symbol: string;
-    elements: number;
-    size: number;
-    hash: any;
-    colors: any[];
-    
-    constructor(symbol: string, elements = 60, size = 60) {
-        this.symbol = symbol;
-        this.elements = elements;
-        this.size = size;
-        this.hash = sha256(symbol).toString();
-        this.colors = this.generateAvatarPalette();
-    }
+  symbol: string;
+  elements: number;
+  size: number;
+  hash: string;
+  colors: any[];
 
-    private _getIconColor = (symbol: string) => {
-        return this.hslToHex(Number(this.hashCode(symbol)), 95, 40);
+  constructor(symbol: string, elements = 60, size = 60) {
+    this.symbol = symbol;
+    this.elements = elements;
+    this.size = size;
+    this.hash = sha256(symbol).toString();
+    this.colors = this.generateAvatarPalette();
+  }
+
+  private getIconColor(symbol: string) {
+    return this.hslToHex(Number(this.hashCode(symbol)), 95, 40);
+  }
+
+  public generateAvatarPalette() {
+    const colors = this.hash
+      .replace(/(\w|\d)/g, (current: string, next: string, index: number) => `${current}${index !== 0 && index % 20 === 0 ? '-' : ''}`)
+      .split('-');
+    return this.generateColors(
+      this.symbol,
+      colors.map((colorHash: string) => this.getIconColor(colorHash))
+    );
+  }
+
+  public getRandomColor(number: number, colors: any[], range: number) {
+    return colors[number % range];
+  }
+
+  public hslToHex(h: number, s: number, l: number) {
+    l /= 100;
+    const a = (s * Math.min(l, 1 - l)) / 100;
+    const f = (n: number) => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color)
+        .toString(16)
+        .padStart(2, '0'); // convert to Hex and prefix "0" if needed
     };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  }
 
-    generateAvatarPalette = () => {
-        const colors = this.hash.replace(/(\w|\d)/g, (current: string, next: string, index: number) => `${current}${index !== 0 && index % 20 === 0 ? '-' : ''}`).split('-');
-        const pixelColors = this.generateColors(this.symbol, colors.map((colorHash: string) => this._getIconColor(colorHash)));
-        return pixelColors;
+  public hashCode(name: string) {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      const character = name.charCodeAt(i);
+      hash = (hash << 5) - hash + character;
+      hash = hash & hash; // Convert to 32bit integer
     }
+    return Math.abs(hash);
+  }
 
-    getRandomColor = (number: number, colors: any[], range: number) => {
-        return colors[(number) % range]
-    }
+  generateColors = (name: string, colors: any[]) => {
+    const numFromName = this.hashCode(name);
+    const range = colors && colors.length;
+    return Array.from({ length: this.elements }, (_, i) => this.getRandomColor(numFromName % i, colors, range));
+  };
 
-    hslToHex = (h: number | number, s: number, l: number) => {
-        l /= 100;
-        const a = s * Math.min(l, 1 - l) / 100;
-        const f = (n: number) => {
-            const k = (n + h / 30) % 12;
-            const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-            return Math.round(255 * color).toString(16).padStart(2, '0');   // convert to Hex and prefix "0" if needed
-        };
-        return `#${f(0)}${f(8)}${f(4)}`;
-    }
-
-    hashCode = (name: string) => {
-        var hash = 0;
-        for (var i = 0; i < name.length; i++) {
-            var character = name.charCodeAt(i);
-            hash = ((hash << 5) - hash) + character;
-            hash = hash & hash; // Convert to 32bit integer
-        }
-        return Math.abs(hash);
-    }
-
-    generateColors = (name: string, colors: any[]) => {
-        const numFromName = this.hashCode(name);
-        const range = colors && colors.length;
-        const colorList = Array.from({ length: this.elements }, (_, i) =>
-            this.getRandomColor(numFromName % i, colors, range),
-        );
-        return colorList;
-    }
-
-    toSvg() {
-        return `<svg
+  toSvg() {
+    return `<svg
             viewBox="0 0 ${this.size} ${this.size}"
             fill="none"
             role="img"
@@ -146,11 +149,11 @@ export default class TokenAvatar {
                 <rect x="70" y="60" width="10" height="10" fill="${this.colors[62]}" />
                 <rect x="70" y="70" width="10" height="10" fill="${this.colors[63]}" />
             </g>
-        </svg>`
-    }
+        </svg>`;
+  }
 
-    toBuffer() {
-        const buffer = Buffer.from(this.toSvg(), 'utf8').toString('base64');
-        return `data:image/svg+xml;base64,${buffer}`;
-    }
+  toBuffer() {
+    const buffer = Buffer.from(this.toSvg(), 'utf8').toString('base64');
+    return `data:image/svg+xml;base64,${buffer}`;
+  }
 }

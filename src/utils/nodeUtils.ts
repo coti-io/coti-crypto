@@ -10,7 +10,6 @@ import { Transaction, TransactionData } from '../transaction';
 import { Wallet } from '../wallet';
 import { HardForks } from './transactionUtils';
 import * as utils from './utils';
-import { replaceNumberToStringByKeyJsonParser } from './utils';
 
 type Network = utils.Network;
 

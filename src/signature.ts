@@ -295,6 +295,7 @@ export class MintQuoteFeeSignature extends Signature {
     return utils.concatByteArrays(byteArraysToMerge);
   }
 }
+
 export class TreasuryCreateDepositSignature extends Signature {
   private readonly leverage: number;
   private readonly locking: number;

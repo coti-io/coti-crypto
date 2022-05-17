@@ -1,12 +1,12 @@
 export class BalanceDto {
-    [address: string]: Balance 
+  [address: string]: Balance;
 }
 
 export type Balance = {
-    addressBalance: number,
-    addressPreBalance: number
-}
+  addressBalance: number;
+  addressPreBalance: number;
+};
 
 export class TokensBalanceDto {
-    [currencyHash: string]: BalanceDto
+  [currencyHash: string]: BalanceDto;
 }

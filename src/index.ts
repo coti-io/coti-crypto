@@ -1,8 +1,8 @@
 import * as utils from './utils/utils';
+import { replaceNumberToStringByKeyJsonParser } from './utils/utils';
 import * as cryptoUtils from './utils/cryptoUtils';
 import * as transactionUtils from './utils/transactionUtils';
 import axios from 'axios';
-import { replaceNumberToStringByKeyJsonParser } from './utils/utils';
 
 axios.defaults.transformResponse = (response: string) => {
   const map = new Map<string, boolean>();

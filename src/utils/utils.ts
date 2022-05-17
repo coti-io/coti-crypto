@@ -54,56 +54,55 @@ export function replaceNumberToStringByKeyJsonParser(input: string, fieldList: M
   let currentKey;
   const result = [];
 
-    while (true) {
-      const currentChar = input.charAt(currentIndex);
-      currentIndex = currentIndex + 1;
-      if (currentKey) {
-        if ('[' === currentChar) {
-          result.push(currentChar);
-          currentIndex = handleArrayParse(input, currentIndex, fieldList, result);
-          continue;
-        } else if (['{'].includes(currentChar)) {
-          result.push(currentChar);
-          currentIndex = handleObjectParse(input, currentIndex, fieldList, result);
-          continue;
+  while (true) {
+    const currentChar = input.charAt(currentIndex);
+    currentIndex = currentIndex + 1;
+    if (currentKey) {
+      if ('[' === currentChar) {
+        result.push(currentChar);
+        currentIndex = handleArrayParse(input, currentIndex, fieldList, result);
+        continue;
+      } else if (['{'].includes(currentChar)) {
+        result.push(currentChar);
+        currentIndex = handleObjectParse(input, currentIndex, fieldList, result);
+        continue;
+      }
+
+      if ([',', '}'].includes(currentChar)) {
+        const value = currentValueChars.join('');
+        if (fieldList.get(currentKey) === undefined || isNaN(Number(value))) {
+          result.push(value);
+        } else {
+          result.push(`"${value}"`);
         }
 
-        if ([',', '}'].includes(currentChar)) {
-          const value = currentValueChars.join('');
-          if (fieldList.get(currentKey) === undefined || isNaN(Number(value))) {
-            result.push(value);
-          } else {
-            result.push(`"${value}"`);
-          }
-
-          currentKeyChars = [];
-          currentValueChars = [];
-          currentKey = '';
-          result.push(currentChar);
-          if (currentChar === '}') {
-            break;
-          }
-        } else {
-          currentValueChars.push(currentChar);
+        currentKeyChars = [];
+        currentValueChars = [];
+        currentKey = '';
+        result.push(currentChar);
+        if (currentChar === '}') {
+          break;
         }
       } else {
-        if (['{', '[', '"', ' '].includes(currentChar)) {
-          result.push(currentChar);
-        } else if (currentChar === ':') {
-          result.push(currentChar);
-          currentKey = currentKeyChars.join('');
-          if (fieldList.get(currentKey) !== undefined) {
-            fieldList.set(currentKey, true);
-          }
-        } else {
-          currentKeyChars.push(currentChar);
-          result.push(currentChar);
+        currentValueChars.push(currentChar);
+      }
+    } else {
+      if (['{', '[', '"', ' '].includes(currentChar)) {
+        result.push(currentChar);
+      } else if (currentChar === ':') {
+        result.push(currentChar);
+        currentKey = currentKeyChars.join('');
+        if (fieldList.get(currentKey) !== undefined) {
+          fieldList.set(currentKey, true);
         }
+      } else {
+        currentKeyChars.push(currentChar);
+        result.push(currentChar);
       }
     }
-    return result.join('');
   }
-
+  return result.join('');
+}
 
 function handleArrayParse(input: string, index: number, fieldList: Map<string, boolean>, result: string[]) {
   while (true) {

@@ -17,34 +17,34 @@ export enum TransactionType {
   ZEROSPEND = 'ZeroSpend',
   CHARGEBACK = 'Chargeback',
   TOKEN_GENERATION = 'TokenGeneration',
-  TOKEN_MINTING = 'TokenMinting'
+  TOKEN_MINTING = 'TokenMinting',
 }
 
 export type TransactionStatus = 'pending' | 'confirmed';
 
 export type OriginatorCurrencyData = {
-  name: string,
-  symbol: string,
-  description: string,
-  totalSupply: string,
-  scale: number,
-  originatorHash: string,
-  originatorSignature: SignatureData
+  name: string;
+  symbol: string;
+  description: string;
+  totalSupply: string;
+  scale: number;
+  originatorHash: string;
+  originatorSignature: SignatureData;
 };
 export type CurrencyTypeData = {
-  currencyType: string,
-  createTime: number,
-  currencyRateSourceType: string,
-  rateSource: string,
-  protectionModel: string,
-  signerHash: string,
-  signature: SignatureData
+  currencyType: string;
+  createTime: number;
+  currencyRateSourceType: string;
+  rateSource: string;
+  protectionModel: string;
+  signerHash: string;
+  signature: SignatureData;
 };
 
 export type ServiceData = {
-  originatorCurrencyData: OriginatorCurrencyData,
-  currencyTypeData: CurrencyTypeData,
-  feeAmount: number
+  originatorCurrencyData: OriginatorCurrencyData;
+  currencyTypeData: CurrencyTypeData;
+  feeAmount: number;
 };
 
 export class ReducedTransaction {

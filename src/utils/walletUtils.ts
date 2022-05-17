@@ -53,7 +53,7 @@ export namespace walletUtils {
   }
 
   export async function checkBalances(addresses: string[], wallet: BaseWallet): Promise<BalanceDto> {
-    return await nodeUtils.checkBalances(addresses, wallet.getNetwork(), wallet.getFullNode());
+    return nodeUtils.checkBalances(addresses, wallet.getNetwork(), wallet.getFullNode());
   }
 
   export async function getTransactionsHistory(addresses: string[], wallet: BaseWallet) {

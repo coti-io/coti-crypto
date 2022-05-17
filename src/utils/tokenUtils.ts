@@ -1,5 +1,4 @@
 import moment from 'moment';
-import { BigDecimal, utils } from '..';
 import {
   CurrencyTypeDataSignature,
   MintQuoteDataSignature,
@@ -107,12 +106,10 @@ export namespace tokenUtils {
       signature: currencyTypeDataSignatureData,
     };
 
-    const tokenGenerationFeeRequest = {
+    return {
       originatorCurrencyData,
       currencyTypeData,
     };
-
-    return tokenGenerationFeeRequest;
   }
 
   export async function getMintQuoteFeeRequest(
@@ -125,35 +122,33 @@ export namespace tokenUtils {
     const instantTimeMs = instantTimeSeconds * 1000;
     const mintingQuote = new MintQuoteSignature(currencyHash, mintingAmount, instantTimeMs);
     const signatureData = await mintingQuote.sign(indexedWallet, false);
-    const mintQuoteFeeRequest: TokenMintQuoteFeeRequest = {
+    return {
       currencyHash,
       mintingAmount,
       createTime: instantTimeSeconds,
       userHash,
       signature: signatureData,
     };
-
-    return mintQuoteFeeRequest;
   }
 
   export async function getTokenMintFeeRequest(
     currencyHash: string,
     mintingAmount: number,
     feeAmount: number,
-    walletAddressRecieveToken: string,
+    walletAddressReceiveToken: string,
     userHash: string,
     indexedWallet: Wallet
   ): Promise<TokenMintFeeRequest> {
     const instantTimeSeconds = moment.utc().unix();
     const instantTimeMs = instantTimeSeconds * 1000;
-    const mintingQuote = new MintQuoteDataSignature(currencyHash, mintingAmount, feeAmount, walletAddressRecieveToken, instantTimeMs);
+    const mintingQuote = new MintQuoteDataSignature(currencyHash, mintingAmount, feeAmount, walletAddressReceiveToken, instantTimeMs);
     const mintingQuoteSD = await mintingQuote.sign(indexedWallet, false);
     const mintingQuoteFee = new MintQuoteFeeSignature(instantTimeMs, currencyHash, mintingAmount, feeAmount);
     const mintingQuoteFeeSD = await mintingQuoteFee.sign(indexedWallet, false);
     const tokenMintingServiceData: TokenMintData = {
       mintingCurrencyHash: currencyHash,
       mintingAmount,
-      receiverAddress: walletAddressRecieveToken,
+      receiverAddress: walletAddressReceiveToken,
       createTime: instantTimeSeconds,
       feeAmount,
       signerHash: userHash,
