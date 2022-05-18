@@ -1,5 +1,4 @@
 import * as utils from './utils/utils';
-import { replaceNumberToStringByKeyJsonParser } from './utils/utils';
 import * as cryptoUtils from './utils/cryptoUtils';
 import * as transactionUtils from './utils/transactionUtils';
 import axios from 'axios';
@@ -7,11 +6,11 @@ import { JsonUtils, JsonUtilsOptions } from './utils/jsonUtils';
 
 axios.defaults.transformResponse = (response: string) => {
   const map = new Map<string, boolean>();
-  map.set('mintingAmount', false);
-  map.set('amount', false);
-  map.set('originalAmount', false);
-  map.set('feeAmount', false);
-  map.set('reducedAmount', false);
+  map.set('mintingAmount', true);
+  map.set('amount', true);
+  map.set('originalAmount', true);
+  map.set('feeAmount', true);
+  map.set('reducedAmount', true);
   const jsonUtilsOptions: JsonUtilsOptions = { keyList: map };
   const jsonUtils = new JsonUtils(jsonUtilsOptions);
   const parser = jsonUtils.parse();
