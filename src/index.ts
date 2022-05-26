@@ -2,19 +2,10 @@ import * as utils from './utils/utils';
 import * as cryptoUtils from './utils/cryptoUtils';
 import * as transactionUtils from './utils/transactionUtils';
 import axios from 'axios';
-import { JsonUtils, JsonUtilsOptions } from './utils/jsonUtils';
+import { cotiParser } from './utils/jsonUtils';
 
 axios.defaults.transformResponse = (response: string) => {
-  const map = new Map<string, boolean>();
-  map.set('mintingAmount', true);
-  map.set('amount', true);
-  map.set('originalAmount', true);
-  map.set('feeAmount', true);
-  map.set('reducedAmount', true);
-  const jsonUtilsOptions: JsonUtilsOptions = { keyList: map };
-  const jsonUtils = new JsonUtils(jsonUtilsOptions);
-  const parser = jsonUtils.parse();
-  return parser(response);
+  return cotiParser(response);
 };
 
 export { utils, cryptoUtils, transactionUtils };

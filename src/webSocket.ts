@@ -6,6 +6,7 @@ import { BigDecimal } from './utils/utils';
 import { BaseWallet, IndexedWallet } from './wallet';
 import { BaseAddress, IndexedAddress } from './address';
 import { TransactionData } from './transaction';
+import { cotiParser } from './utils/jsonUtils';
 
 export type StompClient = stomp.Client;
 
@@ -135,7 +136,7 @@ export class WebSocket {
     if (!this.transactionsSubscriptions.get(addressHex)) {
       let transactionSubscription = this.client.subscribe(`/topic/addressTransactions/${addressHex}`, async ({ body }) => {
         try {
-          const data = JSON.parse(body);
+          const data = cotiParser(body);
           let { transactionData } = data;
           transactionData = new TransactionData(transactionData);
           transactionData.setStatus();
@@ -164,7 +165,7 @@ export class WebSocket {
   }
 
   private updateBalance(body: string) {
-    const data = JSON.parse(body);
+    const data = cotiParser(body);
     if (data.message === 'Balance Updated!') {
       const address = this.wallet.getAddressMap().get(data.addressHash);
       if (address === undefined) {
@@ -187,7 +188,7 @@ export class WebSocket {
 
     let addressPropagationSubscription = this.client.subscribe(`/topic/address/${addressHex}`, async ({ body }) => {
       try {
-        const data = JSON.parse(body);
+        const data = cotiParser(body);
         console.log('Received an address through address propagation:', data.addressHash, ' index:', address.getIndex());
         if (data.addressHash !== addressHex) throw new Error('Error in addressPropagationSubscriber');
 

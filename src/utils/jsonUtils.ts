@@ -165,10 +165,10 @@ export class JsonUtils {
         // replace with if key in the keyList
         if (_options.keyList && key && _options.keyList.get(key)) {
           //return _options.storeAsString ? string : new BigDecimal(string);
-          const res = _options.storeAsString ? string : new BigDecimal(string);
-          return res;
+          //const res = _options.storeAsString ? new BigDecimal(string).toFixed() : new BigDecimal(string);
+          return new BigDecimal(string).toFixed();
         }
-        return !_options.alwaysParseAsBig ? number : new BigDecimal(number);
+        return !_options.alwaysParseAsBig ? number : new BigDecimal(string).toFixed();
       }
     };
     const string = () => {
@@ -322,7 +322,7 @@ export class JsonUtils {
             } else {
               object[key] = value(key);
             }
-          } else if (this.suspectConstructorRx.test(key) === true) {
+          } else if (this.suspectConstructorRx.test(key)) {
             if (_options.constructorAction === 'error') {
               error('Object contains forbidden constructor property');
             } else if (_options.constructorAction === 'ignore') {
@@ -555,3 +555,15 @@ export class JsonUtils {
     return str('', { '': value });
   }
 }
+const map = new Map<string, boolean>();
+map.set('mintingAmount', true);
+map.set('amount', true);
+map.set('originalAmount', true);
+map.set('feeAmount', true);
+map.set('reducedAmount', true);
+map.set('mintedAmount', true);
+map.set('mintableAmount', true);
+map.set('totalSupply', true);
+const jsonUtilsOptions: JsonUtilsOptions = { keyList: map };
+const jsonUtils = new JsonUtils(jsonUtilsOptions);
+export const cotiParser = jsonUtils.parse();
