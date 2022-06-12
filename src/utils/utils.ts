@@ -1,5 +1,6 @@
 import * as moment from 'moment';
 import Decimal from 'decimal.js';
+import { keccak224 } from 'js-sha3';
 
 export type Network = 'mainnet' | 'testnet';
 
@@ -91,6 +92,11 @@ export function numberToByteArray(num: number, byteLength: number) {
     num = num / 256;
   }
   return bytes;
+}
+
+export function getCurrencyHashBySymbol(symbol: string): string {
+  const bytes = getBytesFromString(symbol.toLowerCase());
+  return keccak224.update(bytes).hex();
 }
 
 export function removeZerosFromEndOfNumber(num: number) {
