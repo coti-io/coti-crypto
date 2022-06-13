@@ -1,4 +1,4 @@
-import { BigDecimal, Network } from './utils';
+import { BigDecimal, getCurrencyHashBySymbol, Network } from './utils';
 import * as cryptoUtils from './cryptoUtils';
 import { FullNodeFeeSignature, TransactionTrustScoreSignature } from '../signature';
 import { PrivateKey } from '../ecKeyPair';
@@ -10,7 +10,7 @@ import { IndexedAddress } from '../address';
 import moment from 'moment';
 
 const amountRegex = /^\d+(\.\d{1,8})?$/;
-const nativeCurrencyHash = 'e72d2137d5cfcc672ab743bddbdedb4e059ca9d3db3219f4eb623b01';
+const nativeCurrencyHash = getCurrencyHashBySymbol('coti');
 type KeyPair = cryptoUtils.KeyPair;
 
 export enum HardForks {
