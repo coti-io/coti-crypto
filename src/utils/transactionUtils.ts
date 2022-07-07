@@ -117,7 +117,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   if (!feeIncluded) {
     if (feeAddressInInputMap) {
       if (currencyHash && currencyHash !== nativeCurrencyHash) {
-        addInputBaseTranction(balanceObject, feeAddress!, Number(feeAmount), baseTransactions, nativeCurrencyHash);
+        addInputBaseTransaction(balanceObject, feeAddress!, Number(feeAmount), baseTransactions, nativeCurrencyHash);
       } else {
         const amount = inputMap.get(feeAddress!)!;
         const feeIncludedAmount = feeAmount.add(new BigDecimal(amount.toString()));
@@ -132,7 +132,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
     if (hardFork !== HardForks.SINGLE_CURRENCY && amount === Number(feeAmount) && address === feeAddress) {
       tokenHash = nativeCurrencyHash;
     }
-    addInputBaseTranction(balanceObject, address, amount, baseTransactions, tokenHash, tokensBalanceObject);
+    addInputBaseTransaction(balanceObject, address, amount, baseTransactions, tokenHash, tokensBalanceObject);
   });
   networkFee = await nodeUtils.createMiniConsensus(userHash!, fullNodeFee, networkFee, network, trustScoreNode);
 
@@ -192,7 +192,7 @@ async function getFees<T extends IndexedAddress>(
   return { fullNodeFee, networkFee };
 }
 
-function addInputBaseTranction(
+function addInputBaseTransaction(
   balanceObject: any,
   address: string,
   amount: number,
