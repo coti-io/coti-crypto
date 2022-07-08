@@ -40,7 +40,12 @@
     "prebuild": "rimraf dist",
     "build": "tsc",
     "lint": "eslint . --ext .ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "version-prerelease": "npm version $(semver $npm_package_version -i prerelease --preid beta)",
+    "version-prepatch": "npm version $(semver $npm_package_version -i prepatch --preid beta)",
+    "version-preminor": "npm version $(semver $npm_package_version -i preminor --preid beta)",
+    "version-premajor": "npm version $(semver $npm_package_version -i premajor --preid beta)",
+    "version-release": "npm version $(semver $npm_package_version -i)"
   },
   "keywords": [],
   "author": "Eli Hallufgil <eli@coti.io>",
