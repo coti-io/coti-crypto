@@ -39,6 +39,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "tsc",
+    "git-push-with-tags": "git push && git push --tags",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
