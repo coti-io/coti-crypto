@@ -44,7 +44,15 @@ jobs:
           npm i
           npm run build
           npm run version-${{ inputs.version }}
-          npm publish
+
+      - name: Npm publish
+        run : |
+          if [[ inputs.version == 'release' ]]; then
+             NPM_TAG=latest
+          else 
+             NPM_TAG=beta
+          fi
+          npm publish --tag $NPM_TAG 
 
       - name: Push changes
         uses: ad-m/github-push-action@master
