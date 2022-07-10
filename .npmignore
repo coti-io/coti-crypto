@@ -4,6 +4,7 @@ src
 assets
 .idea
 .vscode
+.github
 *.iml
 .eslintrc
 .eslintignore
