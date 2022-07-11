@@ -1,4 +1,4 @@
-name: Coti Crypto SDK Publisher
+name: npm publisher
 
 on:
   workflow_dispatch:
