@@ -526,32 +526,26 @@ export class TokenHistorySignature extends Signature {
 }
 
 export class BridgeCreateRefundRequestSignature extends Signature {
-  private readonly walletHash: string;
   private readonly swapUuid: string;
 
-  constructor(swapUuid: string, walletHash: string, signature?: SignatureData) {
+  constructor(swapUuid: string, signature?: SignatureData) {
     super(signature);
-    this.walletHash = walletHash;
     this.swapUuid = swapUuid;
   }
 
   public getBytes() {
-    const walletHashInBytes = utils.hexToBytes(this.walletHash);
-    const swapUuidInBytes = utils.getBytesFromString(this.swapUuid);
-    return utils.concatByteArrays([walletHashInBytes, swapUuidInBytes]);
+    return utils.getBytesFromString(this.swapUuid);
   }
 }
 
 export class FaucetSignature extends Signature {
-  private readonly walletHash: string;
   private readonly address: string;
   private readonly currencyHash: string;
   private readonly amount: number;
   private readonly timestamp: number;
 
-  constructor(walletHash: string, address: string, currencyHash: string, amount: number, timestamp: number, signature?: SignatureData) {
+  constructor(address: string, currencyHash: string, amount: number, timestamp: number, signature?: SignatureData) {
     super(signature);
-    this.walletHash = walletHash;
     this.address = address;
     this.currencyHash = currencyHash;
     this.amount = amount;
@@ -559,12 +553,11 @@ export class FaucetSignature extends Signature {
   }
 
   public getBytes() {
-    const walletHashBytes = utils.getBytesFromString(this.walletHash.toString());
     const addressHashBytes = utils.getBytesFromString(this.address.toString());
     const currencyHashBytes = utils.getBytesFromString(this.currencyHash.toString());
     const amountBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.amount));
     const timeInSeconds = this.timestamp * 1000;
     const timestampBytes = utils.numberToByteArray(timeInSeconds, 8);
-    return utils.concatByteArrays([walletHashBytes, addressHashBytes,currencyHashBytes, amountBytes, timestampBytes]);
+    return utils.concatByteArrays([addressHashBytes,currencyHashBytes, amountBytes, timestampBytes]);
   }
 }
