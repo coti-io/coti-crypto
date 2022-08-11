@@ -541,3 +541,30 @@ export class BridgeCreateRefundRequestSignature extends Signature {
     return utils.concatByteArrays([walletHashInBytes, swapUuidInBytes]);
   }
 }
+
+export class FaucetSignature extends Signature {
+  private readonly walletHash: string;
+  private readonly address: string;
+  private readonly currencyHash: string;
+  private readonly amount: number;
+  private readonly timestamp: number;
+
+  constructor(walletHash: string, address: string, currencyHash: string, amount: number, timestamp: number, signature?: SignatureData) {
+    super(signature);
+    this.walletHash = walletHash;
+    this.address = address;
+    this.currencyHash = currencyHash;
+    this.amount = amount;
+    this.timestamp = timestamp;
+  }
+
+  public getBytes() {
+    const walletHashBytes = utils.getBytesFromString(this.walletHash.toString());
+    const addressHashBytes = utils.getBytesFromString(this.address.toString());
+    const currencyHashBytes = utils.getBytesFromString(this.currencyHash.toString());
+    const amountBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.amount));
+    const timeInSeconds = this.timestamp * 1000;
+    const timestampBytes = utils.numberToByteArray(timeInSeconds, 8);
+    return utils.concatByteArrays([walletHashBytes, addressHashBytes,currencyHashBytes, amountBytes, timestampBytes]);
+  }
+}
