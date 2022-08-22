@@ -6,6 +6,7 @@ import { IndexedWallet } from './wallet';
 import * as cryptoUtils from './utils/cryptoUtils';
 import { ServiceData } from './transaction';
 import BigDecimal = utils.BigDecimal;
+import { BaseTransactionToJSON } from './dtos/transactionsUtils.dto';
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -61,7 +62,7 @@ export class BaseTransactionData {
     this.setTime('createTime', baseTransactionData.createTime);
   }
 
-  public setTime(timeField: BaseTransactionTime, time: number | string) {
+  public setTime(timeField: BaseTransactionTime, time: number | string): void {
     if (typeof time === 'string') {
       this[timeField] = utils.utcStringToSeconds(time);
     } else {
@@ -74,7 +75,7 @@ export class BaseTransaction {
   private hash!: string;
   private currencyHash?: string;
   private addressHash: string;
-  private amount: BigDecimal;
+  private amount: utils.BigDecimal;
   private createTime: number;
   private serviceData?: ServiceData;
   private name: BaseTransactionName;
@@ -123,13 +124,13 @@ export class BaseTransaction {
     this.createBaseTransactionHash();
   }
 
-  private createBaseTransactionHash() {
+  private createBaseTransactionHash(): void {
     let baseTxBytes = this.getBytes();
     let baseTxHashedArray = keccak256.update(baseTxBytes).array();
     this.hash = utils.byteArrayToHexString(new Uint8Array(baseTxHashedArray));
   }
 
-  public getAmount() {
+  public getAmount(): utils.BigDecimal {
     return this.amount;
   }
 
@@ -173,11 +174,11 @@ export class BaseTransaction {
     return bytes;
   }
 
-  public getHashArray() {
+  public getHashArray(): number[] {
     return utils.hexToArray(this.hash);
   }
 
-  public static getBaseTransactionFromFeeData(feeData: BaseTransactionData) {
+  public static getBaseTransactionFromFeeData(feeData: BaseTransactionData): BaseTransaction {
     let baseTransaction = new BaseTransaction(feeData.addressHash, new BigDecimal(feeData.amount), feeData.name);
 
     baseTransaction.createTime = feeData.createTime;
@@ -209,7 +210,7 @@ export class BaseTransaction {
     return baseTransaction;
   }
 
-  public async sign<T extends IndexedAddress>(transactionHash: string, wallet: IndexedWallet<T>) {
+  public async sign<T extends IndexedAddress>(transactionHash: string, wallet: IndexedWallet<T>): Promise<void> {
     if (this.isInput()) {
       const messageInBytes = this.getSignatureMessage(transactionHash);
       this.signatureData = await wallet.signMessage(messageInBytes, SigningType.BASE_TX, this.addressHash, {
@@ -219,7 +220,7 @@ export class BaseTransaction {
     }
   }
 
-  public signWithKeyPair(transactionHash: string, keyPair: KeyPair) {
+  public signWithKeyPair(transactionHash: string, keyPair: KeyPair): void {
     if (this.isInput()) {
       const addressHex = cryptoUtils.getAddressHexByKeyPair(keyPair);
       if (addressHex !== this.addressHash) throw new Error('Wrong keyPair for base transaction address');
@@ -228,19 +229,19 @@ export class BaseTransaction {
     }
   }
 
-  public isInput() {
+  public isInput(): boolean {
     return this.amount.isNegative();
   }
 
-  public isOutput() {
+  public isOutput(): boolean {
     return this.amount.isPositive();
   }
 
-  private getSignatureMessage(transactionHash: string) {
+  private getSignatureMessage(transactionHash: string): Uint8Array {
     return utils.hexToBytes(transactionHash);
   }
 
-  public toJSON() {
+  public toJSON(): BaseTransactionToJSON {
     return {
       hash: this.hash,
       addressHash: this.addressHash,

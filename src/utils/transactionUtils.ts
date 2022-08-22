@@ -8,6 +8,8 @@ import { Transaction, TransactionType } from '../transaction';
 import { IndexedWallet } from '../wallet';
 import { IndexedAddress } from '../address';
 import moment from 'moment';
+import { ec } from 'elliptic';
+import { GetFeesResDTO } from '../dtos/transactionsUtils.dto';
 
 const amountRegex = /^\d+(\.\d{1,8})?$/;
 const nativeCurrencyHash = getCurrencyHashBySymbol('coti');
@@ -32,7 +34,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   currencyHash?: string;
   originalCurrencyHash?: string;
   hardFork?: HardForks;
-}) {
+}): Promise<Transaction> {
   const {
     userPrivateKey,
     wallet,
@@ -159,7 +161,7 @@ async function getFullNodeFeeSignature<T extends IndexedAddress>(
   keyPair?: KeyPair,
   wallet?: IndexedWallet<T>,
   originalCurrencyHash?: string
-) {
+): Promise<ec.SignatureOptions> {
   const fullNodeFeeSignature = new FullNodeFeeSignature(originalAmount, originalCurrencyHash);
 
   return keyPair ? fullNodeFeeSignature.signByKeyPair(keyPair) : fullNodeFeeSignature.sign(wallet!);
@@ -175,7 +177,7 @@ async function getFees<T extends IndexedAddress>(
   fullnode?: string,
   trustScoreNode?: string,
   originalCurrencyHash?: string
-) {
+): Promise<GetFeesResDTO> {
   const originalAmountString = originalAmount.toString();
   const fullNodeFeeSignature = await getFullNodeFeeSignature(originalAmountString, keyPair, wallet, originalCurrencyHash);
   const fullNodeFee = await nodeUtils.getFullNodeFees(
@@ -199,7 +201,7 @@ function addInputBaseTransaction(
   baseTransactions: BaseTransaction[],
   currencyHash?: string,
   tokensBalanceObject?: any
-) {
+): void {
   let balance;
   let preBalance;
   let addressBalance;
@@ -243,7 +245,7 @@ function addOutputBaseTransactions(
   feeIncluded: boolean,
   currencyHash?: string,
   originalCurrencyHash?: string
-) {
+): void {
   const amountRBT = feeIncluded
     ? originalAmount.subtract(new BigDecimal(fullNodeFee.amount)).subtract(new BigDecimal(networkFee.amount))
     : originalAmount;
@@ -267,7 +269,7 @@ function addOutputBaseTransactions(
   baseTransactions.push(RBT);
 }
 
-async function getTransactionTrustScoreSignature<T extends IndexedAddress>(transactionHash: string, keyPair?: KeyPair, wallet?: IndexedWallet<T>) {
+async function getTransactionTrustScoreSignature<T extends IndexedAddress>(transactionHash: string, keyPair?: KeyPair, wallet?: IndexedWallet<T>): Promise<ec.SignatureOptions> {
   const transactionTrustScoreSignature = new TransactionTrustScoreSignature(transactionHash);
 
   return keyPair ? transactionTrustScoreSignature.signByKeyPair(keyPair, true) : transactionTrustScoreSignature.sign(wallet!, true);
@@ -280,7 +282,7 @@ export async function addTrustScoreToTransaction<T extends IndexedAddress>(
   wallet?: IndexedWallet<T>,
   network?: Network,
   trustScoreNode?: string
-) {
+): Promise<void> {
   const transactionHash = transaction.getHash();
   const transactionTrustScoreSignature = await getTransactionTrustScoreSignature(transactionHash, keyPair, wallet);
   const transactionTrustScoreData = await nodeUtils.getTrustScoreForTransaction(
@@ -301,7 +303,7 @@ export async function transactionTokenGeneration(params: {
   userHash: string;
   transactionType: TransactionType;
   transactionDescription: string;
-}) {
+}): Promise<Transaction> {
   const { feeBT, fullnodeFee, walletAddressIBT, userHash, transactionType, transactionDescription } = params;
   const instantTimeUnix = moment.utc().unix();
   const tokenGenerationFee = new BigDecimal(feeBT.amount);

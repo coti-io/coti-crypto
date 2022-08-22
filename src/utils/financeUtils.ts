@@ -3,15 +3,7 @@ import { BaseTransactionData, SignatureData } from '..';
 import { CotiError } from '../cotiError';
 import { Network } from './utils';
 import { TokenGenerationRequest, TokenMintFeeRequest, TokenMintQuoteFeeRequest } from './tokenUtils';
-
-export type TokenMintingFeeQuoteResponse = {
-  currencyHash: string;
-  createTime: number;
-  mintingAmount: number;
-  mintingFee: number;
-  signerHash: string;
-  signature: SignatureData;
-};
+import { GetWalletCurrenciesResDto, TokenMintingFeeQuoteResponse } from '../dtos/financeUtils.dto';
 
 export namespace financeUtils {
   const financeServer = {
@@ -71,7 +63,7 @@ export namespace financeUtils {
     }
   }
 
-  export async function getWalletCurrencies(tokenHashes: string[], financeServerUrl?: string, network: Network = 'mainnet') {
+  export async function getWalletCurrencies(tokenHashes: string[], financeServerUrl?: string, network: Network = 'mainnet'): Promise<GetWalletCurrenciesResDto> {
     const headers = {
       'Content-Type': 'application/json',
     };

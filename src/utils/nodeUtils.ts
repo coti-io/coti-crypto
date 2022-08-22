@@ -10,6 +10,16 @@ import { Transaction, TransactionData } from '../transaction';
 import { Wallet } from '../wallet';
 import { HardForks } from './transactionUtils';
 import * as utils from './utils';
+import {
+  CheckIfAddressExistsResDTO,
+  GetTokenDetailsResDTO,
+  GetTransactionResDTO,
+  GetTransactionsHistoryByStampResDTO,
+  GetTransactionsHistoryResDTO,
+  GetUserTrustScoreResDTO,
+  SendAddressToNodeResDTO,
+  SendTransactionResDTO, TokenDetails
+} from '../dtos/nodeUtils.dto';
 
 type Network = utils.Network;
 
@@ -29,7 +39,7 @@ const nodeUrl = {
 };
 
 export namespace nodeUtils {
-  export async function getUserTrustScore(userHash: string, network: Network = 'mainnet', trustScoreNode?: string) {
+  export async function getUserTrustScore(userHash: string, network: Network = 'mainnet', trustScoreNode?: string): Promise<GetUserTrustScoreResDTO> {
     try {
       const { data } = await axios.post(`${trustScoreNode || nodeUrl[network].trustScoreNode}/usertrustscore`, {
         userHash,
@@ -40,7 +50,7 @@ export namespace nodeUtils {
     }
   }
 
-  export async function sendAddressToNode(address: BaseAddress, network: Network = 'mainnet', fullnode?: string) {
+  export async function sendAddressToNode(address: BaseAddress, network: Network = 'mainnet', fullnode?: string): Promise<SendAddressToNodeResDTO> {
     try {
       const { data } = await axios.put(`${fullnode || nodeUrl[network].fullNode}/address`, { address: address.getAddressHex() });
 
@@ -50,7 +60,7 @@ export namespace nodeUtils {
     }
   }
 
-  export async function checkAddressesExist(addressesToCheck: string[], network: Network = 'mainnet', fullnode?: string) {
+  export async function checkAddressesExist(addressesToCheck: string[], network: Network = 'mainnet', fullnode?: string): Promise<CheckIfAddressExistsResDTO> {
     try {
       const { data } = await axios.post(`${fullnode || nodeUrl[network].fullNode}/address`, { addresses: addressesToCheck });
 
@@ -80,7 +90,7 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getTransaction(transactionHash: string, network: Network = 'mainnet', fullnode?: string) {
+  export async function getTransaction(transactionHash: string, network: Network = 'mainnet', fullnode?: string): Promise<TransactionData> {
     try {
       const { data } = await axios.post(`${fullnode || nodeUrl[network].fullNode}/transaction`, { transactionHash });
       let transaction: TransactionData = data.transactionData;
@@ -94,7 +104,7 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getNoneIndexTransactions(network: Network = 'mainnet', fullnode?: string) {
+  export async function getNoneIndexTransactions(network: Network = 'mainnet', fullnode?: string): Promise<any[]> {
     try {
       const { data } = await axios.get(`${fullnode || nodeUrl[network].fullNode}/transaction/none-indexed`);
 
@@ -104,7 +114,7 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getTransactionsHistory(addresses: string[], network: Network = 'mainnet', fullnode?: string) {
+  export async function getTransactionsHistory(addresses: string[], network: Network = 'mainnet', fullnode?: string): Promise<GetTransactionsHistoryResDTO> {
     let response = await axios.post(`${fullnode || nodeUrl[network].fullNode}/transaction/addressTransactions/batch`, { addresses });
     return getMapFromTransactionHistoryResponse(response);
   }
@@ -133,7 +143,7 @@ export namespace nodeUtils {
     fullnode?: string,
     startTime?: number,
     endTime?: number
-  ) {
+  ): Promise<GetTransactionsHistoryByStampResDTO> {
     let response = await axios.post(`${fullnode || nodeUrl[network].fullNode}/transaction/addressTransactions/timestamp/batch`, {
       addresses,
       startTime,
@@ -151,7 +161,7 @@ export namespace nodeUtils {
     feeIncluded?: boolean,
     fullnode?: string,
     originalCurrencyHash?: string
-  ) {
+  ): Promise<BaseTransactionData> {
     try {
       const response = await axios.put(`${fullnode || nodeUrl[network].fullNode}/fee`, {
         originalAmount: amountToTransfer,
@@ -173,7 +183,7 @@ export namespace nodeUtils {
     network: Network = 'mainnet',
     feeIncluded?: boolean,
     trustScoreNode?: string
-  ) {
+  ): Promise<BaseTransactionData> {
     try {
       const response = await axios.put(`${trustScoreNode || nodeUrl[network].trustScoreNode}/networkFee`, {
         fullNodeFeeData,
@@ -193,7 +203,7 @@ export namespace nodeUtils {
     networkFeeData: BaseTransactionData,
     network: Network = 'mainnet',
     trustScoreNode?: string
-  ) {
+  ): Promise<BaseTransactionData> {
     const iteration = 3;
     let validationNetworkFeeMessage = {
       fullNodeFeeData,
@@ -234,7 +244,7 @@ export namespace nodeUtils {
     }
   }
 
-  export async function sendTransaction(transaction: Transaction, network: Network = 'mainnet', fullnode?: string) {
+  export async function sendTransaction(transaction: Transaction, network: Network = 'mainnet', fullnode?: string): Promise<SendTransactionResDTO> {
     try {
       const response = await axios.put(`${fullnode || nodeUrl[network].fullNode}/transaction`, transaction);
 
@@ -244,7 +254,7 @@ export namespace nodeUtils {
     }
   }
 
-  export function getSocketUrl(network: Network = 'mainnet', fullnode?: string) {
+  export function getSocketUrl(network: Network = 'mainnet', fullnode?: string): string {
     return (fullnode || nodeUrl[network].fullNode) + '/websocket';
   }
 
@@ -342,7 +352,7 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getTokenDetails(currencyHash: string, userHash: string, indexedWallet: Wallet, api?: string, network: Network = 'mainnet') {
+  export async function getTokenDetails(currencyHash: string, userHash: string, indexedWallet: Wallet, api?: string, network: Network = 'mainnet'): Promise<GetTokenDetailsResDTO> {
     const instantTimeSeconds = moment.utc().unix();
     const instantTimeMs = instantTimeSeconds * 1000;
     const tokenCurrencies = new TokenDetailsSignature({ userHash, instantTime: instantTimeMs, currencyHash });
@@ -372,7 +382,7 @@ export namespace nodeUtils {
     indexedWallet: Wallet,
     api?: string,
     network: Network = 'mainnet'
-  ) {
+  ): Promise<TokenDetails> {
     const instantTimeSeconds = moment.utc().unix();
     const instantTimeMs = instantTimeSeconds * 1000;
     const tokenCurrencies = new TokenDetailsSignature({ userHash, instantTime: instantTimeMs, currencySymbol });

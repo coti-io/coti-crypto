@@ -4,6 +4,7 @@ import * as cryptoUtils from './utils/cryptoUtils';
 import { EcSignatureOptions } from './utils/cryptoUtils';
 import * as utils from './utils/utils';
 import { IndexedWallet } from './wallet';
+import { ec } from 'elliptic';
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -33,30 +34,30 @@ export abstract class Signature {
     }
   }
 
-  public async sign<T extends IndexedAddress>(wallet: IndexedWallet<T>, isHash = false) {
+  public async sign<T extends IndexedAddress>(wallet: IndexedWallet<T>, isHash = false): Promise<ec.SignatureOptions> {
     const messageInBytes = this.getSignatureMessage(isHash);
     this.signatureData = await wallet.signMessage(messageInBytes, this.signingType);
     return this.signatureData;
   }
 
-  public verify(walletHash: string, isHash = false) {
+  public verify(walletHash: string, isHash = false): boolean {
     const messageInBytes = this.getSignatureMessage(isHash);
     return cryptoUtils.verifySignature(messageInBytes, this.signatureData, walletHash);
   }
 
-  public createBasicSignatureHash() {
+  public createBasicSignatureHash(): Uint8Array {
     let messageInBytes = this.getBytes();
     let messageHashedArray = keccak256.update(messageInBytes).array();
     return new Uint8Array(messageHashedArray);
   }
 
-  public signByKeyPair(keyPair: KeyPair, isHash = false) {
+  public signByKeyPair(keyPair: KeyPair, isHash = false): ec.SignatureOptions {
     const messageInBytes = this.getSignatureMessage(isHash);
     this.signatureData = cryptoUtils.signByteArrayMessage(messageInBytes, keyPair);
     return this.signatureData;
   }
 
-  private getSignatureMessage(isHash: boolean) {
+  private getSignatureMessage(isHash: boolean): Uint8Array {
     return isHash ? this.getBytes() : this.createBasicSignatureHash();
   }
 
@@ -241,12 +242,12 @@ export class MintQuoteSignature extends Signature {
 
 export class MintQuoteDataSignature extends Signature {
   private currencyHash: string;
-  private mintingAmount: number;
-  private feeAmount: number;
+  private mintingAmount: string;
+  private feeAmount: string;
   private receiverAddress: string;
   private instantTime: number;
 
-  constructor(currencyHash: string, mintingAmount: number, feeAmount: number, receiverAddress: string, instantTime: number) {
+  constructor(currencyHash: string, mintingAmount: string, feeAmount: string, receiverAddress: string, instantTime: number) {
     super();
 
     this.currencyHash = currencyHash;
@@ -259,8 +260,8 @@ export class MintQuoteDataSignature extends Signature {
 
   public getBytes(): Uint8Array {
     const currencyHashBytes = utils.hexToBytes(this.currencyHash);
-    const mintingAmountBytes = utils.getBytesFromString(this.mintingAmount.toString());
-    const feeAmountBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.feeAmount).toString());
+    const mintingAmountBytes = utils.getBytesFromString(this.mintingAmount);
+    const feeAmountBytes = utils.getBytesFromString(this.feeAmount);
     const receiverAddressBytes = utils.hexToBytes(this.receiverAddress);
     const instantTimeBytes = utils.numberToByteArray(this.instantTime, 8);
     const byteArraysToMerge = [currencyHashBytes, mintingAmountBytes, feeAmountBytes, receiverAddressBytes, instantTimeBytes];
@@ -271,11 +272,11 @@ export class MintQuoteDataSignature extends Signature {
 
 export class MintQuoteFeeSignature extends Signature {
   private currencyHash: string;
-  private mintingAmount: number;
-  private feeAmount: number;
+  private mintingAmount: string;
+  private feeAmount: string;
   private instantTime: number;
 
-  constructor(instantTime: number, currencyHash: string, mintingAmount: number, feeAmount: number) {
+  constructor(instantTime: number, currencyHash: string, mintingAmount: string, feeAmount: string) {
     super();
 
     this.currencyHash = currencyHash;
@@ -288,7 +289,7 @@ export class MintQuoteFeeSignature extends Signature {
   public getBytes(): Uint8Array {
     const currencyHashBytes = utils.hexToBytes(this.currencyHash);
     const mintingAmountBytes = utils.getBytesFromString(this.mintingAmount.toString());
-    const feeAmountBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.feeAmount).toString());
+    const feeAmountBytes = utils.getBytesFromString(this.feeAmount.toString());
     const instantTimeBytes = utils.numberToByteArray(this.instantTime, 8);
     const byteArraysToMerge = [instantTimeBytes, currencyHashBytes, mintingAmountBytes, feeAmountBytes];
 
@@ -533,7 +534,7 @@ export class BridgeCreateRefundRequestSignature extends Signature {
     this.swapUuid = swapUuid;
   }
 
-  public getBytes() {
+  public getBytes(): Uint8Array {
     return utils.getBytesFromString(this.swapUuid);
   }
 }
@@ -552,7 +553,7 @@ export class FaucetSignature extends Signature {
     this.timestamp = timestamp;
   }
 
-  public getBytes() {
+  public getBytes(): Uint8Array {
     const addressHashBytes = utils.getBytesFromString(this.address.toString());
     const currencyHashBytes = utils.getBytesFromString(this.currencyHash.toString());
     const amountBytes = utils.getBytesFromString(utils.removeZerosFromEndOfNumber(this.amount));

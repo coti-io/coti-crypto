@@ -41,27 +41,27 @@ export class LedgerDevice extends LedgerEvent {
     this.transportType = transportType;
   }
 
-  public listen() {
+  public listen(): void {
     ledgerUtils.listen({ next: event => this.next(event), error: error => this.error(error), complete: () => this.complete() }, this.transportType);
   }
 
-  public listenLog() {
+  public listenLog(): void {
     ledgerUtils.listenLog(ledgerLog => this.log(ledgerLog));
   }
 
-  public log(ledgerLog: LedgerLog) {
+  public log(ledgerLog: LedgerLog): void {
     this.emit('log', ledgerLog);
   }
 
-  public next(event: DescriptorEvent<Descriptor>) {
+  public next(event: DescriptorEvent<Descriptor>): void {
     this.emit(event.type, event);
   }
 
-  public error(error: Error) {
+  public error(error: Error): void {
     this.emit('error', error);
   }
 
-  public complete() {
+  public complete(): void {
     console.log(`Complete`);
   }
 }

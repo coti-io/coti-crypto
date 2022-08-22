@@ -25,10 +25,10 @@ export type TokenMintQuoteFeeRequest = {
 
 export type TokenMintData = {
   mintingCurrencyHash: string;
-  mintingAmount: number;
+  mintingAmount: string;
   receiverAddress: string;
   createTime: number;
-  feeAmount: number;
+  feeAmount: string;
   signerHash: string;
   signature: SignatureData;
 };
@@ -36,8 +36,8 @@ export type TokenMintData = {
 export type TokenMintingFeeQuoteData = {
   currencyHash: string;
   createTime: number;
-  mintingAmount: number;
-  mintingFee: number;
+  mintingAmount: string;
+  mintingFee: string;
   signerHash: string;
   signature: SignatureData;
 };
@@ -133,8 +133,8 @@ export namespace tokenUtils {
 
   export async function getTokenMintFeeRequest(
     currencyHash: string,
-    mintingAmount: number,
-    feeAmount: number,
+    mintingAmount: string,
+    feeAmount: string,
     walletAddressReceiveToken: string,
     userHash: string,
     indexedWallet: Wallet

@@ -30,21 +30,21 @@ if (NODE_APP) {
   ledgerTransport.node = require('@ledgerhq/hw-transport-node-hid').default;
 }
 
-function checkTransportType(transportType: LedgerTransportType) {
+function checkTransportType(transportType: LedgerTransportType): void {
   if (NODE_APP && transportType !== 'node') throw new Error('Ledger transport type should be node type');
   if (!NODE_APP && transportType === 'node') throw new Error('Ledger transaction type can not be node type');
 }
 
-export function listenLog(callback: (ledgerLog: LedgerLog) => void) {
+export function listenLog(callback: (ledgerLog: LedgerLog) => void): void {
   listenLedgerLog(callback);
 }
 
-export function listen(observer: Observer<DescriptorEvent<Descriptor>>, transportType: LedgerTransportType = 'web') {
+export function listen(observer: Observer<DescriptorEvent<Descriptor>>, transportType: LedgerTransportType = 'web'): void {
   checkTransportType(transportType);
   ledgerTransport[transportType]!.listen(observer);
 }
 
-export async function connect(transportType: LedgerTransportType = 'web') {
+export async function connect(transportType: LedgerTransportType = 'web'): Promise<HWSDK> {
   checkTransportType(transportType);
   const transport = await ledgerTransport[transportType]!.create(undefined, listenTimeout);
   transport.setExchangeTimeout(exchangeTimeout);
@@ -52,7 +52,7 @@ export async function connect(transportType: LedgerTransportType = 'web') {
   return new HWSDK(transport);
 }
 
-export async function getPublicKey(index: number, interactive?: boolean, transportType?: LedgerTransportType) {
+export async function getPublicKey(index: number, interactive?: boolean, transportType?: LedgerTransportType): Promise<string> {
   try {
     const hw = await connect(transportType);
 
@@ -63,7 +63,7 @@ export async function getPublicKey(index: number, interactive?: boolean, transpo
   }
 }
 
-export async function getUserPublicKey(interactive?: boolean, transportType?: LedgerTransportType) {
+export async function getUserPublicKey(interactive?: boolean, transportType?: LedgerTransportType): Promise<string> {
   try {
     const hw = await connect(transportType);
 
@@ -111,7 +111,7 @@ export async function signUserMessage(
   }
 }
 
-function getLedgerSigningType(signingType?: SigningType) {
+function getLedgerSigningType(signingType?: SigningType): number | undefined {
   if (signingType) {
     const signingTypeKey = signature.signingTypeKeyMap.get(signingType);
     if (signingTypeKey) return LedgerSigningType[signingTypeKey];

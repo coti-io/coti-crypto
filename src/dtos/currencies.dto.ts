@@ -11,13 +11,13 @@ export type TokenCurrency = {
   currencySymbol: string;
   currencyType: string; //TODO: find what are the possible values
   description: string;
-  mintableAmount: number;
+  mintableAmount: string;
   originatorHash: string;
   originatorSignature: SignatureData;
   protectionModel: string;
   rateSource: string;
   scale: number;
-  totalSupply: number;
+  totalSupply: string;
 };
 
 export class TokenCurrenciesDto {

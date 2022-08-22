@@ -1,5 +1,6 @@
 import * as cryptoUtils from './utils/cryptoUtils';
 import { BigDecimal } from './utils/utils';
+import { ec } from 'elliptic';
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -13,27 +14,27 @@ export class BaseAddress {
     this.addressHex = addressHex;
   }
 
-  public checkAddress(addressHex: string) {
+  public checkAddress(addressHex: string): void {
     cryptoUtils.verifyAddressStructure(addressHex);
   }
 
-  public getAddressHex() {
+  public getAddressHex(): string {
     return this.addressHex;
   }
 
-  public getPreBalance() {
+  public getPreBalance(): BigDecimal {
     return this.preBalance;
   }
 
-  public setPreBalance(preBalance: BigDecimal) {
+  public setPreBalance(preBalance: BigDecimal): void {
     this.preBalance = preBalance;
   }
 
-  public getBalance() {
+  public getBalance(): BigDecimal {
     return this.balance;
   }
 
-  public setBalance(balance: BigDecimal) {
+  public setBalance(balance: BigDecimal): void {
     this.balance = balance;
   }
 }
@@ -46,7 +47,7 @@ export class IndexedAddress extends BaseAddress {
     this.index = index;
   }
 
-  public getIndex() {
+  public getIndex(): number {
     return this.index;
   }
 }
@@ -63,7 +64,7 @@ export class Address extends IndexedAddress {
     this.keyPair = keyPair;
   }
 
-  public getAddressKeyPair() {
+  public getAddressKeyPair(): ec.KeyPair {
     return this.keyPair;
   }
 }

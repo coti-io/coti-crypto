@@ -8,6 +8,7 @@ import { BigDecimal, Network } from './utils/utils';
 import * as ledgerUtils from './utils/ledgerUtils';
 import BN from 'bn.js';
 import moment from 'moment';
+import { ec } from 'elliptic';
 
 type KeyPair = cryptoUtils.KeyPair;
 type LedgerTransportType = ledgerUtils.LedgerTransportType;
@@ -62,51 +63,51 @@ export class BaseWallet extends WalletEvent {
     this.transactionMap = new Map();
   }
 
-  public async loadAddresses(addresses: BaseAddress[]) {
+  public async loadAddresses(addresses: BaseAddress[]): Promise<void> {
     if (!addresses || !addresses.length) return;
     addresses.forEach(address => {
       this.setInitialAddressToMap(address);
     });
   }
 
-  public getNetwork() {
+  public getNetwork(): Network {
     return this.network;
   }
 
-  public getFullNode() {
+  public getFullNode(): string | undefined {
     return this.fullnode;
   }
 
-  public getTrustScoreNode() {
+  public getTrustScoreNode(): string | undefined {
     return this.trustScoreNode;
   }
 
-  public isAddressExists(addressHex: string) {
+  public isAddressExists(addressHex: string): boolean {
     return this.addressMap.has(addressHex);
   }
 
-  public getAddressMap() {
+  public getAddressMap(): Map<string, BaseAddress> {
     return this.addressMap;
   }
 
-  public getAddressHexes() {
+  public getAddressHexes(): string[] {
     return [...this.addressMap.keys()];
   }
 
-  public getAddresses() {
+  public getAddresses(): BaseAddress[] {
     return [...this.addressMap.values()];
   }
 
-  protected setInitialAddressToMap(address: BaseAddress) {
+  protected setInitialAddressToMap(address: BaseAddress): void {
     this.setAddressToMap(address);
   }
 
-  protected setAddressToMap(address: BaseAddress) {
+  protected setAddressToMap(address: BaseAddress): void {
     if (!(address instanceof BaseAddress)) throw new Error('BaseAddress required');
     this.addressMap.set(address.getAddressHex(), address);
   }
 
-  public async setAddress(address: BaseAddress, checkNetwork = true) {
+  public async setAddress(address: BaseAddress, checkNetwork = true): Promise<void> {
     this.setInitialAddressToMap(address);
     if (checkNetwork) {
       await this.checkBalancesOfAddresses([address]);
@@ -114,11 +115,11 @@ export class BaseWallet extends WalletEvent {
     }
   }
 
-  public getAddressByAddressHex(addressHex: string) {
+  public getAddressByAddressHex(addressHex: string): BaseAddress | undefined {
     return this.addressMap.get(addressHex);
   }
 
-  public async checkBalancesOfAddresses(addresses?: BaseAddress[]) {
+  public async checkBalancesOfAddresses(addresses?: BaseAddress[]): Promise<void> {
     if (addresses === undefined) addresses = this.getAddresses();
     if (addresses.length === 0) return;
     const addressesBalance = await walletUtils.checkBalances(
@@ -140,7 +141,7 @@ export class BaseWallet extends WalletEvent {
     }
   }
 
-  public setAddressWithBalance(address: BaseAddress, balance: BigDecimal, preBalance: BigDecimal) {
+  public setAddressWithBalance(address: BaseAddress, balance: BigDecimal, preBalance: BigDecimal): void {
     address.setBalance(balance);
     address.setPreBalance(preBalance);
     this.setAddressToMap(address);
@@ -148,7 +149,7 @@ export class BaseWallet extends WalletEvent {
     this.emit('balanceChange', address);
   }
 
-  public getTotalBalance() {
+  public getTotalBalance(): {balance: BigDecimal, prebalance: BigDecimal} {
     let balance = new BigDecimal('0');
     let prebalance = new BigDecimal('0');
     this.addressMap.forEach(address => {
@@ -159,7 +160,7 @@ export class BaseWallet extends WalletEvent {
     return { balance, prebalance };
   }
 
-  public async loadTransactions(transactions: ReducedTransaction[]) {
+  public async loadTransactions(transactions: ReducedTransaction[]): Promise<void> {
     if (!transactions || !transactions.length) return;
     transactions.forEach(reducedTransaction => {
       if (!(reducedTransaction instanceof ReducedTransaction)) throw new Error('ReducedTransaction instance required');
@@ -167,11 +168,11 @@ export class BaseWallet extends WalletEvent {
     });
   }
 
-  public getTransactionByHash(hash: string) {
+  public getTransactionByHash(hash: string): ReducedTransaction | undefined {
     return this.transactionMap.get(hash);
   }
 
-  public async checkTransactionHistory(addresses?: BaseAddress[]) {
+  public async checkTransactionHistory(addresses?: BaseAddress[]): Promise<void> {
     console.log('Starting to get transaction history');
     const addressHexes = addresses === undefined ? this.getAddressHexes() : addresses.map(address => address.getAddressHex());
     const transactionHistoryMap = await walletUtils.getTransactionsHistory(addressHexes, this);
@@ -181,7 +182,7 @@ export class BaseWallet extends WalletEvent {
     console.log(`Finished to get transaction history. Total transactions: ${transactionHistoryMap.size}`);
   }
 
-  public setTransaction(transaction: TransactionData) {
+  public setTransaction(transaction: TransactionData): void {
     const existingTransaction = this.transactionMap.get(transaction.hash);
 
     // If the transaction was already confirmed, no need to reprocess it
@@ -223,35 +224,35 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     this.indexToAddressHexMap = new Map();
   }
 
-  async init() {
+  async init(): Promise<void> {
     await this.setPublicHash();
   }
 
   public abstract setPublicHash(): Promise<void>;
 
-  public getMaxAddress() {
+  public getMaxAddress(): number | undefined {
     return this.maxAddress;
   }
 
-  public getMaxIndex() {
+  public getMaxIndex(): number | undefined {
     return this.maxIndex;
   }
 
-  public getWebSocketIndexGap() {
+  public getWebSocketIndexGap(): number | undefined {
     return this.webSocketIndexGap;
   }
 
-  private checkAddressIndexed(address: BaseAddress) {
+  private checkAddressIndexed(address: BaseAddress): void {
     if (!(address instanceof IndexedAddress)) throw new Error('Address should be indexed');
   }
 
-  protected addressTypeGuard(address: BaseAddress, Class: Constructor<T>) {
+  protected addressTypeGuard(address: BaseAddress, Class: Constructor<T>): void {
     if (!(address instanceof Class)) throw new Error('Wrong address type');
   }
 
   public abstract checkAddressType(address: BaseAddress): void;
 
-  protected setAddressToMap(address: BaseAddress) {
+  protected setAddressToMap(address: BaseAddress): void {
     if (this.maxAddress && this.addressMap.get(address.getAddressHex()) === undefined && this.addressMap.size >= this.maxAddress)
       throw new Error(`Address map size can not exceed ${this.maxAddress}`);
     this.checkAddressType(address);
@@ -261,7 +262,7 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     if (this.maxIndex === undefined || this.maxIndex < index) this.maxIndex = index;
   }
 
-  protected setInitialAddressToMap(address: BaseAddress) {
+  protected setInitialAddressToMap(address: BaseAddress): void {
     this.checkAddressIndexed(address);
     const typedAddress = this.getAddressFromIndexedAddress(<IndexedAddress>address);
     super.setInitialAddressToMap(typedAddress);
@@ -269,26 +270,26 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
 
   public abstract getAddressFromIndexedAddress(indexedAddress: IndexedAddress): T;
 
-  public getIndexByAddress(addressHex: string) {
+  public getIndexByAddress(addressHex: string): number | null {
     const address = this.addressMap.get(addressHex);
     return address ? (<T>address).getIndex() : null;
   }
 
-  public async getAddressByIndex(index: number) {
+  public async getAddressByIndex(index: number): Promise<BaseAddress> {
     const addressHex = this.indexToAddressHexMap.get(index);
     if (!addressHex) return this.generateAndSetAddressByIndex(index);
     const address = this.addressMap.get(addressHex);
     return address ? <T>address : this.generateAndSetAddressByIndex(index);
   }
 
-  public async generateAndSetAddressByIndex(index: number, sendToNode = true) {
+  public async generateAndSetAddressByIndex(index: number, sendToNode = true): Promise<IndexedAddress> {
     const address = await this.generateAddressByIndex(index);
     this.setAddressToMap(address);
     if (sendToNode) await walletUtils.sendAddressToNode(address, this);
     return address;
   }
 
-  public getPublicHash() {
+  public getPublicHash(): string {
     return this.publicHash;
   }
 
@@ -303,7 +304,7 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     return this.on('signingMessage', listener);
   }
 
-  public async autoDiscoverAddresses(addressGap?: number) {
+  public async autoDiscoverAddresses(addressGap?: number): Promise<Map<string, BaseAddress>> {
     console.log(`Starting to discover addresses`);
     const addresses = await walletUtils.getAddressesOfWallet(this, addressGap);
     if (addresses.length > 0) await this.checkBalancesOfAddresses(addresses);
@@ -313,7 +314,7 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
 
   public abstract async generateAddressByIndex(index: number): Promise<T>;
 
-  public async getUserTrustScore() {
+  public async getUserTrustScore(): Promise<number> {
     let data = await walletUtils.getUserTrustScore(this);
     if (!data) throw new Error(`Error getting user trust score, received no data`);
     if (!data.trustScore) throw new Error('Error getting user trust score, unexpected response:' + data);
@@ -347,38 +348,38 @@ export class Wallet extends IndexedWallet<Address> {
     this.setPublicHash();
   }
 
-  private checkSeedFormat(seed: string) {
+  private checkSeedFormat(seed: string): boolean {
     return seed.length === 64;
   }
 
-  private generateSeed(userSecret: string, serverKey: BN) {
+  private generateSeed(userSecret: string, serverKey: BN): void {
     let hexServerKey = serverKey.toString(16, 2);
     let combinedString = `${userSecret}${hexServerKey}`;
     this.seed = cryptoUtils.generateSeed(combinedString);
   }
 
-  private generateAndSetKeyPair() {
+  private generateAndSetKeyPair(): void {
     this.keyPair = cryptoUtils.generateKeyPairFromSeed(this.seed);
   }
 
-  public async setPublicHash() {
+  public async setPublicHash(): Promise<void> {
     this.publicHash = cryptoUtils.getPublicKeyByKeyPair(this.keyPair);
   }
 
-  private generateKeyPairByIndex(index: number) {
+  private generateKeyPairByIndex(index: number): ec.KeyPair {
     return cryptoUtils.generateKeyPairFromSeed(this.seed, index);
   }
 
-  private getKeyPair() {
+  private getKeyPair(): ec.KeyPair {
     return this.keyPair;
   }
 
-  public async generateAddressByIndex(index: number) {
+  public async generateAddressByIndex(index: number): Promise<Address> {
     const keyPair = this.generateKeyPairByIndex(index);
     return new Address(keyPair, index);
   }
 
-  public getAddressFromIndexedAddress(indexedAddress: IndexedAddress) {
+  public getAddressFromIndexedAddress(indexedAddress: IndexedAddress): Address {
     const keyPair = this.generateKeyPairByIndex(indexedAddress.getIndex());
     const address = new Address(keyPair, indexedAddress.getIndex());
     address.setBalance(indexedAddress.getBalance());
@@ -386,7 +387,7 @@ export class Wallet extends IndexedWallet<Address> {
     return address;
   }
 
-  public checkAddressType(address: BaseAddress) {
+  public checkAddressType(address: BaseAddress): void {
     this.addressTypeGuard(address, Address);
   }
 
@@ -395,7 +396,7 @@ export class Wallet extends IndexedWallet<Address> {
     signingType: SigningType = SigningType.MESSAGE,
     addressHex?: string,
     signingData?: SigningData
-  ) {
+  ): Promise<ec.SignatureOptions> {
     console.log(`Signing message of type ${signingType}`);
     this.emit('signingMessage', signingType);
 
@@ -431,27 +432,27 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
     this.maxAddress = maxAddress || 20;
   }
 
-  public async setPublicHash() {
+  public async setPublicHash(): Promise<void> {
     const ledgerPublicKey = await ledgerUtils.getUserPublicKey(this.interactive, this.transportType);
     const keyPair = cryptoUtils.getKeyPairFromPublic(ledgerPublicKey);
     this.publicHash = cryptoUtils.getPublicKeyByKeyPair(keyPair);
   }
 
-  public async loadAddresses(addresses: BaseAddress[]) {
+  public async loadAddresses(addresses: BaseAddress[]): Promise<void> {
     if (addresses && addresses.length > this.maxAddress!) throw new Error(`Number of addresses should be less than ${this.maxAddress}`);
     await super.loadAddresses(addresses);
   }
 
-  public checkAddressType(address: BaseAddress) {
+  public checkAddressType(address: BaseAddress): void {
     this.addressTypeGuard(address, LedgerAddress);
   }
 
-  public async generateAddressByIndex(index: number) {
+  public async generateAddressByIndex(index: number): Promise<LedgerAddress> {
     const ledgerPublicKey = await ledgerUtils.getPublicKey(index, this.interactive, this.transportType);
     return new LedgerAddress(index, ledgerPublicKey);
   }
 
-  public getAddressFromIndexedAddress(indexedAddress: IndexedAddress) {
+  public getAddressFromIndexedAddress(indexedAddress: IndexedAddress): LedgerAddress {
     const address = new LedgerAddress(indexedAddress.getIndex(), undefined, indexedAddress.getAddressHex());
     address.setBalance(indexedAddress.getBalance());
     address.setPreBalance(indexedAddress.getPreBalance());
@@ -463,7 +464,7 @@ export class LedgerWallet extends IndexedWallet<LedgerAddress> {
     signingType: SigningType = SigningType.MESSAGE,
     addressHex?: string,
     signingData?: SigningData
-  ) {
+  ): Promise<SignatureData> {
     console.log(`Ledger device signing message of type ${signingType}`);
     this.emit('signingMessage', signingType);
 

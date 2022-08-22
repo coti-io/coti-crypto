@@ -15,11 +15,11 @@ export default class TokenAvatar {
     this.colors = this.generateAvatarPalette();
   }
 
-  private getIconColor(symbol: string) {
+  private getIconColor(symbol: string): string {
     return this.hslToHex(Number(this.hashCode(symbol)), 95, 40);
   }
 
-  public generateAvatarPalette() {
+  public generateAvatarPalette(): string[] {
     const colors = this.hash
       .replace(/(\w|\d)/g, (current: string, next: string, index: number) => `${current}${index !== 0 && index % 20 === 0 ? '-' : ''}`)
       .split('-');
@@ -29,11 +29,11 @@ export default class TokenAvatar {
     );
   }
 
-  public getRandomColor(number: number, colors: any[], range: number) {
+  public getRandomColor(number: number, colors: string[], range: number): string {
     return colors[number % range];
   }
 
-  public hslToHex(h: number, s: number, l: number) {
+  public hslToHex(h: number, s: number, l: number): string {
     l /= 100;
     const a = (s * Math.min(l, 1 - l)) / 100;
     const f = (n: number) => {
@@ -46,7 +46,7 @@ export default class TokenAvatar {
     return `#${f(0)}${f(8)}${f(4)}`;
   }
 
-  public hashCode(name: string) {
+  public hashCode(name: string): number {
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
       const character = name.charCodeAt(i);
@@ -56,13 +56,13 @@ export default class TokenAvatar {
     return Math.abs(hash);
   }
 
-  generateColors = (name: string, colors: any[]) => {
+  generateColors = (name: string, colors: string[]): string[] => {
     const numFromName = this.hashCode(name);
     const range = colors && colors.length;
     return Array.from({ length: this.elements }, (_, i) => this.getRandomColor(numFromName % i, colors, range));
   };
 
-  toSvg() {
+  toSvg(): string {
     return `<svg
             viewBox="0 0 ${this.size} ${this.size}"
             fill="none"
@@ -152,7 +152,7 @@ export default class TokenAvatar {
         </svg>`;
   }
 
-  toBuffer() {
+  toBuffer(): string {
     const buffer = Buffer.from(this.toSvg(), 'utf8').toString('base64');
     return `data:image/svg+xml;base64,${buffer}`;
   }

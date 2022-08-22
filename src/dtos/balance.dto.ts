@@ -3,8 +3,8 @@ export class BalanceDto {
 }
 
 export type Balance = {
-  addressBalance: number;
-  addressPreBalance: number;
+  addressBalance: string;
+  addressPreBalance: string;
 };
 
 export class TokensBalanceDto {

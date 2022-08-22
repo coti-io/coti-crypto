@@ -40,7 +40,7 @@ export function encryptGCM(data: string, password: string, iv: string): Encrypti
   };
 }
 
-export function decryptGCM(encrypted: Encryption, password: string, iv: string) {
+export function decryptGCM(encrypted: Encryption, password: string, iv: string): string {
   let decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(password), iv);
   decipher.setAuthTag(encrypted.tag);
   let dec = decipher.update(encrypted.content, 'hex', 'utf8');
@@ -48,38 +48,38 @@ export function decryptGCM(encrypted: Encryption, password: string, iv: string) 
   return dec;
 }
 
-export function encryptCTR(text: string, password: string) {
+export function encryptCTR(text: string, password: string): string{
   let cipher = crypto.createCipheriv('aes-256-ctr', password, null);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return encrypted;
 }
 
-export function decryptCTR(text: string, password: string) {
+export function decryptCTR(text: string, password: string): string {
   let decipher = crypto.createDecipheriv('aes-256-ctr', password, null);
   let dec = decipher.update(text, 'hex', 'utf8');
   dec += decipher.final('utf8');
   return dec;
 }
 
-export function getCrc32(arr: Uint8Array) {
+export function getCrc32(arr: Uint8Array): string {
   let checkSum = CRC32.buf(arr);
   let checkSumInBytes = new Uint8Array(toBytesInt32(checkSum));
   return utils.byteArrayToHexString(checkSumInBytes);
 }
 
-export function toBytesInt32(num: number) {
+export function toBytesInt32(num: number): ArrayBuffer {
   let arr = new ArrayBuffer(4);
   let view = new DataView(arr);
   view.setInt32(0, num, false);
   return arr;
 }
 
-export function generateKeyPair() {
+export function generateKeyPair(): elliptic.ec.KeyPair {
   return ec.genKeyPair();
 }
 
-export function generateKeyPairFromSeed(seed: string, index?: number) {
+export function generateKeyPairFromSeed(seed: string, index?: number): elliptic.ec.KeyPair {
   let privateKeyInBytes = utils.hexToBytes(seed);
   if (index !== undefined) {
     if (!Number.isInteger(index)) throw new Error(`Index should be integer`);
@@ -94,29 +94,29 @@ export function generateKeyPairFromSeed(seed: string, index?: number) {
   return getKeyPairFromPrivate(privateKeyInHex);
 }
 
-export function generatePrivateKey() {
+export function generatePrivateKey(): string {
   const keyPair = generateKeyPair();
   return getPrivateKeyFromKeyPair(keyPair);
 }
 
-export function getPrivateKeyFromKeyPair(keyPair: KeyPair) {
+export function getPrivateKeyFromKeyPair(keyPair: KeyPair): string {
   return keyPair.getPrivate('hex');
 }
 
-export function getKeyPairFromPrivate(privateKeyHex: string) {
+export function getKeyPairFromPrivate(privateKeyHex: string): elliptic.ec.KeyPair {
   return ec.keyFromPrivate(privateKeyHex, 'hex');
 }
 
-export function getKeyPairFromPublic(publicKey: string | { x: string; y: string }) {
+export function getKeyPairFromPublic(publicKey: string | { x: string; y: string }): elliptic.ec.KeyPair {
   return ec.keyFromPublic(publicKey, 'hex');
 }
 
-export function getKeyPairFromPublicHash(publicHash: string) {
+export function getKeyPairFromPublicHash(publicHash: string): elliptic.ec.KeyPair {
   const pub = { x: publicHash.substr(0, 64), y: publicHash.substr(64, 128) };
   return getKeyPairFromPublic(pub);
 }
 
-export function verifySignature(messageInBytes: Uint8Array, signature: EcSignature | EcSignatureOptions, publicHash: string) {
+export function verifySignature(messageInBytes: Uint8Array, signature: EcSignature | EcSignatureOptions, publicHash: string): boolean {
   let keyPair = getKeyPairFromPublicHash(publicHash);
   return keyPair.verify(messageInBytes, signature);
 }
@@ -132,26 +132,26 @@ export function getPublicKeyFromPublicHash(publicHash: string): PublicKey {
   return { x: publicHash.substr(0, 64), y: publicHash.substr(64, 128) };
 }
 
-function validatePublicKey(publicHash: string) {
+function validatePublicKey(publicHash: string): boolean {
   return publicHash !== null && publicHash !== undefined && publicHash.length === publicKeyLength && regexp.test(publicHash);
 }
 
-export function verifyOrderOfPrivateKey(privateKeyHex: string) {
+export function verifyOrderOfPrivateKey(privateKeyHex: string): boolean {
   return orderG.cmp(new BN(privateKeyHex, 16)) >= 0;
 }
 
-export function getPublicKeyByKeyPair(keyPair: KeyPair) {
+export function getPublicKeyByKeyPair(keyPair: KeyPair): string {
   let publicXKeyHex = keyPair.getPublic().getX().toString('hex');
   let publicYKeyHex = keyPair.getPublic().getY().toString('hex');
 
   return paddingPublicKeyByCoordinates(publicXKeyHex, publicYKeyHex);
 }
 
-export function paddingPublicKeyByCoordinates(publicKeyX: string, publicKeyY: string) {
+export function paddingPublicKeyByCoordinates(publicKeyX: string, publicKeyY: string): string {
   return paddingPublicKey({ x: publicKeyX, y: publicKeyY });
 }
 
-export function paddingPublicKey(publicKey: PublicKey) {
+export function paddingPublicKey(publicKey: PublicKey): string {
   const paddingLetter = '0';
   let publicX = publicKey.x;
   let publicY = publicKey.y;
@@ -170,27 +170,27 @@ export function paddingPublicKey(publicKey: PublicKey) {
   return publicX + publicY;
 }
 
-export function verifyAddressStructure(addressHex: string) {
+export function verifyAddressStructure(addressHex: string): boolean {
   if (addressHex.length !== 136) return false;
   let addressHexWithoutCheckSum = addressHex.substring(0, 128);
   let checkSumHex = getCheckSumFromAddressHex(addressHexWithoutCheckSum);
   return checkSumHex === addressHex.substring(128, 136);
 }
 
-export function getAddressHexByKeyPair(keyPair: KeyPair) {
+export function getAddressHexByKeyPair(keyPair: KeyPair): string {
   let paddedAddress = getPublicKeyByKeyPair(keyPair);
   let checkSumHex = getCheckSumFromAddressHex(paddedAddress);
 
   return paddedAddress + checkSumHex;
 }
 
-export function getCheckSumFromAddressHex(hexString: string) {
+export function getCheckSumFromAddressHex(hexString: string): string {
   let bytes = utils.hexToBytes(hexString);
   bytes = removeLeadingZeroBytesFromAddress(bytes);
   return getCrc32(bytes);
 }
 
-function removeLeadingZeroBytesFromAddress(addressBytes: Uint8Array) {
+function removeLeadingZeroBytesFromAddress(addressBytes: Uint8Array): Uint8Array {
   let xPart = addressBytes.subarray(0, addressBytes.byteLength / 2);
   let yPart = addressBytes.subarray(addressBytes.byteLength / 2, addressBytes.byteLength);
 
@@ -210,15 +210,15 @@ export function generateSeed(key: string) {
   return blake.blake2bHex(Buffer.from(combinedArray), null, 32);
 }
 
-export function generateMnemonic() {
+export function generateMnemonic(): string {
   return bip39.generateMnemonic();
 }
 
-export async function generateSeedFromMnemonic(mnemonic: string) {
+export async function generateSeedFromMnemonic(mnemonic: string): Promise<string>{
   return bip39.mnemonicToSeed(mnemonic).then(bytes => utils.byteArrayToHexString(bytes));
 }
 
-export async function generateKeyPairFromMnemonic(mnemonic: string, index?: number) {
+export async function generateKeyPairFromMnemonic(mnemonic: string, index?: number): Promise<elliptic.ec.KeyPair> {
   const seed = await generateSeedFromMnemonic(mnemonic);
   return generateKeyPairFromSeed(seed, index);
 }

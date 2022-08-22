@@ -44,7 +44,7 @@ export type CurrencyTypeData = {
 export type ServiceData = {
   originatorCurrencyData: OriginatorCurrencyData;
   currencyTypeData: CurrencyTypeData;
-  feeAmount: number;
+  feeAmount: string;
 };
 
 export class ReducedTransaction {
@@ -137,12 +137,12 @@ export class Transaction {
     if (createHash) this.createTransactionHash();
   }
 
-  public addBaseTransaction(address: BaseAddress, valueToSend: BigDecimal, name: BaseTransactionName) {
+  public addBaseTransaction(address: BaseAddress, valueToSend: BigDecimal, name: BaseTransactionName): void {
     let baseTransaction = new BaseTransaction(address.getAddressHex(), valueToSend, name);
     this.baseTransactions.push(baseTransaction);
   }
 
-  public createTransactionHash() {
+  public createTransactionHash(): string {
     let bytesOfAllBaseTransactions: number[] = [];
     this.baseTransactions.forEach(baseTransaction => {
       bytesOfAllBaseTransactions = bytesOfAllBaseTransactions.concat(baseTransaction.getHashArray());
@@ -153,35 +153,35 @@ export class Transaction {
     return this.hash;
   }
 
-  public addTrustScoreMessageToTransaction(trustScoreMessage: string) {
+  public addTrustScoreMessageToTransaction(trustScoreMessage: string): void {
     this.trustScoreResults.push(trustScoreMessage);
   }
 
-  public getSenderHash() {
+  public getSenderHash(): string {
     return this.senderHash;
   }
 
-  public getHash() {
+  public getHash(): string {
     return this.hash;
   }
 
-  public getCreateTime() {
+  public getCreateTime(): number {
     return this.createTime;
   }
 
-  public setCreateTime(createTime: number) {
+  public setCreateTime(createTime: number): void {
     this.createTime = createTime;
   }
 
-  public getTransactionConsensusUpdateTime() {
+  public getTransactionConsensusUpdateTime(): number | undefined {
     return this.transactionConsensusUpdateTime;
   }
 
-  public setTransactionConsensusUpdateTime(transactionConsensusUpdateTime: number) {
+  public setTransactionConsensusUpdateTime(transactionConsensusUpdateTime: number): void {
     this.transactionConsensusUpdateTime = transactionConsensusUpdateTime;
   }
 
-  public async signTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
+  public async signTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>): Promise<void> {
     let totalAmount = new BigDecimal(0);
     for (let baseTransaction of this.baseTransactions) {
       if (baseTransaction.isInput()) {
@@ -196,13 +196,13 @@ export class Transaction {
     });
   }
 
-  public signWithPrivateKeys(userPrivateKey: string, inputPrivateKeys: string[]) {
+  public signWithPrivateKeys(userPrivateKey: string, inputPrivateKeys: string[]): void {
     const userKeyPair = new PrivateKey(userPrivateKey).keyPair;
     const inputKeyPairs = inputPrivateKeys.map(inputPrivateKey => new PrivateKey(inputPrivateKey).keyPair);
     this.signWithKeyPairs(userKeyPair, inputKeyPairs);
   }
 
-  public signWithKeyPairs(userKeyPair: KeyPair, inputKeyPairs: KeyPair[]) {
+  public signWithKeyPairs(userKeyPair: KeyPair, inputKeyPairs: KeyPair[]): void {
     const inputBaseTransactions = this.getInputBaseTransactions();
     if (inputBaseTransactions.length !== inputKeyPairs.length) throw new Error(`Error at number of input key pairs`);
 
@@ -214,23 +214,23 @@ export class Transaction {
     this.senderSignature = cryptoUtils.signByteArrayMessage(messageInBytes, userKeyPair);
   }
 
-  public getInputBaseTransactions() {
+  public getInputBaseTransactions(): BaseTransaction[] {
     return this.baseTransactions.filter(baseTransaction => baseTransaction.isInput());
   }
 
-  public getOutputBaseTransactions() {
+  public getOutputBaseTransactions(): BaseTransaction[] {
     return this.baseTransactions.filter(baseTransaction => baseTransaction.isOutput());
   }
 
-  public getFullNodeFee() {
+  public getFullNodeFee(): utils.BigDecimal {
     return this.getOutputBaseTransactions()[0].getAmount();
   }
 
-  public getNetworkFee() {
+  public getNetworkFee(): utils.BigDecimal {
     return this.getOutputBaseTransactions()[1].getAmount();
   }
 
-  private getSignatureMessage() {
+  private getSignatureMessage(): Uint8Array {
     const transactionHashInBytes = utils.hexToBytes(this.hash);
     const transactionTypeInBytes = utils.getBytesFromString(this.type);
     const utcTime = this.createTime * 1000;

@@ -10,16 +10,16 @@ export class EcKeyPair {
     this.keyPair = cryptoUtils.generateKeyPairFromSeed(seed, index);
   }
 
-  public toAddress() {
+  public toAddress(): string {
     if (this.index === undefined) throw new Error('Not generating an address');
     return cryptoUtils.getAddressHexByKeyPair(this.keyPair);
   }
 
-  public getPrivateKey() {
+  public getPrivateKey(): string {
     return cryptoUtils.getPrivateKeyFromKeyPair(this.keyPair);
   }
 
-  public getPublicKey() {
+  public getPublicKey(): string {
     return this.index === undefined ? cryptoUtils.getPublicKeyByKeyPair(this.keyPair) : this.toAddress();
   }
 }
@@ -31,7 +31,7 @@ export class PrivateKey {
     this.keyPair = cryptoUtils.getKeyPairFromPrivate(privateKeyHex);
   }
 
-  public getPublicKey() {
+  public getPublicKey(): string {
     return cryptoUtils.getPublicKeyByKeyPair(this.keyPair);
   }
 }

@@ -5,20 +5,21 @@ import { BaseWallet, IndexedWallet } from '../wallet';
 import { nodeUtils } from './nodeUtils';
 import { BaseTransactionData } from '../baseTransaction';
 import { BalanceDto } from '../dtos/balance.dto';
+import { GetTransactionsHistoryResDTO, GetUserTrustScoreResDTO, SendAddressToNodeResDTO } from '../dtos/nodeUtils.dto';
 
 export namespace walletUtils {
-  export async function getUserTrustScore<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
+  export async function getUserTrustScore<T extends IndexedAddress>(wallet: IndexedWallet<T>): Promise<GetUserTrustScoreResDTO> {
     const userHash = wallet.getPublicHash();
     const network = wallet.getNetwork();
     const trustScoreNode = wallet.getTrustScoreNode();
     return nodeUtils.getUserTrustScore(userHash, network, trustScoreNode);
   }
 
-  export async function sendAddressToNode(address: BaseAddress, wallet: BaseWallet) {
+  export async function sendAddressToNode(address: BaseAddress, wallet: BaseWallet): Promise<SendAddressToNodeResDTO> {
     return nodeUtils.sendAddressToNode(address, wallet.getNetwork(), wallet.getFullNode());
   }
 
-  export async function getAddressesOfWallet<T extends IndexedAddress>(wallet: IndexedWallet<T>, addressGap?: number) {
+  export async function getAddressesOfWallet<T extends IndexedAddress>(wallet: IndexedWallet<T>, addressGap?: number): Promise<T[]>{
     let addressesToCheck: string[] = [];
     let addressesThatExists: T[] = [];
     let nextChunk = 0;
@@ -56,11 +57,11 @@ export namespace walletUtils {
     return nodeUtils.checkBalances(addresses, wallet.getNetwork(), wallet.getFullNode());
   }
 
-  export async function getTransactionsHistory(addresses: string[], wallet: BaseWallet) {
+  export async function getTransactionsHistory(addresses: string[], wallet: BaseWallet): Promise<GetTransactionsHistoryResDTO>{
     return nodeUtils.getTransactionsHistory(addresses, wallet.getNetwork(), wallet.getFullNode());
   }
 
-  export async function getFullNodeFees<T extends IndexedAddress>(wallet: IndexedWallet<T>, amountToTransfer: string, feeIncluded?: boolean) {
+  export async function getFullNodeFees<T extends IndexedAddress>(wallet: IndexedWallet<T>, amountToTransfer: string, feeIncluded?: boolean): Promise<BaseTransactionData> {
     const userHash = wallet.getPublicHash();
     const userSignature = await new FullNodeFeeSignature(amountToTransfer).sign(wallet);
     const network = wallet.getNetwork();
@@ -68,14 +69,14 @@ export namespace walletUtils {
     return nodeUtils.getFullNodeFees(amountToTransfer, userHash, userSignature, network, feeIncluded, fullnode);
   }
 
-  export async function getNetworkFees<T extends IndexedAddress>(wallet: IndexedWallet<T>, fullNodeFee: BaseTransactionData, feeIncluded?: boolean) {
+  export async function getNetworkFees<T extends IndexedAddress>(wallet: IndexedWallet<T>, fullNodeFee: BaseTransactionData, feeIncluded?: boolean): Promise<BaseTransactionData> {
     const userHash = wallet.getPublicHash();
     const network = wallet.getNetwork();
     const trustScoreNode = wallet.getTrustScoreNode();
     return nodeUtils.getNetworkFees(fullNodeFee, userHash, network, feeIncluded, trustScoreNode);
   }
 
-  export async function getTrustScoreForTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>, userHash: string, transaction: Transaction) {
+  export async function getTrustScoreForTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>, userHash: string, transaction: Transaction): Promise<any> {
     const transactionHash = transaction.getHash() || transaction.createTransactionHash();
     const userSignature = await new TransactionTrustScoreSignature(transactionHash).sign(wallet, true);
     const network = wallet.getNetwork();
