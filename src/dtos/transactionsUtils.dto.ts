@@ -1,13 +1,11 @@
 import { BaseTransactionData, BaseTransactionName, Item, TrustScoreNodeResult } from '../baseTransaction';
-import * as utils from '../utils/utils';
 import { ServiceData } from '../transaction';
 import { SignatureData } from '../signature';
-import { BigDecimal } from '../utils/utils';
 
 export type GetFeesResDTO = {
   fullNodeFee: BaseTransactionData;
   networkFee: BaseTransactionData;
-}
+};
 
 export type BaseTransactionToJSON = {
   hash: string;
@@ -27,4 +25,4 @@ export type BaseTransactionToJSON = {
   signatureData?: SignatureData;
   signerHash?: string;
   originalCurrencyHash?: string;
-}
+};

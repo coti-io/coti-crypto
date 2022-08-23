@@ -98,15 +98,6 @@ export class BaseWallet extends WalletEvent {
     return [...this.addressMap.values()];
   }
 
-  protected setInitialAddressToMap(address: BaseAddress): void {
-    this.setAddressToMap(address);
-  }
-
-  protected setAddressToMap(address: BaseAddress): void {
-    if (!(address instanceof BaseAddress)) throw new Error('BaseAddress required');
-    this.addressMap.set(address.getAddressHex(), address);
-  }
-
   public async setAddress(address: BaseAddress, checkNetwork = true): Promise<void> {
     this.setInitialAddressToMap(address);
     if (checkNetwork) {
@@ -149,7 +140,7 @@ export class BaseWallet extends WalletEvent {
     this.emit('balanceChange', address);
   }
 
-  public getTotalBalance(): {balance: BigDecimal, prebalance: BigDecimal} {
+  public getTotalBalance(): { balance: BigDecimal; prebalance: BigDecimal } {
     let balance = new BigDecimal('0');
     let prebalance = new BigDecimal('0');
     this.addressMap.forEach(address => {
@@ -203,6 +194,15 @@ export class BaseWallet extends WalletEvent {
 
     this.emit('receivedTransaction', transaction);
   }
+
+  protected setInitialAddressToMap(address: BaseAddress): void {
+    this.setAddressToMap(address);
+  }
+
+  protected setAddressToMap(address: BaseAddress): void {
+    if (!(address instanceof BaseAddress)) throw new Error('BaseAddress required');
+    this.addressMap.set(address.getAddressHex(), address);
+  }
 }
 
 type Constructor<T> = { new (...args: any[]): T };
@@ -242,31 +242,7 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     return this.webSocketIndexGap;
   }
 
-  private checkAddressIndexed(address: BaseAddress): void {
-    if (!(address instanceof IndexedAddress)) throw new Error('Address should be indexed');
-  }
-
-  protected addressTypeGuard(address: BaseAddress, Class: Constructor<T>): void {
-    if (!(address instanceof Class)) throw new Error('Wrong address type');
-  }
-
   public abstract checkAddressType(address: BaseAddress): void;
-
-  protected setAddressToMap(address: BaseAddress): void {
-    if (this.maxAddress && this.addressMap.get(address.getAddressHex()) === undefined && this.addressMap.size >= this.maxAddress)
-      throw new Error(`Address map size can not exceed ${this.maxAddress}`);
-    this.checkAddressType(address);
-    super.setAddressToMap(address);
-    const index = (<T>address).getIndex();
-    this.indexToAddressHexMap.set(index, address.getAddressHex());
-    if (this.maxIndex === undefined || this.maxIndex < index) this.maxIndex = index;
-  }
-
-  protected setInitialAddressToMap(address: BaseAddress): void {
-    this.checkAddressIndexed(address);
-    const typedAddress = this.getAddressFromIndexedAddress(<IndexedAddress>address);
-    super.setInitialAddressToMap(typedAddress);
-  }
 
   public abstract getAddressFromIndexedAddress(indexedAddress: IndexedAddress): T;
 
@@ -321,6 +297,30 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     this.trustScore = data.trustScore;
     return this.trustScore;
   }
+
+  protected addressTypeGuard(address: BaseAddress, Class: Constructor<T>): void {
+    if (!(address instanceof Class)) throw new Error('Wrong address type');
+  }
+
+  protected setAddressToMap(address: BaseAddress): void {
+    if (this.maxAddress && this.addressMap.get(address.getAddressHex()) === undefined && this.addressMap.size >= this.maxAddress)
+      throw new Error(`Address map size can not exceed ${this.maxAddress}`);
+    this.checkAddressType(address);
+    super.setAddressToMap(address);
+    const index = (<T>address).getIndex();
+    this.indexToAddressHexMap.set(index, address.getAddressHex());
+    if (this.maxIndex === undefined || this.maxIndex < index) this.maxIndex = index;
+  }
+
+  protected setInitialAddressToMap(address: BaseAddress): void {
+    this.checkAddressIndexed(address);
+    const typedAddress = this.getAddressFromIndexedAddress(<IndexedAddress>address);
+    super.setInitialAddressToMap(typedAddress);
+  }
+
+  private checkAddressIndexed(address: BaseAddress): void {
+    if (!(address instanceof IndexedAddress)) throw new Error('Address should be indexed');
+  }
 }
 
 export class Wallet extends IndexedWallet<Address> {
@@ -348,30 +348,8 @@ export class Wallet extends IndexedWallet<Address> {
     this.setPublicHash();
   }
 
-  private checkSeedFormat(seed: string): boolean {
-    return seed.length === 64;
-  }
-
-  private generateSeed(userSecret: string, serverKey: BN): void {
-    let hexServerKey = serverKey.toString(16, 2);
-    let combinedString = `${userSecret}${hexServerKey}`;
-    this.seed = cryptoUtils.generateSeed(combinedString);
-  }
-
-  private generateAndSetKeyPair(): void {
-    this.keyPair = cryptoUtils.generateKeyPairFromSeed(this.seed);
-  }
-
   public async setPublicHash(): Promise<void> {
     this.publicHash = cryptoUtils.getPublicKeyByKeyPair(this.keyPair);
-  }
-
-  private generateKeyPairByIndex(index: number): ec.KeyPair {
-    return cryptoUtils.generateKeyPairFromSeed(this.seed, index);
-  }
-
-  private getKeyPair(): ec.KeyPair {
-    return this.keyPair;
   }
 
   public async generateAddressByIndex(index: number): Promise<Address> {
@@ -394,8 +372,7 @@ export class Wallet extends IndexedWallet<Address> {
   public async signMessage(
     messageInBytes: Uint8Array,
     signingType: SigningType = SigningType.MESSAGE,
-    addressHex?: string,
-    signingData?: SigningData
+    addressHex?: string
   ): Promise<ec.SignatureOptions> {
     console.log(`Signing message of type ${signingType}`);
     this.emit('signingMessage', signingType);
@@ -407,6 +384,28 @@ export class Wallet extends IndexedWallet<Address> {
       keyPair = (<Address>address).getAddressKeyPair();
     } else keyPair = this.getKeyPair();
     return cryptoUtils.signByteArrayMessage(messageInBytes, keyPair);
+  }
+
+  private checkSeedFormat(seed: string): boolean {
+    return seed.length === 64;
+  }
+
+  private generateSeed(userSecret: string, serverKey: BN): void {
+    let hexServerKey = serverKey.toString(16, 2);
+    let combinedString = `${userSecret}${hexServerKey}`;
+    this.seed = cryptoUtils.generateSeed(combinedString);
+  }
+
+  private generateAndSetKeyPair(): void {
+    this.keyPair = cryptoUtils.generateKeyPairFromSeed(this.seed);
+  }
+
+  private generateKeyPairByIndex(index: number): ec.KeyPair {
+    return cryptoUtils.generateKeyPairFromSeed(this.seed, index);
+  }
+
+  private getKeyPair(): ec.KeyPair {
+    return this.keyPair;
   }
 }
 

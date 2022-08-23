@@ -13,12 +13,12 @@ import * as utils from './utils';
 import {
   CheckIfAddressExistsResDTO,
   GetTokenDetailsResDTO,
-  GetTransactionResDTO,
   GetTransactionsHistoryByStampResDTO,
   GetTransactionsHistoryResDTO,
   GetUserTrustScoreResDTO,
   SendAddressToNodeResDTO,
-  SendTransactionResDTO, TokenDetails
+  SendTransactionResDTO,
+  TokenDetails,
 } from '../dtos/nodeUtils.dto';
 
 type Network = utils.Network;
@@ -60,7 +60,11 @@ export namespace nodeUtils {
     }
   }
 
-  export async function checkAddressesExist(addressesToCheck: string[], network: Network = 'mainnet', fullnode?: string): Promise<CheckIfAddressExistsResDTO> {
+  export async function checkAddressesExist(
+    addressesToCheck: string[],
+    network: Network = 'mainnet',
+    fullnode?: string
+  ): Promise<CheckIfAddressExistsResDTO> {
     try {
       const { data } = await axios.post(`${fullnode || nodeUrl[network].fullNode}/address`, { addresses: addressesToCheck });
 
@@ -114,12 +118,16 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getTransactionsHistory(addresses: string[], network: Network = 'mainnet', fullnode?: string): Promise<GetTransactionsHistoryResDTO> {
+  export async function getTransactionsHistory(
+    addresses: string[],
+    network: Network = 'mainnet',
+    fullnode?: string
+  ): Promise<GetTransactionsHistoryResDTO> {
     let response = await axios.post(`${fullnode || nodeUrl[network].fullNode}/transaction/addressTransactions/batch`, { addresses });
     return getMapFromTransactionHistoryResponse(response);
   }
 
-  function getMapFromTransactionHistoryResponse(response: AxiosResponse<any>) {
+  function getMapFromTransactionHistoryResponse(response: AxiosResponse<any>): Map<string, TransactionData> {
     const transactionMap = new Map<string, TransactionData>();
     let parsedData = response.data;
     if (typeof parsedData !== 'object') {
@@ -229,7 +237,7 @@ export namespace nodeUtils {
     userSignature: SignatureData,
     network: Network = 'mainnet',
     trustScoreNode?: string
-  ) {
+  ): Promise<any> {
     const trustScoreMessage = {
       userHash,
       transactionHash,
@@ -258,7 +266,7 @@ export namespace nodeUtils {
     return (fullnode || nodeUrl[network].fullNode) + '/websocket';
   }
 
-  export async function setTrustScore(apiKey: string, userHash: string, network: Network = 'mainnet', api?: string) {
+  export async function setTrustScore(apiKey: string, userHash: string, network: Network = 'mainnet', api?: string): Promise<any> {
     if (!apiKey) throw new NodeError('Api key is missing');
 
     const headers = { 'exchange-api-key': apiKey };
@@ -276,7 +284,13 @@ export namespace nodeUtils {
     }
   }
 
-  export async function updateUserType(apiKey: string, userHash: string, network: Network = 'mainnet', userType: UserType, api?: string) {
+  export async function updateUserType(
+    apiKey: string,
+    userHash: string,
+    network: Network = 'mainnet',
+    userType: UserType,
+    api?: string
+  ): Promise<any> {
     if (!apiKey) throw new NodeError('Api key is missing');
     const headers = { 'exchange-api-key': apiKey };
     const updateUserTypeMessage = {
@@ -352,7 +366,13 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getTokenDetails(currencyHash: string, userHash: string, indexedWallet: Wallet, api?: string, network: Network = 'mainnet'): Promise<GetTokenDetailsResDTO> {
+  export async function getTokenDetails(
+    currencyHash: string,
+    userHash: string,
+    indexedWallet: Wallet,
+    api?: string,
+    network: Network = 'mainnet'
+  ): Promise<GetTokenDetailsResDTO> {
     const instantTimeSeconds = moment.utc().unix();
     const instantTimeMs = instantTimeSeconds * 1000;
     const tokenCurrencies = new TokenDetailsSignature({ userHash, instantTime: instantTimeMs, currencyHash });
@@ -417,7 +437,7 @@ export namespace nodeUtils {
     }
   }
 
-  function getErrorMessage(error: any, debugMessage: string, fieldError = 'message') {
+  function getErrorMessage(error: any, debugMessage: string, fieldError = 'message'): NodeError {
     const errorMessage = error.response && error.response.data ? error.response.data[fieldError] : error.message;
 
     return new NodeError(errorMessage, { debugMessage });

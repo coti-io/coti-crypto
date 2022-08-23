@@ -14,7 +14,7 @@ export class CotiError extends Error {
     this.debugMessage = debugMessage;
   }
 
-  public setCause(cause: Error) {
+  public setCause(cause: Error): void {
     this.cause = cause;
   }
 }

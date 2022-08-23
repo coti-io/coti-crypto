@@ -4,34 +4,83 @@
     "browser": true,
     "es2020": true
   },
-  "plugins": ["@typescript-eslint"],
+  "plugins": [
+    "@typescript-eslint"
+  ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": 2020,
     "sourceType": "module"
   },
   "rules": {
-    "callback-return": ["error", ["done", "proceed", "next", "onwards", "callback", "cb"]],
+    "@typescript-eslint/explicit-function-return-type": "error",
+    "callback-return": [
+      "error",
+      [
+        "done",
+        "proceed",
+        "next",
+        "onwards",
+        "callback",
+        "cb"
+      ]
+    ],
     "camelcase": "off",
-    "comma-style": ["warn", "last"],
+    "comma-style": [
+      "warn",
+      "last"
+    ],
     "curly": "off",
-    "eqeqeq": ["error", "always"],
-    "eol-last": ["warn"],
-    "handle-callback-err": ["error"],
+    "eqeqeq": [
+      "error",
+      "always"
+    ],
+    "eol-last": [
+      "warn"
+    ],
+    "handle-callback-err": [
+      "error"
+    ],
     "indent": "off",
     "linebreak-style": "off",
-    "no-dupe-keys": ["error"],
-    "no-duplicate-case": ["error"],
-    "no-extra-semi": ["warn"],
-    "no-labels": ["error"],
-    "no-mixed-spaces-and-tabs": [2, "smart-tabs"],
-    "no-redeclare": ["warn"],
-    "no-return-assign": ["error", "always"],
-    "no-sequences": ["error"],
-    "no-trailing-spaces": ["warn"],
-    "no-undef": ["error"],
-    "no-unexpected-multiline": ["warn"],
-    "no-unreachable": ["warn"],
+    "no-dupe-keys": [
+      "error"
+    ],
+    "no-duplicate-case": [
+      "error"
+    ],
+    "no-extra-semi": [
+      "warn"
+    ],
+    "no-labels": [
+      "error"
+    ],
+    "no-mixed-spaces-and-tabs": [
+      2,
+      "smart-tabs"
+    ],
+    "no-redeclare": [
+      "warn"
+    ],
+    "no-return-assign": [
+      "error",
+      "always"
+    ],
+    "no-sequences": [
+      "error"
+    ],
+    "no-trailing-spaces": [
+      "warn"
+    ],
+    "no-undef": [
+      "error"
+    ],
+    "no-unexpected-multiline": [
+      "warn"
+    ],
+    "no-unreachable": [
+      "warn"
+    ],
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": [
       "warn",
@@ -43,30 +92,47 @@
       }
     ],
     "no-use-before-define": [
-      "error", {
+      "error",
+      {
         "functions": false
       }
     ],
-    "one-var": ["warn", "never"],
+    "one-var": [
+      "warn",
+      "never"
+    ],
     "prefer-arrow-callback": [
-      "warn", {
+      "warn",
+      {
         "allowNamedFunctions": true
       }
     ],
-    "arrow-parens": ["error", "as-needed"],
+    "arrow-parens": [
+      "error",
+      "as-needed"
+    ],
     "quotes": [
-      "warn", "single", {
+      "warn",
+      "single",
+      {
         "avoidEscape": false,
         "allowTemplateLiterals": true
       }
     ],
-    "semi": ["error", "always"],
+    "semi": [
+      "error",
+      "always"
+    ],
     "semi-spacing": [
-      "warn", {
+      "warn",
+      {
         "before": false,
         "after": true
       }
     ],
-    "semi-style": ["warn", "last"]
+    "semi-style": [
+      "warn",
+      "last"
+    ]
   }
 }

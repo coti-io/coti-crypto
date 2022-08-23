@@ -4,6 +4,7 @@
     "target": "es2019",
     "removeComments": false,
     "strict": true,
+    "alwaysStrict": true,
     "noEmitOnError": true,
     "sourceMap": true,
     "declaration": true,
@@ -13,10 +14,17 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "watch": false,
-    "typeRoots": ["node_modules/@types"]
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "noImplicitAny": true,
+    "strictFunctionTypes": true
   },
   "include": [
     "./src/**/*"
   ],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

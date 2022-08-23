@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { BaseTransactionData, SignatureData } from '..';
+import { BaseTransactionData } from '..';
 import { CotiError } from '../cotiError';
 import { Network } from './utils';
 import { TokenGenerationRequest, TokenMintFeeRequest, TokenMintQuoteFeeRequest } from './tokenUtils';
@@ -63,7 +63,11 @@ export namespace financeUtils {
     }
   }
 
-  export async function getWalletCurrencies(tokenHashes: string[], financeServerUrl?: string, network: Network = 'mainnet'): Promise<GetWalletCurrenciesResDto> {
+  export async function getWalletCurrencies(
+    tokenHashes: string[],
+    financeServerUrl?: string,
+    network: Network = 'mainnet'
+  ): Promise<GetWalletCurrenciesResDto> {
     const headers = {
       'Content-Type': 'application/json',
     };
@@ -77,7 +81,7 @@ export namespace financeUtils {
     }
   }
 
-  function getErrorMessage(error: any, debugMessage?: string) {
+  function getErrorMessage(error: any, debugMessage?: string): CotiError {
     const errorMessage = error.response && error.response.data && error.response.data.message;
 
     return new CotiError(errorMessage, { debugMessage });

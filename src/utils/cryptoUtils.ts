@@ -48,7 +48,7 @@ export function decryptGCM(encrypted: Encryption, password: string, iv: string):
   return dec;
 }
 
-export function encryptCTR(text: string, password: string): string{
+export function encryptCTR(text: string, password: string): string {
   let cipher = crypto.createCipheriv('aes-256-ctr', password, null);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
@@ -203,7 +203,7 @@ function removeLeadingZeroBytesFromAddress(addressBytes: Uint8Array): Uint8Array
   return addressWithoutLeadingZeroBytes;
 }
 
-export function generateSeed(key: string) {
+export function generateSeed(key: string): any {
   let sha2Array = sha256.array(key);
   let sha3Array = sha3Bit256.update(key).array();
   let combinedArray = sha2Array.concat(sha3Array);
@@ -214,7 +214,7 @@ export function generateMnemonic(): string {
   return bip39.generateMnemonic();
 }
 
-export async function generateSeedFromMnemonic(mnemonic: string): Promise<string>{
+export async function generateSeedFromMnemonic(mnemonic: string): Promise<string> {
   return bip39.mnemonicToSeed(mnemonic).then(bytes => utils.byteArrayToHexString(bytes));
 }
 

@@ -15,10 +15,6 @@ export default class TokenAvatar {
     this.colors = this.generateAvatarPalette();
   }
 
-  private getIconColor(symbol: string): string {
-    return this.hslToHex(Number(this.hashCode(symbol)), 95, 40);
-  }
-
   public generateAvatarPalette(): string[] {
     const colors = this.hash
       .replace(/(\w|\d)/g, (current: string, next: string, index: number) => `${current}${index !== 0 && index % 20 === 0 ? '-' : ''}`)
@@ -36,7 +32,7 @@ export default class TokenAvatar {
   public hslToHex(h: number, s: number, l: number): string {
     l /= 100;
     const a = (s * Math.min(l, 1 - l)) / 100;
-    const f = (n: number) => {
+    const f = (n: number): string => {
       const k = (n + h / 30) % 12;
       const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
       return Math.round(255 * color)
@@ -155,5 +151,9 @@ export default class TokenAvatar {
   toBuffer(): string {
     const buffer = Buffer.from(this.toSvg(), 'utf8').toString('base64');
     return `data:image/svg+xml;base64,${buffer}`;
+  }
+
+  private getIconColor(symbol: string): string {
+    return this.hslToHex(Number(this.hashCode(symbol)), 95, 40);
   }
 }

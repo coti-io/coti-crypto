@@ -1,5 +1,6 @@
 /* eslint-disable no-use-before-define */
 /* eslint-disable callback-return */
+// eslint-disable no-use-before-define
 import { BigDecimal } from './utils';
 
 export interface JsonUtilsOptions {
@@ -22,12 +23,7 @@ export class JsonUtils {
     /(?:c|\\u0063)(?:o|\\u006[Ff])(?:n|\\u006[Ee])(?:s|\\u0073)(?:t|\\u0074)(?:r|\\u0072)(?:u|\\u0075)(?:c|\\u0063)(?:t|\\u0074)(?:o|\\u006[Ff])(?:r|\\u0072)/;
 
   options: JsonUtilsOptions = { bigDecimal: false };
-  constructor(options?: JsonUtilsOptions) {
-    this.options = { ...this.options, ...options };
-  }
-
   escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g;
-
   meta = {
     // table of character substitutions
     '\b': '\\b',
@@ -39,7 +35,11 @@ export class JsonUtils {
     '\\': '\\\\',
   } as Record<string, string>;
 
-  parse(options: JsonUtilsOptions = this.options) {
+  constructor(options?: JsonUtilsOptions) {
+    this.options = { ...this.options, ...options };
+  }
+
+  parse(options: JsonUtilsOptions = this.options): any {
     // This is a function that can parse a JSON text, producing a JavaScript
     // data structure. It is a simple, recursive descent parser. It does not use
     // eval or regular expressions, so it can be used as a model for implementing
@@ -101,7 +101,7 @@ export class JsonUtils {
       t: '\t',
     };
     let text: string;
-    const error = (m: string) => {
+    const error = (m: string): Error => {
       // Call error when something is wrong.
 
       throw {
@@ -111,7 +111,7 @@ export class JsonUtils {
         text,
       };
     };
-    const next = (c?: string) => {
+    const next = (c?: string): string => {
       // If a c parameter is provided, verify that it matches the current character.
 
       if (c && c !== ch) {
@@ -125,7 +125,7 @@ export class JsonUtils {
       at += 1;
       return ch;
     };
-    const number = (key?: string) => {
+    const number = (key?: string): number | string | undefined => {
       // Parse a number value.
 
       let number;
@@ -171,7 +171,7 @@ export class JsonUtils {
         return !_options.alwaysParseAsBig ? number : new BigDecimal(string).toFixed();
       }
     };
-    const string = () => {
+    const string = (): string | undefined => {
       // Parse a string value.
 
       let hex;
@@ -213,14 +213,14 @@ export class JsonUtils {
       }
       error('Bad string');
     };
-    const white = () => {
+    const white = (): void => {
       // Skip whitespace.
 
       while (ch && ch <= ' ') {
         next();
       }
     };
-    const word = () => {
+    const word = (): boolean | null | undefined => {
       // true, false, or null.
 
       switch (ch) {
@@ -247,7 +247,7 @@ export class JsonUtils {
       error(`Unexpected '${ch}'`);
     };
 
-    const value = (key?: string) => {
+    const value = (key?: string): any => {
       // Parse a JSON value. It could be an object, an array, a string, a number,
       // or a word.
 
@@ -265,7 +265,7 @@ export class JsonUtils {
           return ch >= '0' && ch <= '9' ? number(key) : word();
       }
     };
-    const array = () => {
+    const array = (): any => {
       // Parse an array value.
 
       const array = [] as unknown[];
@@ -350,7 +350,7 @@ export class JsonUtils {
     // Return the json_parse function. It will have access to all of the above
     // functions and variables.
 
-    return function (source: unknown, reviver?: Function) {
+    return function (source: unknown, reviver?: Function): any {
       let result;
 
       text = `${source}`;
@@ -369,7 +369,7 @@ export class JsonUtils {
       // result.
 
       return typeof reviver === 'function'
-        ? (function walk(holder: any, key) {
+        ? (function walk(holder: any, key): string {
             let v;
             const value = holder[key];
             if (value && typeof value === 'object') {
@@ -388,14 +388,14 @@ export class JsonUtils {
     };
   }
 
-  stringify(value: unknown, replacer?: Function | object | number, space?: string | number) {
+  stringify(value: unknown, replacer?: Function | object | number, space?: string | number): string {
     // The stringify method takes a value and an optional replacer, and an optional
     // space parameter, and returns a JSON text. The replacer can be a function
     // that can replace values, or an array of strings that will select the keys.
     // A default replacer method can be provided. Use of the space parameter can
     // produce text that is more easily readable.
 
-    const quote = (string: string) => {
+    const quote = (string: string): string => {
       // If the string contains no control characters, no quote characters, and no
       // backslash characters, then we can safely slap some quotes around it.
       // Otherwise we must also replace the offending characters with safe escape
@@ -555,6 +555,7 @@ export class JsonUtils {
     return str('', { '': value });
   }
 }
+
 const map = new Map<string, boolean>();
 map.set('mintingAmount', true);
 map.set('amount', true);

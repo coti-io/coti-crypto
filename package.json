@@ -37,7 +37,7 @@
     "webstomp-client": "^1.2.6"
   },
   "scripts": {
-    "prebuild": "rimraf dist",
+    "prebuild": "rimraf dist && npm run lint",
     "build": "tsc",
     "git-push-with-tags": "git push && git push --tags",
     "lint": "eslint . --ext .ts",

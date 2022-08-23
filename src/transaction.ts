@@ -90,11 +90,11 @@ export class TransactionData {
     this.setTime('transactionConsensusUpdateTime', transactionData.transactionConsensusUpdateTime);
   }
 
-  public setStatus() {
+  public setStatus(): void {
     this.status = this.transactionConsensusUpdateTime ? 'confirmed' : 'pending';
   }
 
-  public setTime(timeField: TransactionTime, time?: number | string) {
+  public setTime(timeField: TransactionTime, time?: number | string): void {
     if (typeof time === 'string') {
       this[timeField] = utils.utcStringToSeconds(time);
     } else if (typeof time === 'number') {

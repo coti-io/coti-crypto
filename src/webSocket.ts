@@ -28,7 +28,7 @@ export class WebSocket {
     this.socketUrl = nodeUtils.getSocketUrl(wallet.getNetwork(), wallet.getFullNode());
   }
 
-  public connect(successCallback?: () => Promise<void>, reconnectFailedCallback?: () => Promise<void>) {
+  public connect(successCallback?: () => Promise<void>, reconnectFailedCallback?: () => Promise<void>): Promise<void> {
     if (successCallback) this.successCallback = successCallback;
     if (reconnectFailedCallback) this.reconnectFailedCallback = reconnectFailedCallback;
 
@@ -72,7 +72,13 @@ export class WebSocket {
     });
   }
 
-  private async reconnect() {
+  public connectToAddress(addressHex: string): void {
+    this.subscribeToAddressBalance(addressHex);
+
+    this.subscribeToAddressTransactions(addressHex);
+  }
+
+  private async reconnect(): Promise<void> {
     while (!this.connected && this.reconnectCounter <= 6) {
       console.log('Web socket trying to reconnect. Counter: ', this.reconnectCounter);
       await this.connect();
@@ -85,23 +91,23 @@ export class WebSocket {
     this.reconnectCounter = 0;
   }
 
-  private setClient() {
+  private setClient(): void {
     const ws = new SockJS(this.socketUrl);
     this.client = stomp.over(ws, { debug: false });
   }
 
-  private async closeSocketConnection() {
+  private async closeSocketConnection(): Promise<void> {
     await this.addressesUnsubscribe();
     this.client.disconnect();
   }
 
-  private async addressesUnsubscribe() {
+  private async addressesUnsubscribe(): Promise<void> {
     this.propagationSubscriptions.forEach(propagationSubscription => propagationSubscription.unsubscribe());
     this.balanceSubscriptions.forEach(balanceSubscription => balanceSubscription.unsubscribe());
     this.transactionsSubscriptions.forEach(transactionsSubscription => transactionsSubscription.unsubscribe());
   }
 
-  private async onConnected(addressesInHex: string[]) {
+  private async onConnected(addressesInHex: string[]): Promise<void> {
     this.reconnectCounter = 0;
     console.log(`Starting to websocket subscriptions of ${addressesInHex.length} addresses.`);
     if (!addressesInHex) addressesInHex = [];
@@ -126,13 +132,7 @@ export class WebSocket {
     if (this.successCallback) return this.successCallback();
   }
 
-  public connectToAddress(addressHex: string) {
-    this.subscribeToAddressBalance(addressHex);
-
-    this.subscribeToAddressTransactions(addressHex);
-  }
-
-  private subscribeToAddressTransactions(addressHex: string) {
+  private subscribeToAddressTransactions(addressHex: string): void {
     if (!this.transactionsSubscriptions.get(addressHex)) {
       let transactionSubscription = this.client.subscribe(`/topic/addressTransactions/${addressHex}`, async ({ body }) => {
         try {
@@ -150,7 +150,7 @@ export class WebSocket {
     }
   }
 
-  private subscribeToAddressBalance(addressHex: string) {
+  private subscribeToAddressBalance(addressHex: string): void {
     if (!this.balanceSubscriptions.get(addressHex)) {
       let balanceSubscription = this.client.subscribe(`/topic/${addressHex}`, async ({ body }) => {
         try {
@@ -164,7 +164,7 @@ export class WebSocket {
     }
   }
 
-  private updateBalance(body: string) {
+  private updateBalance(body: string): void {
     const data = cotiParser(body);
     if (data.message === 'Balance Updated!') {
       const address = this.wallet.getAddressMap().get(data.addressHash);
@@ -178,7 +178,7 @@ export class WebSocket {
     }
   }
 
-  private addressPropagationSubscriber(address: IndexedAddress) {
+  private addressPropagationSubscriber(address: IndexedAddress): void {
     console.log('Subscribing for address:', address.getAddressHex());
     const alreadySubscribed = this.propagationSubscriptions.get(address);
     const addressHex = address.getAddressHex();
@@ -206,7 +206,7 @@ export class WebSocket {
     this.propagationSubscriptions.set(address, addressPropagationSubscription);
   }
 
-  private async checkBalanceAndSubscribeNewAddress<T extends IndexedAddress>(address: IndexedAddress) {
+  private async checkBalanceAndSubscribeNewAddress<T extends IndexedAddress>(address: IndexedAddress): Promise<void> {
     if (this.wallet instanceof IndexedWallet) {
       const nextPropagationAddressIndex = Array.from(this.propagationSubscriptions.keys()).pop().getIndex() + 1;
       const maxAddress = this.wallet.getMaxAddress();
@@ -227,7 +227,7 @@ export class WebSocket {
     }
   }
 
-  private setAddressWithBalance(address: BaseAddress, addressBalance: BigDecimal, addressPreBalance: BigDecimal) {
+  private setAddressWithBalance(address: BaseAddress, addressBalance: BigDecimal, addressPreBalance: BigDecimal): void {
     this.wallet.setAddressWithBalance(address, addressBalance, addressPreBalance);
   }
 }

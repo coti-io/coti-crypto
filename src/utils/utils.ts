@@ -99,7 +99,7 @@ export function getCurrencyHashBySymbol(symbol: string): string {
   return keccak224.update(bytes).hex();
 }
 
-export function removeZerosFromEndOfNumber(num: number) {
+export function removeZerosFromEndOfNumber(num: number): string {
   return removeZerosFromEndOfStringOfNumber(num.toString());
 }
 

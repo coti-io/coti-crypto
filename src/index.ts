@@ -4,7 +4,7 @@ import * as transactionUtils from './utils/transactionUtils';
 import axios from 'axios';
 import { cotiParser } from './utils/jsonUtils';
 
-axios.defaults.transformResponse = (response: string) => {
+axios.defaults.transformResponse = (response: string): any => {
   return cotiParser(response);
 };
 
