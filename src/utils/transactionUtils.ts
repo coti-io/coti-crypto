@@ -50,6 +50,10 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
     throw new Error('Fullnode should support transfer of none native tokens.');
   }
 
+  if(hardFork === HardForks.MULTI_CURRENCY && (currencyHash || originalCurrencyHash) && (!currencyHash || !originalCurrencyHash) ){
+    throw new Error(`Invalid value for ${!currencyHash? 'currencyHash' : 'originalCurrencyHash'}.`);
+  }
+
   if (feeIncluded && currencyHash) {
     throw new Error('Should fail when trying to transfer token which is not native with feeIncluded true.');
   }
