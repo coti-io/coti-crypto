@@ -1,0 +1,62 @@
+name: npm publisher
+
+on:
+  workflow_dispatch:
+    branches:
+      - dev
+      - master
+    inputs:
+      version:
+        type: choice
+        description: Choose version
+        required: true
+        options:
+          - prerelease
+          - release
+          - prepatch
+          - preminor
+          - premajor
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          persist-credentials: true
+
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '12.22.4'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Npm version
+        run: |
+          git config --local user.email "eli@coti.io"
+          git config --local user.name "coti-tech"
+          npm i
+          npm run build
+          npm run version-${{ inputs.version }}
+
+      - name: Npm publish
+        run : |
+          if [[ inputs.version == 'release' ]]; then
+             NPM_TAG=latest
+          else 
+             NPM_TAG=beta
+          fi
+          npm publish --tag $NPM_TAG 
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          ssh: true
+          branch: ${{ github.ref }}
+          tags: true

@@ -1,8 +1,10 @@
 tsconfig.json
 settings.json
 src
+assets
 .idea
 .vscode
+.github
 *.iml
 .eslintrc
 .eslintignore
