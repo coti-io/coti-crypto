@@ -154,9 +154,13 @@ export class Transaction {
 
   public async signTransaction<T extends IndexedAddress>(wallet: IndexedWallet<T>) {
     let totalAmount = new BigDecimal(0);
+    let destinationAddress = '';
     for (let baseTransaction of this.baseTransactions) {
       if (baseTransaction.isInput()) {
         totalAmount = totalAmount.add(baseTransaction.getAmount());
+      }
+      if (baseTransaction.getName() === BaseTransactionName.RECEIVER) {
+        destinationAddress = baseTransaction.getAddressHash();
       }
       await baseTransaction.sign(this.hash, wallet);
     }
@@ -164,6 +168,7 @@ export class Transaction {
     const messageInBytes = this.getSignatureMessage();
     this.senderSignature = await wallet.signMessage(messageInBytes, SigningType.TX, undefined, {
       amount: totalAmount.multiply(new BigDecimal('-1')).toPlainString(),
+      destinationAddress,
     });
   }
 

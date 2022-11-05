@@ -201,6 +201,14 @@ export class BaseTransaction {
     return utils.hexToBytes(transactionHash);
   }
 
+  public getName() {
+    return this.name;
+  }
+
+  public getAddressHash() {
+    return this.addressHash;
+  }
+
   public toJSON() {
     return {
       hash: this.hash,
