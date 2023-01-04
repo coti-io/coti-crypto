@@ -47,7 +47,7 @@ jobs:
 
       - name: Npm publish
         run : |
-          if [[ inputs.version == 'release' ]]; then
+          if [ ${{ inputs.version }} == 'release' ]; then
              NPM_TAG=latest
           else 
              NPM_TAG=beta
