@@ -5,7 +5,7 @@ import { BaseTransactionData } from '../baseTransaction';
 import { NodeError } from '../cotiError';
 import { BalanceDto, TokensBalanceDto } from '../dtos/balance.dto';
 import { TokenCurrenciesDto, TokenCurrency } from '../dtos/currencies.dto';
-import { SignatureData, TokenCurrenciesSignature, TokenDetailsSignature, TokenHistorySignature } from '../signature';
+import { SignatureData, TokenCurrenciesSignature, TokenHistorySignature } from '../signature';
 import { Transaction, TransactionData } from '../transaction';
 import { Wallet } from '../wallet';
 import { HardForks } from './transactionUtils';
@@ -343,15 +343,8 @@ export namespace nodeUtils {
   }
 
   export async function getTokenDetails(currencyHash: string, userHash: string, indexedWallet: Wallet, api?: string, network: Network = 'mainnet') {
-    const instantTimeSeconds = moment.utc().unix();
-    const instantTimeMs = instantTimeSeconds * 1000;
-    const tokenCurrencies = new TokenDetailsSignature({ userHash, instantTime: instantTimeMs, currencyHash });
-    const signatureData = await tokenCurrencies.sign(indexedWallet, false);
     const payload = {
-      userHash,
       currencyHash,
-      createTime: instantTimeSeconds,
-      signature: signatureData,
     };
     const headers = {
       'Content-Type': 'application/json',
@@ -373,15 +366,8 @@ export namespace nodeUtils {
     api?: string,
     network: Network = 'mainnet'
   ) {
-    const instantTimeSeconds = moment.utc().unix();
-    const instantTimeMs = instantTimeSeconds * 1000;
-    const tokenCurrencies = new TokenDetailsSignature({ userHash, instantTime: instantTimeMs, currencySymbol });
-    const signatureData = await tokenCurrencies.sign(indexedWallet, false);
     const payload = {
-      userHash,
       symbol: currencySymbol,
-      createTime: instantTimeSeconds,
-      signature: signatureData,
     };
     const headers = {
       'Content-Type': 'application/json',
