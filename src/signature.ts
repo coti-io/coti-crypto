@@ -65,13 +65,13 @@ export abstract class Signature {
 
 export class FullNodeFeeSignature extends Signature {
   private amount: string;
-  private originalCurrencyHash?: string;
+  private currencyHash?: string;
 
-  constructor(amount: string, originalCurrencyHash?: string) {
+  constructor(amount: string, currencyHash?: string) {
     super();
     this.signingType = SigningType.FULL_NODE_FEE;
     this.amount = amount;
-    this.originalCurrencyHash = originalCurrencyHash;
+    this.currencyHash = currencyHash;
   }
 
   public getBytes(): Uint8Array {
@@ -79,8 +79,8 @@ export class FullNodeFeeSignature extends Signature {
     const amountPlainString = new utils.BigDecimal(this.amount).toPlainString();
     const amountBytes = utils.getBytesFromString(amountPlainString);
 
-    if (this.originalCurrencyHash) {
-      byteArraysToMerge.push(utils.hexToBytes(this.originalCurrencyHash));
+    if (this.currencyHash) {
+      byteArraysToMerge.push(utils.hexToBytes(this.currencyHash));
     }
 
     byteArraysToMerge.push(amountBytes);

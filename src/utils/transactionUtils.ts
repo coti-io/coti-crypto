@@ -109,7 +109,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
     network,
     fullnode,
     trustScoreNode,
-    originalCurrencyHash
+    currencyHash
   );
   const baseTransactions: BaseTransaction[] = [];
   const feeAmount = new BigDecimal(fullNodeFee.amount.toString()).add(new BigDecimal(networkFee.amount.toString()));
@@ -158,9 +158,9 @@ async function getFullNodeFeeSignature<T extends IndexedAddress>(
   originalAmount: string,
   keyPair?: KeyPair,
   wallet?: IndexedWallet<T>,
-  originalCurrencyHash?: string
+  currencyHash?: string
 ) {
-  const fullNodeFeeSignature = new FullNodeFeeSignature(originalAmount, originalCurrencyHash);
+  const fullNodeFeeSignature = new FullNodeFeeSignature(originalAmount, currencyHash);
 
   return keyPair ? fullNodeFeeSignature.signByKeyPair(keyPair) : fullNodeFeeSignature.sign(wallet!);
 }
@@ -174,10 +174,10 @@ async function getFees<T extends IndexedAddress>(
   network?: Network,
   fullnode?: string,
   trustScoreNode?: string,
-  originalCurrencyHash?: string
+  currencyHash?: string
 ) {
   const originalAmountString = originalAmount.toString();
-  const fullNodeFeeSignature = await getFullNodeFeeSignature(originalAmountString, keyPair, wallet, originalCurrencyHash);
+  const fullNodeFeeSignature = await getFullNodeFeeSignature(originalAmountString, keyPair, wallet, currencyHash);
   const fullNodeFee = await nodeUtils.getFullNodeFees(
     originalAmountString,
     userHash,
@@ -185,7 +185,7 @@ async function getFees<T extends IndexedAddress>(
     network,
     feeIncluded,
     fullnode,
-    originalCurrencyHash
+    currencyHash
   );
   const networkFee = await nodeUtils.getNetworkFees(fullNodeFee, userHash, network, feeIncluded, trustScoreNode);
 
