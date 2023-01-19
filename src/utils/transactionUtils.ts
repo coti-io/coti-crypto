@@ -136,16 +136,7 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   });
   networkFee = await nodeUtils.createMiniConsensus(userHash!, fullNodeFee, networkFee, network, trustScoreNode);
 
-  addOutputBaseTransactions(
-    originalAmount,
-    fullNodeFee,
-    networkFee,
-    destinationAddress,
-    baseTransactions,
-    feeIncluded,
-    currencyHash,
-    originalCurrencyHash
-  );
+  addOutputBaseTransactions(originalAmount, fullNodeFee, networkFee, destinationAddress, baseTransactions, feeIncluded, currencyHash);
 
   const transaction = new Transaction(baseTransactions, description, userHash!);
 
@@ -241,8 +232,7 @@ function addOutputBaseTransactions(
   destinationAddress: string,
   baseTransactions: BaseTransaction[],
   feeIncluded: boolean,
-  currencyHash?: string,
-  originalCurrencyHash?: string
+  currencyHash?: string
 ) {
   const amountRBT = feeIncluded
     ? originalAmount.subtract(new BigDecimal(fullNodeFee.amount)).subtract(new BigDecimal(networkFee.amount))
@@ -257,7 +247,7 @@ function addOutputBaseTransactions(
     originalAmount,
     currencyHash,
     undefined,
-    originalCurrencyHash
+    currencyHash
   );
   const fullNodeTransactionFee = BaseTransaction.getBaseTransactionFromFeeData(fullNodeFee);
   const transactionNetworkFee = BaseTransaction.getBaseTransactionFromFeeData(networkFee);
