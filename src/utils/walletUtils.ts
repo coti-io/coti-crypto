@@ -60,12 +60,17 @@ export namespace walletUtils {
     return nodeUtils.getTransactionsHistory(addresses, wallet.getNetwork(), wallet.getFullNode());
   }
 
-  export async function getFullNodeFees<T extends IndexedAddress>(wallet: IndexedWallet<T>, amountToTransfer: string, feeIncluded?: boolean) {
+  export async function getFullNodeFees<T extends IndexedAddress>(
+    wallet: IndexedWallet<T>,
+    amountToTransfer: string,
+    feeIncluded?: boolean,
+    currencyHash?: string
+  ) {
     const userHash = wallet.getPublicHash();
-    const userSignature = await new FullNodeFeeSignature(amountToTransfer).sign(wallet);
+    const userSignature = await new FullNodeFeeSignature(amountToTransfer, currencyHash).sign(wallet);
     const network = wallet.getNetwork();
     const fullnode = wallet.getFullNode();
-    return nodeUtils.getFullNodeFees(amountToTransfer, userHash, userSignature, network, feeIncluded, fullnode);
+    return nodeUtils.getFullNodeFees(amountToTransfer, userHash, userSignature, network, feeIncluded, fullnode, currencyHash);
   }
 
   export async function getNetworkFees<T extends IndexedAddress>(wallet: IndexedWallet<T>, fullNodeFee: BaseTransactionData, feeIncluded?: boolean) {
