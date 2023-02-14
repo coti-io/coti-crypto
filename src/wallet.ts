@@ -292,7 +292,7 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     return this.publicHash;
   }
 
-  public abstract async signMessage(
+  public abstract signMessage(
     messageInBytes: Uint8Array,
     signingType?: SigningType,
     addressHex?: string,
@@ -311,7 +311,7 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     return this.getAddressMap();
   }
 
-  public abstract async generateAddressByIndex(index: number): Promise<T>;
+  public abstract generateAddressByIndex(index: number): Promise<T>;
 
   public async getUserTrustScore() {
     let data = await walletUtils.getUserTrustScore(this);

@@ -58,7 +58,7 @@ export async function getPublicKey(index: number, interactive?: boolean, transpo
 
     const res = await hw.getPublicKey(index, interactive);
     return res.publicKey;
-  } catch (error) {
+  } catch (error: any) {
     throw new LedgerError(error.message, { debugMessage: `Error getting public key for index ${index} from ledger wallet`, cause: error });
   }
 }
@@ -69,7 +69,7 @@ export async function getUserPublicKey(interactive?: boolean, transportType?: Le
 
     const res = await hw.getUserPublicKey(interactive);
     return res.publicKey;
-  } catch (error) {
+  } catch (error: any) {
     throw new LedgerError(error.message, { debugMessage: `Error getting user public key from ledger wallet`, cause: error });
   }
 }
@@ -88,7 +88,7 @@ export async function signMessage(
     const ledgerSigningType = getLedgerSigningType(signingType);
     const res = await hw.signMessage(index, messageInBytes, ledgerSigningType, hashed, signingData);
     return { r: res.r, s: res.s };
-  } catch (error) {
+  } catch (error: any) {
     throw new LedgerError(error.message, { debugMessage: `Error signing message at ledger wallet`, cause: error });
   }
 }
@@ -106,7 +106,7 @@ export async function signUserMessage(
     const ledgerSigningType = getLedgerSigningType(signingType);
     const res = await hw.signUserMessage(messageInBytes, ledgerSigningType, hashed, signingData);
     return { r: res.r, s: res.s };
-  } catch (error) {
+  } catch (error: any) {
     throw new LedgerError(error.message, { debugMessage: `Error signing user message at ledger wallet`, cause: error });
   }
 }

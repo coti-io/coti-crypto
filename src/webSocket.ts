@@ -28,7 +28,7 @@ export class WebSocket {
     this.socketUrl = nodeUtils.getSocketUrl(wallet.getNetwork(), wallet.getFullNode());
   }
 
-  public connect(successCallback?: () => Promise<void>, reconnectFailedCallback?: () => Promise<void>) {
+  public connect(successCallback?: () => Promise<void>, reconnectFailedCallback?: () => Promise<void>): Promise<void> {
     if (successCallback) this.successCallback = successCallback;
     if (reconnectFailedCallback) this.reconnectFailedCallback = reconnectFailedCallback;
 
