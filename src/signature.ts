@@ -4,6 +4,7 @@ import * as cryptoUtils from './utils/cryptoUtils';
 import { EcSignatureOptions } from './utils/cryptoUtils';
 import * as utils from './utils/utils';
 import { IndexedWallet } from './wallet';
+import {getBytesFromArrayOfStrings} from './utils/utils';
 
 type KeyPair = cryptoUtils.KeyPair;
 
@@ -559,5 +560,51 @@ export class FaucetSignature extends Signature {
     const timeInSeconds = this.timestamp * 1000;
     const timestampBytes = utils.numberToByteArray(timeInSeconds, 8);
     return utils.concatByteArrays([addressHashBytes,currencyHashBytes, amountBytes, timestampBytes]);
+  }
+}
+
+export class TreasuryEnrollSignature extends Signature {
+  private readonly depositUuids: string[];
+  private readonly programUuid: string;
+  private readonly lockDays: number;
+  private readonly timestamp: number;
+  private readonly dropAddress: string;
+  constructor(depositUuids: string[], dropAddress: string, programUuid: string, lockDays: number, timestamp: number, signature?: SignatureData) {
+    super(signature);
+    this.depositUuids = depositUuids;
+    this.programUuid = programUuid;
+    this.lockDays = lockDays;
+    this.dropAddress = dropAddress;
+    this.timestamp = timestamp;
+  }
+  public getBytes(): Uint8Array {
+    const depositUuidsBytes = getBytesFromArrayOfStrings(this.depositUuids);
+    const programIdBytes = utils.getBytesFromString(this.programUuid);
+    const dropAddressBytes = utils.getBytesFromString(this.dropAddress);
+    const lockDaysBytes = utils.numberToByteArray(this.lockDays, 3);
+    const timeInSeconds = this.timestamp * 1000;
+    const timestampBytes = utils.numberToByteArray(timeInSeconds, 8);
+    return utils.concatByteArrays([depositUuidsBytes, programIdBytes, lockDaysBytes, dropAddressBytes, timestampBytes]);
+  }
+}
+export class TreasuryEnrollEstimationSignature extends Signature {
+  private readonly depositUuids: string[];
+  private readonly programUuid: string;
+  private readonly lockDays: number;
+  private readonly timestamp: number;
+  constructor(depositUuids: string[], programUuid: string, lockDays: number, timestamp: number, signature?: SignatureData) {
+    super(signature);
+    this.depositUuids = depositUuids;
+    this.programUuid = programUuid;
+    this.lockDays = lockDays;
+    this.timestamp = timestamp;
+  }
+  public getBytes(): Uint8Array {
+    const depositUuidsBytes = getBytesFromArrayOfStrings(this.depositUuids);
+    const programIdBytes = utils.getBytesFromString(this.programUuid);
+    const lockDaysBytes = utils.numberToByteArray(this.lockDays, 3);
+    const timeInSeconds = this.timestamp * 1000;
+    const timestampBytes = utils.numberToByteArray(timeInSeconds, 8);
+    return utils.concatByteArrays([depositUuidsBytes, programIdBytes, lockDaysBytes, timestampBytes]);
   }
 }

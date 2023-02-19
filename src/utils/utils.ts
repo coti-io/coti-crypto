@@ -51,7 +51,10 @@ export function utcStringToSeconds(utcString: string) {
 export function getBytesFromString(str: string) {
   return new Uint8Array(getArrayFromString(str));
 }
-
+export function getBytesFromArrayOfStrings(strArray: string[]) {
+  const concatenatedString = strArray.reduce( (acc, cur) => acc+cur, '');
+  return new Uint8Array(getArrayFromString(concatenatedString));
+}
 export function getArrayFromString(str: string) {
   return str.split('').map(e => e.charCodeAt(0));
 }
