@@ -10,6 +10,7 @@ import { Transaction, TransactionData } from '../transaction';
 import { Wallet } from '../wallet';
 import { HardForks } from './transactionUtils';
 import * as utils from './utils';
+import {GetUserTrustScoreDto, SendAddressToNodeDto} from '../dtos/nodeUtils.dto';
 
 type Network = utils.Network;
 
@@ -29,7 +30,7 @@ const nodeUrl = {
 };
 
 export namespace nodeUtils {
-  export async function getUserTrustScore(userHash: string, network: Network = 'mainnet', trustScoreNode?: string) {
+  export async function getUserTrustScore(userHash: string, network: Network = 'mainnet', trustScoreNode?: string): Promise<GetUserTrustScoreDto> {
     try {
       const { data } = await axios.post(`${trustScoreNode || nodeUrl[network].trustScoreNode}/usertrustscore`, {
         userHash,
@@ -40,7 +41,7 @@ export namespace nodeUtils {
     }
   }
 
-  export async function sendAddressToNode(address: BaseAddress, network: Network = 'mainnet', fullnode?: string) {
+  export async function sendAddressToNode(address: BaseAddress, network: Network = 'mainnet', fullnode?: string): Promise<SendAddressToNodeDto> {
     try {
       const { data } = await axios.put(`${fullnode || nodeUrl[network].fullNode}/address`, { address: address.getAddressHex() });
 
@@ -104,12 +105,12 @@ export namespace nodeUtils {
     }
   }
 
-  export async function getTransactionsHistory(addresses: string[], network: Network = 'mainnet', fullnode?: string) {
+  export async function getTransactionsHistory(addresses: string[], network: Network = 'mainnet', fullnode?: string): Promise<Map<string, TransactionData>> {
     let response = await axios.post(`${fullnode || nodeUrl[network].fullNode}/transaction/addressTransactions/batch`, { addresses });
     return getMapFromTransactionHistoryResponse(response);
   }
 
-  function getMapFromTransactionHistoryResponse(response: AxiosResponse<any>) {
+  function getMapFromTransactionHistoryResponse(response: AxiosResponse<any>): Map<string, TransactionData> {
     const transactionMap = new Map<string, TransactionData>();
     let parsedData = response.data;
     if (typeof parsedData !== 'object') {
@@ -151,7 +152,7 @@ export namespace nodeUtils {
     feeIncluded?: boolean,
     fullnode?: string,
     originalCurrencyHash?: string
-  ) {
+  ): Promise<BaseTransactionData> {
     try {
       const response = await axios.put(`${fullnode || nodeUrl[network].fullNode}/fee`, {
         originalAmount: amountToTransfer,
@@ -173,7 +174,7 @@ export namespace nodeUtils {
     network: Network = 'mainnet',
     feeIncluded?: boolean,
     trustScoreNode?: string
-  ) {
+  ): Promise<BaseTransactionData>  {
     try {
       const response = await axios.put(`${trustScoreNode || nodeUrl[network].trustScoreNode}/networkFee`, {
         fullNodeFeeData,
