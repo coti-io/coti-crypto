@@ -45,6 +45,7 @@
     "git-push-with-tags": "git push && git push --tags",
     "lint": "eslint . --ext .ts",
     "test": "jest",
+    "test-coverage": "jest --coverage",
     "version-prerelease": "npm version $(semver $npm_package_version -i prerelease --preid beta)",
     "version-prepatch": "npm version $(semver $npm_package_version -i prepatch --preid beta)",
     "version-preminor": "npm version $(semver $npm_package_version -i preminor --preid beta)",
