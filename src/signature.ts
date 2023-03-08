@@ -608,3 +608,18 @@ export class TreasuryEnrollEstimationSignature extends Signature {
     return utils.concatByteArrays([depositUuidsBytes, programIdBytes, lockDaysBytes, timestampBytes]);
   }
 }
+
+export class TreasuryErcConnectSignature extends Signature {
+  private readonly cotiAddress: string;
+  private readonly ethAddress: string;
+  constructor(cotiAddress: string, ethAddress: string, signature?: SignatureData) {
+    super(signature);
+    this.cotiAddress = cotiAddress;
+    this.ethAddress = ethAddress;
+  }
+  public getBytes(): Uint8Array {
+    const cotiAddressBytes = utils.getBytesFromString(this.cotiAddress);
+    const ethAddressBytes = utils.getBytesFromString(this.ethAddress);
+    return utils.concatByteArrays([cotiAddressBytes, ethAddressBytes]);
+  }
+}
