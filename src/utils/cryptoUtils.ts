@@ -5,7 +5,7 @@ import * as elliptic from 'elliptic';
 import * as utils from './utils';
 import { sha256 } from 'js-sha256';
 import { keccak256, sha3_256 as sha3Bit256 } from 'js-sha3';
-import blake from 'blakejs';
+import { blake2bHex } from 'blakejs';
 import { SignatureData } from '../signature';
 import * as bip39 from 'bip39';
 
@@ -207,7 +207,7 @@ export function generateSeed(key: string): any {
   let sha2Array = sha256.array(key);
   let sha3Array = sha3Bit256.update(key).array();
   let combinedArray = sha2Array.concat(sha3Array);
-  return blake.blake2bHex(Buffer.from(combinedArray), null, 32);
+  return blake2bHex(Buffer.from(combinedArray), undefined, 32);
 }
 
 export function generateMnemonic(): string {

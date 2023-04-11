@@ -1,4 +1,3 @@
-declare module 'blakejs';
 declare module '@ledgerhq/logs' {
   export type Log = {
     type: string;
