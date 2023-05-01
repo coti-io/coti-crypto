@@ -7,6 +7,7 @@ import { BaseWallet, IndexedWallet } from './wallet';
 import { BaseAddress, IndexedAddress } from './address';
 import { TransactionData } from './transaction';
 import { cotiParser } from './utils/jsonUtils';
+import { BalanceDto } from './dtos/balance.dto';
 
 export type StompClient = stomp.Client;
 
@@ -22,9 +23,11 @@ export class WebSocket {
   private readonly propagationSubscriptions = new Map();
   private readonly balanceSubscriptions = new Map();
   private readonly transactionsSubscriptions = new Map();
+  public maxIndexToSync?: number;
 
-  constructor(wallet: BaseWallet) {
+  constructor(wallet: BaseWallet, maxIndexToSync ?: number) {
     this.wallet = wallet;
+    this.maxIndexToSync = maxIndexToSync;
     this.socketUrl = nodeUtils.getSocketUrl(wallet.getNetwork(), wallet.getFullNode());
   }
 
@@ -90,7 +93,7 @@ export class WebSocket {
     this.client = stomp.over(ws, { debug: false });
   }
 
-  private async closeSocketConnection() {
+  public async closeSocketConnection() {
     await this.addressesUnsubscribe();
     this.client.disconnect();
   }
@@ -111,7 +114,7 @@ export class WebSocket {
     });
     if (this.wallet instanceof IndexedWallet) {
       const maxAddress = this.wallet.getMaxAddress();
-      const indexGap = this.wallet.getWebSocketIndexGap() || 10;
+      const indexGap = this.maxIndexToSync || this.wallet.getWebSocketIndexGap() || 10;
       const maxIndex = this.wallet.getMaxIndex();
       const nextIndex = maxIndex !== undefined ? maxIndex + 1 : 0;
       const maxIndexToSubscribe = maxAddress === undefined ? nextIndex + indexGap : Math.min(nextIndex + indexGap, maxAddress);
@@ -173,8 +176,11 @@ export class WebSocket {
         console.log(errorMsg);
         throw new Error(errorMsg);
       }
-      const { balance, preBalance } = data;
-      this.setAddressWithBalance(address, balance === null ? 0 : balance, preBalance === null ? 0 : preBalance);
+      const { balance, preBalance, currencyHash } = data;
+      this.setAddressWithBalance({
+        address,
+        balance: balance === null ? 0 : balance, preBalance: preBalance === null ? 0 : preBalance, currencyHash
+    });
     }
   }
 
@@ -218,8 +224,9 @@ export class WebSocket {
       const addressHex = address.getAddressHex();
 
       const balances = await walletUtils.checkBalances([addressHex], this.wallet);
+      const tokenBalances = await walletUtils.checkTokenBalances([addressHex], this.wallet);
       const { addressBalance, addressPreBalance } = balances[addressHex];
-      this.setAddressWithBalance(address, new BigDecimal(addressBalance), new BigDecimal(addressPreBalance));
+      this.setAddressWithBalance({ address, balance: new BigDecimal(addressBalance), preBalance: new BigDecimal(addressPreBalance), tokenBalance: Object.keys(tokenBalances).length > 0 ? tokenBalances[addressHex] : undefined });
 
       const addressIndex = address.getIndex();
       console.log(`Subscribing the balance and transactions for address: ${addressHex} and index: ${addressIndex}`);
@@ -227,7 +234,14 @@ export class WebSocket {
     }
   }
 
-  private setAddressWithBalance(address: BaseAddress, addressBalance: BigDecimal, addressPreBalance: BigDecimal) {
-    this.wallet.setAddressWithBalance(address, addressBalance, addressPreBalance);
+  private setAddressWithBalance(params: {
+                                  address: BaseAddress,
+                                  balance: BigDecimal,
+                                  preBalance: BigDecimal,
+                                  currencyHash?: string
+                                  tokenBalance?: BalanceDto
+                                }) {
+    const {address, balance, preBalance, currencyHash, tokenBalance} = params;
+    this.wallet.setAddressWithBalance({ address, balance, preBalance, currencyHash, tokenBalance });
   }
 }

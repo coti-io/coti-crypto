@@ -8,6 +8,8 @@ import { Transaction, TransactionType } from '../transaction';
 import { IndexedWallet } from '../wallet';
 import { IndexedAddress } from '../address';
 import moment from 'moment';
+import { Balance, CotiBalanceDto, TokensBalanceDto } from '../dtos/balance.dto';
+import { ec } from 'elliptic';
 
 const amountRegex = /^\d+(\.\d{1,8})?$/;
 const nativeCurrencyHash = getCurrencyHashBySymbol('coti');
@@ -18,6 +20,35 @@ export enum HardForks {
   MULTI_CURRENCY,
 }
 
+/**
+ * Creates a transaction for sending funds to a specified destination address.
+ * @param {Object} parameterObject - An object containing parameters for creating the transaction.
+ * @param {string} [parameterObject.userPrivateKey] - The user's private key.
+ * @param {IndexedWallet} [parameterObject.wallet] - An indexed wallet object.
+ * @param {Map<string, number>} parameterObject.inputMap - A map of input addresses and their corresponding amounts.
+ * @param {string} [parameterObject.feeAddress] - The fee address.
+ * @param {string} parameterObject.destinationAddress - The destination address.
+ * @param {string} [parameterObject.description] - A description for the transaction.
+ * @param {Network} [parameterObject.network] - The network to use for the transaction.
+ * @param {string} [parameterObject.fullnode] - The full node to use for the transaction.
+ * @param {string} [parameterObject.trustScoreNode] - The trust score node to use for the transaction.
+ * @param {boolean} [parameterObject.feeIncluded=false] - Whether the fee is included in the transaction amount.
+ * @param {string} [parameterObject.currencyHash] - The hash of the currency to use for the transaction.
+ * @param {string} [parameterObject.originalCurrencyHash] - The hash of the original currency used for the transaction.
+ * @param {HardForks} [parameterObject.hardFork=HardForks.SINGLE_CURRENCY] - The hard fork to use for the transaction.
+ * @returns {Promise<Transaction>} A promise that resolves to the transaction object.
+ * @throws {Error} Will throw an error if the fullnode does not support transfer of none native tokens.
+ * @throws {Error} Will throw an error if trying to transfer a non-native token with feeIncluded set to true.
+ * @throws {Error} Will throw an error if userPrivateKey or wallet is not defined.
+ * @throws {Error} Will throw an error if the network parameter is not the same as the wallet network.
+ * @throws {Error} Will throw an error if the fullnode parameter is not the same as the wallet fullnode.
+ * @throws {Error} Will throw an error if the trustScoreNode parameter is not the same as the wallet trustScoreNode.
+ * @throws {Error} Will throw an error if the fee address is missing or invalid.
+ * @throws {Error} Will throw an error if the input address is invalid.
+ * @throws {Error} Will throw an error if the input amount is invalid.
+ * @throws {Error} Will throw an error if the input amount is not positive.
+ * @throws {Error} Will throw an error if the fee address is not found in the inputs of a fee-included transaction.
+ */
 export async function createTransaction<T extends IndexedAddress>(parameterObject: {
   userPrivateKey?: string;
   wallet?: IndexedWallet<T>;
@@ -145,6 +176,14 @@ export async function createTransaction<T extends IndexedAddress>(parameterObjec
   return transaction;
 }
 
+/**
+ Asynchronously generates a signature for a full node fee.
+ @param {string} originalAmount - The original amount of the transaction.
+ @param {KeyPair | undefined} keyPair - The key pair used to sign the transaction.
+ @param {IndexedWallet<T> | undefined} wallet - The indexed wallet used to sign the transaction.
+ @param {string | undefined} currencyHash - The currency hash used to sign the transaction.
+ @returns {Promise<string>} - The generated signature.
+ */
 async function getFullNodeFeeSignature<T extends IndexedAddress>(
   originalAmount: string,
   keyPair?: KeyPair,
@@ -156,6 +195,21 @@ async function getFullNodeFeeSignature<T extends IndexedAddress>(
   return keyPair ? fullNodeFeeSignature.signByKeyPair(keyPair) : fullNodeFeeSignature.sign(wallet!);
 }
 
+
+/**
+ * Get full node and network fees for a given amount and user.
+ * @template T
+ * @param {BigDecimal} originalAmount - The original amount to calculate fees for.
+ * @param {string} userHash - The user public hash to calculate fees for.
+ * @param {KeyPair} [keyPair] - The key pair to use for signing the full node fee.
+ * @param {IndexedWallet<T>} [wallet] - The wallet to use for signing the full node fee.
+ * @param {boolean} [feeIncluded] - Whether the fees are already included in the amount.
+ * @param {Network} [network] - The network to use for calculating fees.
+ * @param {string} [fullnode] - The full node to use for calculating fees.
+ * @param {string} [trustScoreNode] - The trust score node to use for calculating fees.
+ * @param {string} [currencyHash] - The currency hash to use for calculating fees.
+ * @returns {Promise<{ fullNodeFee: BaseTransactionData, networkFee: BaseTransactionData }>} - The full node and network fees base transactions.
+ */
 async function getFees<T extends IndexedAddress>(
   originalAmount: BigDecimal,
   userHash: string,
@@ -166,7 +220,7 @@ async function getFees<T extends IndexedAddress>(
   fullnode?: string,
   trustScoreNode?: string,
   currencyHash?: string
-) {
+): Promise<{fullNodeFee: BaseTransactionData, networkFee: BaseTransactionData}> {
   const originalAmountString = originalAmount.toString();
   const fullNodeFeeSignature = await getFullNodeFeeSignature(originalAmountString, keyPair, wallet, currencyHash);
   const fullNodeFee = await nodeUtils.getFullNodeFees(
@@ -183,14 +237,24 @@ async function getFees<T extends IndexedAddress>(
   return { fullNodeFee, networkFee };
 }
 
+/**
+ Adds a base transaction to the given base transactions array for an input from the given address.
+ @param {CotiBalanceDto} balanceObject - An object containing the balance and pre-balance of each address.
+ @param {string} address - The address from which the input is coming.
+ @param {number} amount - The amount of the input transaction.
+ @param {array} baseTransactions - An array of base transactions.
+ @param {string} [currencyHash] - An optional currency hash.
+ @param {TokensBalanceDto} [tokensBalanceObject] - An optional object containing token balances for each address.
+ @returns {void}
+ */
 function addInputBaseTransaction(
-  balanceObject: any,
+  balanceObject: CotiBalanceDto,
   address: string,
   amount: number,
   baseTransactions: BaseTransaction[],
   currencyHash?: string,
-  tokensBalanceObject?: any
-) {
+  tokensBalanceObject?: TokensBalanceDto
+): void {
   let balance;
   let preBalance;
   let addressBalance;
@@ -225,6 +289,17 @@ function addInputBaseTransaction(
   baseTransactions.push(new BaseTransaction(address, spendFromAddress, BaseTransactionName.INPUT, undefined, undefined, undefined, currencyHash));
 }
 
+/**
+ Adds output base transactions to an array of base transactions for a COTI transaction.
+ @param {BigDecimal} originalAmount - The original amount of the transaction.
+ @param {BaseTransactionData} fullNodeFee - The full node fee data.
+ @param {BaseTransactionData} networkFee - The network fee data.
+ @param {string} destinationAddress - The destination address for the transaction.
+ @param {BaseTransaction[]} baseTransactions - The array of base transactions to add to.
+ @param {boolean} feeIncluded - Whether the fees are already included in the amount.
+ @param {string} [currencyHash] - The currency hash for the transaction, if any.
+ @returns {void}
+ */
 function addOutputBaseTransactions(
   originalAmount: BigDecimal,
   fullNodeFee: BaseTransactionData,
@@ -233,7 +308,7 @@ function addOutputBaseTransactions(
   baseTransactions: BaseTransaction[],
   feeIncluded: boolean,
   currencyHash?: string
-) {
+): void {
   const amountRBT = feeIncluded
     ? originalAmount.subtract(new BigDecimal(fullNodeFee.amount)).subtract(new BigDecimal(networkFee.amount))
     : originalAmount;
@@ -257,12 +332,30 @@ function addOutputBaseTransactions(
   baseTransactions.push(RBT);
 }
 
-async function getTransactionTrustScoreSignature<T extends IndexedAddress>(transactionHash: string, keyPair?: KeyPair, wallet?: IndexedWallet<T>) {
+/**
+ Generates a transaction trust score signature for a given transaction hash.
+ @async
+ @param {string} transactionHash - The hash of the transaction to generate the signature for.
+ @param {KeyPair} [keyPair] - The key pair to use for signing. If provided, will sign the signature using the key pair.
+ @param {IndexedWallet<T>} [wallet] - The indexed wallet to use for signing. If provided, will sign the signature using the wallet.
+ @returns {Promise<ec.SignatureOptions>} - A Promise that resolves to ec.SignatureOptions.
+ */
+async function getTransactionTrustScoreSignature<T extends IndexedAddress>(transactionHash: string, keyPair?: KeyPair, wallet?: IndexedWallet<T>): Promise<ec.SignatureOptions> {
   const transactionTrustScoreSignature = new TransactionTrustScoreSignature(transactionHash);
 
   return keyPair ? transactionTrustScoreSignature.signByKeyPair(keyPair, true) : transactionTrustScoreSignature.sign(wallet!, true);
 }
 
+/**
+ * Adds trust score information to a transaction and returns the updated transaction.
+ * @param {Transaction} transaction - The transaction to add trust score information to.
+ * @param {string} userHash - The user public hash to be used to retrieve trust score data.
+ * @param {KeyPair=} keyPair - The key pair to sign the transaction trust score signature. If not provided, a wallet must be specified.
+ * @param {IndexedWallet<T>=} wallet - The wallet containing the address to sign the transaction trust score signature. If not provided, a key pair must be specified.
+ * @param {Network=} network - The network to use to retrieve trust score data. Defaults to the `MAINNET` network.
+ * @param {string=} trustScoreNode - The trust score node URL to use to retrieve trust score data. Defaults to the default trust score node URL.
+ * @returns {Promise<void>}
+ */
 export async function addTrustScoreToTransaction<T extends IndexedAddress>(
   transaction: Transaction,
   userHash: string,
@@ -270,7 +363,7 @@ export async function addTrustScoreToTransaction<T extends IndexedAddress>(
   wallet?: IndexedWallet<T>,
   network?: Network,
   trustScoreNode?: string
-) {
+): Promise<void> {
   const transactionHash = transaction.getHash();
   const transactionTrustScoreSignature = await getTransactionTrustScoreSignature(transactionHash, keyPair, wallet);
   const transactionTrustScoreData = await nodeUtils.getTrustScoreForTransaction(
@@ -284,6 +377,17 @@ export async function addTrustScoreToTransaction<T extends IndexedAddress>(
   transaction.addTrustScoreMessageToTransaction(transactionTrustScoreData);
 }
 
+/**
+ * Generates a transaction for token generation.
+ * @param {Object} params - The parameters for generating the transaction.
+ * @param {BaseTransactionData} params.feeBT - The base transaction data for the fee.
+ * @param {BaseTransactionData} params.fullnodeFee - The base transaction data for the fullnode fee.
+ * @param {string} params.walletAddressIBT - The destination address for the IBT transaction.
+ * @param {string} params.userHash - The user public hash for the transaction.
+ * @param {TransactionType} params.transactionType - The transaction type.
+ * @param {string} params.transactionDescription - The description of the transaction.
+ * @returns {Transaction} The generated transaction.
+ */
 export async function transactionTokenGeneration(params: {
   feeBT: BaseTransactionData;
   fullnodeFee: BaseTransactionData;

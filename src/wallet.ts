@@ -4,10 +4,12 @@ import { ReducedTransaction, TransactionData } from './transaction';
 import { walletUtils } from './utils/walletUtils';
 import { SignatureData, SigningType } from './signature';
 import * as cryptoUtils from './utils/cryptoUtils';
-import { BigDecimal, Network } from './utils/utils';
+import { BigDecimal, getCurrencyHashBySymbol, Network } from './utils/utils';
 import * as ledgerUtils from './utils/ledgerUtils';
 import BN from 'bn.js';
 import moment from 'moment';
+import { BalanceDto } from './dtos/balance.dto';
+import { WebSocket } from './webSocket';
 
 type KeyPair = cryptoUtils.KeyPair;
 type LedgerTransportType = ledgerUtils.LedgerTransportType;
@@ -125,26 +127,51 @@ export class BaseWallet extends WalletEvent {
       addresses.map(address => address.getAddressHex()),
       this
     );
+    const addressesTokenBalances = await walletUtils.checkTokenBalances(
+      addresses.map(address => address.getAddressHex()),
+      this
+    );
     for (const address of addresses) {
       let { addressBalance, addressPreBalance } = addressesBalance[address.getAddressHex()];
       const balance = new BigDecimal(`${addressBalance}`);
       const preBalance = new BigDecimal(`${addressPreBalance}`);
       const existingAddress = this.addressMap.get(address.getAddressHex());
+      const existTokenBalance = addressesTokenBalances && addressesTokenBalances[address.getAddressHex()];
+      const addressTokenBalance = !!existTokenBalance ? addressesTokenBalances[address.getAddressHex()] : undefined;
+
       if (
         !existingAddress ||
         existingAddress.getBalance().comparedTo(balance) !== 0 ||
         existingAddress.getPreBalance().comparedTo(preBalance) !== 0
       ) {
-        this.setAddressWithBalance(address, balance, preBalance);
+        this.setAddressWithBalance({ address, balance, preBalance, tokenBalance: addressTokenBalance });
       }
     }
   }
 
-  public setAddressWithBalance(address: BaseAddress, balance: BigDecimal, preBalance: BigDecimal) {
-    address.setBalance(balance);
-    address.setPreBalance(preBalance);
-    this.setAddressToMap(address);
+  public setAddressWithBalance(params: {
+    address: BaseAddress;
+    balance: BigDecimal;
+    preBalance: BigDecimal;
+    currencyHash?: string;
+    tokenBalance?: BalanceDto;
+  }) {
+    const { address, balance, preBalance, currencyHash, tokenBalance } = params;
+    const nativeCurrencyHash = getCurrencyHashBySymbol('coti');
+    if (!currencyHash || currencyHash === nativeCurrencyHash) {
+      address.setBalance(balance);
+      address.setPreBalance(preBalance);
+      address.setTokenBalance(nativeCurrencyHash, new BigDecimal(balance), new BigDecimal(preBalance));
+    } else {
+      address.setTokenBalance(currencyHash, new BigDecimal(balance), new BigDecimal(preBalance));
+    }
+    if (tokenBalance) {
+      for (const [currencyHash, balance] of Object.entries(tokenBalance)) {
+        address.setTokenBalance(currencyHash, new BigDecimal(balance.addressBalance), new BigDecimal(balance.addressPreBalance));
+      }
+    }
 
+    this.setAddressToMap(address);
     this.emit('balanceChange', address);
   }
 
@@ -303,16 +330,26 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
     return this.on('signingMessage', listener);
   }
 
+  /**
+   *
+   * @param (number) addressGap - limit addresses to load.
+   */
   public async autoDiscoverAddresses(addressGap?: number) {
     console.log(`Starting to discover addresses`);
     const addresses = await walletUtils.getAddressesOfWallet(this, addressGap);
-    if (addresses.length > 0) await this.checkBalancesOfAddresses(addresses);
+    if (addresses.length > 0) {
+      await this.checkBalancesOfAddresses(addresses);
+    }
     console.log(`Finished to discover addresses. Total addresses: ${addresses.length}`);
     return this.getAddressMap();
   }
 
   public abstract generateAddressByIndex(index: number): Promise<T>;
 
+  /**
+   *
+   * @returns (number) The wallet trust score.
+   */
   public async getUserTrustScore() {
     let data = await walletUtils.getUserTrustScore(this);
     if (!data) throw new Error(`Error getting user trust score, received no data`);
@@ -323,11 +360,15 @@ export abstract class IndexedWallet<T extends IndexedAddress> extends BaseWallet
 }
 
 export class Wallet extends IndexedWallet<Address> {
+
   private seed!: string;
   private keyPair!: KeyPair;
+  private autoSync!: boolean;
+  private webSocket!: WebSocket;
 
   constructor(params: {
     seed?: string;
+    autoSync?: boolean;
     userSecret?: string;
     serverKey?: BN;
     network?: Network;
@@ -335,7 +376,7 @@ export class Wallet extends IndexedWallet<Address> {
     trustScoreNode?: string;
     webSocketIndexGap?: number;
   }) {
-    const { seed, userSecret, serverKey, network, fullnode, trustScoreNode, webSocketIndexGap } = params;
+    const { seed, userSecret, serverKey, network, fullnode, trustScoreNode, webSocketIndexGap, autoSync } = params;
     super({ network, fullnode, trustScoreNode, webSocketIndexGap });
     if (seed) {
       if (!this.checkSeedFormat(seed)) throw new Error('Seed is not in correct format');
@@ -345,8 +386,8 @@ export class Wallet extends IndexedWallet<Address> {
 
     this.generateAndSetKeyPair();
     this.setPublicHash();
+    this.setAutoSync(!!autoSync);
   }
-
   private checkSeedFormat(seed: string) {
     return seed.length === 64;
   }
@@ -357,6 +398,29 @@ export class Wallet extends IndexedWallet<Address> {
     this.seed = cryptoUtils.generateSeed(combinedString);
   }
 
+  public async autoDiscoverAddresses(bulkSize?: number) {
+    console.log(`Starting to discover addresses`);
+    const addresses = await walletUtils.autoDiscoverV(this, bulkSize);
+    if (addresses.length > 0) {
+      await this.checkBalancesOfAddresses(addresses);
+    }
+    if(this.autoSync){
+      let webSocket = this.webSocket;
+      if(webSocket) {
+        for(const address of this.getAddresses()) {
+          const addressHex = address.getAddressHex();
+          webSocket.connectToAddress(addressHex);
+        }
+      } else {
+        webSocket = new WebSocket(this, addresses.length-1);
+        await webSocket.connect();
+        this.webSocket = webSocket;
+      }
+    }
+    console.log(`Finished to discover addresses. Total addresses: ${addresses.length}`);
+    return this.getAddressMap();
+  }
+
   private generateAndSetKeyPair() {
     this.keyPair = cryptoUtils.generateKeyPairFromSeed(this.seed);
   }
@@ -365,6 +429,34 @@ export class Wallet extends IndexedWallet<Address> {
     this.publicHash = cryptoUtils.getPublicKeyByKeyPair(this.keyPair);
   }
 
+  public async loadAddresses(addresses: BaseAddress[]) {
+    if (addresses && addresses.length > this.maxAddress!) throw new Error(`Number of addresses should be less than ${this.maxAddress}`);
+    await super.loadAddresses(addresses);
+
+    if(this.getAutoSync()){
+      const webSocket = this.getWebsocket();
+      if(!!webSocket){
+        for(const address of addresses) {
+          const addressHex = address.getAddressHex();
+          webSocket.connectToAddress(addressHex);
+        }
+      }
+    }
+  }
+  public setAutoSync(autoSync: boolean) {
+    this.autoSync = autoSync;
+  }
+
+  public getAutoSync(): boolean {
+    return this.autoSync;
+  }
+  public setWebSocket(websocket: WebSocket) {
+    this.webSocket = websocket;
+  }
+
+  public getWebsocket(): WebSocket {
+    return this.webSocket;
+  }
   private generateKeyPairByIndex(index: number) {
     return cryptoUtils.generateKeyPairFromSeed(this.seed, index);
   }

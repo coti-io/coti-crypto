@@ -7,6 +7,7 @@ export class BaseAddress {
   protected addressHex: string;
   protected preBalance: BigDecimal = new BigDecimal('0');
   protected balance: BigDecimal = new BigDecimal('0');
+  protected tokenBalances: Map<string, {balance: BigDecimal, preBalance: BigDecimal}> = new Map<string, {balance: BigDecimal, preBalance: BigDecimal}>();
 
   constructor(addressHex: string) {
     this.checkAddress(addressHex);
@@ -35,6 +36,10 @@ export class BaseAddress {
 
   public setBalance(balance: BigDecimal) {
     this.balance = balance;
+  }
+
+  public setTokenBalance(currencyHash: string, balance: BigDecimal, preBalance: BigDecimal){
+    this.tokenBalances.set(currencyHash, {balance, preBalance});
   }
 }
 

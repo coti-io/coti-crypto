@@ -1,5 +1,5 @@
-export class BalanceDto {
-  [address: string]: Balance;
+export class  TokensBalanceDto {
+  [address: string]: BalanceDto;
 }
 
 export type Balance = {
@@ -7,6 +7,10 @@ export type Balance = {
   addressPreBalance: number;
 };
 
-export class TokensBalanceDto {
-  [currencyHash: string]: BalanceDto;
+export class  CotiBalanceDto {
+  [address: string]: Balance;
+}
+
+export class BalanceDto {
+  [currencyHash: string]: Balance;
 }

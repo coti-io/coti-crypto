@@ -48,6 +48,24 @@ export type TokenMintFeeRequest = {
 };
 
 export namespace tokenUtils {
+
+  /**
+   * Generates a new TokenGenerationRequest object using the specified parameters.
+   * @async
+   * @param {Object} params - An object containing the required parameters for the TokenGenerationRequest.
+   * @param {string} params.userHash - The hash of the user creating the TokenGenerationRequest.
+   * @param {string} params.currencyName - The name of the currency to be generated.
+   * @param {string} params.currencySymbol - The symbol of the currency to be generated.
+   * @param {string} params.currencyType - The type of the currency to be generated.
+   * @param {string} params.description - A description of the currency to be generated.
+   * @param {string} params.totalSupply - The total supply of the currency to be generated.
+   * @param {number} params.scale - The scale of the currency to be generated.
+   * @param {string} params.currencyRateSourceType - The rate source type of the currency to be generated.
+   * @param {string} params.rateSource - The rate source of the currency to be generated.
+   * @param {string} params.protectionModel - The protection model of the currency to be generated.
+   * @param {Wallet} params.indexedWallet - The indexed wallet object used to sign the TokenGenerationRequest data.
+   * @returns {Promise<TokenGenerationRequest>} A new TokenGenerationRequest object.
+   */
   export async function getTokenGenerationFeeRequest(params: {
     userHash: string;
     currencyName: string;
@@ -131,6 +149,17 @@ export namespace tokenUtils {
     };
   }
 
+  /**
+   * Creates a new TokenMintFeeRequest object representing the fee for minting a token with the specified parameters.
+   * @async
+   * @param {string} currencyHash - The hash of the currency being minted.
+   * @param {number} mintingAmount - The amount of the currency being minted.
+   * @param {number} feeAmount - The fee for minting the currency.
+   * @param {string} walletAddressReceiveToken - The wallet address to receive the minted token.
+   * @param {string} userHash - The hash of the user who is minting the token.
+   * @param {Wallet} indexedWallet - The indexed wallet to use for signing the minting quote and fee quote.
+   * @returns {Promise<TokenMintFeeRequest>} A new TokenMintFeeRequest object representing the fee for minting the token.
+   */
   export async function getTokenMintFeeRequest(
     currencyHash: string,
     mintingAmount: number,

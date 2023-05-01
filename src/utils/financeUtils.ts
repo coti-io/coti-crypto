@@ -23,6 +23,15 @@ export namespace financeUtils {
     },
   };
 
+  /**
+   * Generates a new BaseTransactionData object representing the fee for generating a token with the specified TokenGenerationRequest.
+   * @async
+   * @param {TokenGenerationRequest} tokenGenerationRequest - The TokenGenerationRequest for which to calculate the fee.
+   * @param {string} [financeServerUrl] - The URL of the finance server to use for the request. If omitted, the default finance server URL for the specified network will be used.
+   * @param {Network} [network='mainnet'] - The network to use for the request. Defaults to 'mainnet'.
+   * @returns {Promise<BaseTransactionData>} A new BaseTransactionData object representing the fee for generating the token.
+   * @throws {Error} If there was an error generating the fee.
+   */
   export async function getTokenGenerationFeeBT(
     tokenGenerationRequest: TokenGenerationRequest,
     financeServerUrl?: string,
@@ -43,6 +52,17 @@ export namespace financeUtils {
     }
   }
 
+
+  /**
+   Send a request to get the token minting fee quote from the Finance server
+   @async
+   @function getTokenMintQuoteFee
+   @param {TokenMintQuoteFeeRequest} tokenMintQuoteFeeRequest - An object containing the data required to make the request
+   @param {string} [financeServerUrl] - Optional parameter to specify the Finance server URL to send the request to
+   @param {Network} [network='mainnet'] - Optional parameter to specify the network to use. Defaults to 'mainnet'
+   @returns {Promise<TokenMintingFeeQuoteResponse>} A Promise that resolves with the token minting fee quote
+   @throws {Error} An error if the request fails
+   */
   export async function getTokenMintQuoteFee(
     tokenMintQuoteFeeRequest: TokenMintQuoteFeeRequest,
     financeServerUrl?: string,
@@ -57,6 +77,14 @@ export namespace financeUtils {
     }
   }
 
+  /**
+   Calculates the minting fee for a token minting operation using a given token mint fee request object.
+   @param {TokenMintFeeRequest} tokenMintFeeRequest - The token mint fee request object containing the necessary data to calculate the fee.
+   @param {string} financeServerUrl - (optional) The URL of the finance server to use. Defaults to the mainnet finance server.
+   @param {Network} network - (optional) The network to use. Defaults to 'mainnet'.
+   @returns {Promise<BaseTransactionData>} - A Promise that resolves to a BaseTransactionData object representing the calculated minting fee.
+   @throws {Error} - If there is an error with the request, an error message is thrown.
+   */
   export async function getTokenMintFee(
     tokenMintFeeRequest: TokenMintFeeRequest,
     financeServerUrl?: string,
