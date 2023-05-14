@@ -93,12 +93,12 @@ export namespace walletUtils {
     let offset = 0;
     let isAddressesBulkNotRegistered = false;
     let maxAddressReached = false;
-    const generatedAddressMap = new Map<string, IndexedAddress>();
     console.log(`Getting wallet addresses from fullnode with bulks of ${bulkSize}`);
     const addressHexToIndexMap = new Map<string, { index: number; isRegisteredAddress: boolean }>();
     let isMaxBulkIndexKnownByFN = true;
     let maxIndexRegistered;
     while (!isAddressesBulkNotRegistered && !maxAddressReached && isMaxBulkIndexKnownByFN) {
+      const generatedAddressMap = new Map<string, IndexedAddress>();
       const maxAddress = wallet.getMaxAddress();
       const latestBulkAddress = (await wallet.generateAddressByIndex(offset + bulkSize - 1)).getAddressHex();
       for (let i = offset; i < offset + bulkSize; i++) {
